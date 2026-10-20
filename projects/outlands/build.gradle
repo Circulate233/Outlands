@@ -119,6 +119,55 @@ test {
     jvmArgs ProjectConstants.JVM_ARGUMENTS + ProjectConstants.COMPILER_JVM_ARGUMENTS
 }
 
+
+// region Run configs -------------------------------------------------------
+// The loader boots through 'com.cleanroommc.boot.Main*', which forwards to FML with the env contract below.
+// Slime Launcher (ForgeDev) supplies the Minecraft classpath, assets and natives, so only the loader specific
+// environment variables have to be provided here.
+def mcVersion = props.minecraft_version
+def mcpVersion = props.mcp_version
+
+def loaderEnv = { String target, String tweaker ->
+    [
+        target          : target,
+        tweakClass      : tweaker,
+        mainClass       : 'top.outlands.foundation.boot.Foundation',
+        MC_VERSION      : mcVersion,
+        MCP_VERSION     : mcpVersion,
+        MCP_MAPPINGS    : mcpBase.mappingZip.get().absolutePath,
+        MCP_TO_SRG      : mcpBase.map2Srg.get().absolutePath,
+        FORGE_GROUP     : project.group.toString(),
+        FORGE_VERSION   : props.last_forge_version
+    ] as Map<String, String>
+}
+
+forgedev.runs {
+    // :outlands does not own an mcpBase (the MCP layer lives in :mcpbase), so wire the launcher up by hand
+    all { run ->
+        run.cache.set(layout.buildDirectory.dir('slime-launcher-cache'))
+        run.metadata(mcpBase.metadata)
+    }
+
+    cleanroomClient {
+        options {
+            mainClass = 'com.cleanroommc.boot.MainClient'
+            workingDir = file('run')
+            jvmArgs = ProjectConstants.JVM_ARGUMENTS + ['-Dmixin.debug.export=true', '-Dmixin.checks.interfaces=true']
+            environment.putAll(loaderEnv('fmldevclient', 'net.minecraftforge.fml.common.launcher.FMLTweaker'))
+        }
+    }
+
+    cleanroomServer {
+        options {
+            mainClass = 'com.cleanroommc.boot.MainServer'
+            workingDir = file('run')
+            jvmArgs = ProjectConstants.JVM_ARGUMENTS
+            environment.putAll(loaderEnv('fmldevserver', 'net.minecraftforge.fml.common.launcher.FMLServerTweaker'))
+        }
+    }
+}
+// endregion
+
 tasks.register('outlandsInfo') {
     doLast {
         println 'src    : ' + patches.patched.get().asFile
