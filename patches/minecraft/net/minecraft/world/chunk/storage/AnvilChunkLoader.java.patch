@@ -59,7 +59,7 @@
          if (!compound.hasKey("Level", 10))
          {
              LOGGER.error("Chunk file at {},{} is missing level data, skipping", x, z);
-@@ -113,10 +143,29 @@
+@@ -113,14 +143,32 @@
                      );
                      nbttagcompound.setInteger("xPos", x);
                      nbttagcompound.setInteger("zPos", z);
@@ -90,7 +90,11 @@
              }
          }
      }
-@@ -131,7 +180,10 @@
+-
+     @Override
+     public void saveChunk(World worldIn, Chunk chunkIn) throws MinecraftException, IOException
+     {
+@@ -132,7 +180,10 @@
              NBTTagCompound nbttagcompound1 = new NBTTagCompound();
              nbttagcompound.setTag("Level", nbttagcompound1);
              nbttagcompound.setInteger("DataVersion", 1343);
@@ -101,7 +105,7 @@
              this.addChunkToPending(chunkIn.getPos(), nbttagcompound);
          }
          catch (Exception exception)
-@@ -322,11 +374,19 @@
+@@ -323,11 +374,19 @@
              {
                  NBTTagCompound nbttagcompound2 = new NBTTagCompound();
  
@@ -121,7 +125,7 @@
              }
          }
  
-@@ -335,8 +395,16 @@
+@@ -336,8 +395,16 @@
  
          for (TileEntity tileentity : chunkIn.getTileEntityMap().values())
          {
@@ -138,7 +142,7 @@
          }
  
          compound.setTag("TileEntities", nbttaglist2);
-@@ -362,6 +430,18 @@
+@@ -363,6 +430,18 @@
  
              compound.setTag("TileTicks", nbttaglist3);
          }
@@ -157,7 +161,7 @@
      }
  
      private Chunk readChunkFromNBT(World worldIn, NBTTagCompound compound)
-@@ -405,6 +485,16 @@
+@@ -406,6 +485,16 @@
              chunk.setBiomeArray(compound.getByteArray("Biomes"));
          }
  
@@ -174,7 +178,7 @@
          NBTTagList nbttaglist1 = compound.getTagList("Entities", 10);
  
          for (int j1 = 0; j1 < nbttaglist1.tagCount(); j1++)
-@@ -453,8 +543,6 @@
+@@ -454,8 +543,6 @@
                  );
              }
          }
@@ -183,14 +187,13 @@
      }
  
      @Nullable
-@@ -586,5 +674,10 @@
- 
+@@ -588,4 +675,9 @@
              return entity;
          }
-+    }
+     }
 +
 +    public int getPendingSaveCount()
 +    {
 +        return this.chunksToSave.size();
-     }
++    }
  }

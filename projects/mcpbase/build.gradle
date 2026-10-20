@@ -1,0 +1,62 @@
+// ForgeDev based replacement for the ':mcp' + ':minecraft' projects.
+//
+// The MCP layer owns everything that has to happen before any patch is applied:
+//   decompile -> MCPConfig patches -> mcpcleanup (processor) -> rename to MCP names
+//
+//   * access transformers must run on the *SRG* classes, before the rename, because forge_at.cfg uses SRG names
+//   * the processor (mcpcleanup) must run exactly once: it strips every '//' comment, which would destroy comments
+//     added by our own patches if it ran afterwards
+//
+// ':minecraft' had no patches of its own, so it is folded into this project: the "clean" base produced here is
+// what 'patches/minecraft' is applied to.
+
+plugins {
+    id 'top.outlands.forgedev' version '7.0.0-beta.58-cr1'
+}
+
+import com.cleanroommc.gradle.helpers.ProjectConstants
+
+def props = project.properties
+
+def mcpArtifactVersion = "${props.minecraft_version}-${props.mcp_version}"
+
+forgedev {
+    mcpBase {
+        mcpVersion = mcpArtifactVersion
+        mcpPipeline = 'joined'
+
+        mappingChannel = props.mapping_channel
+        mappingVersion = props.mapping_version
+
+        // mcp_config is published to our own repository
+        repositories.add('forge=https://maven.outlands.top/releases/')
+
+        // forge_at.cfg uses SRG names (field_/func_/descriptors), so it has to be applied before the rename
+        accessTransformers.from(file("$rootDir/src/main/resources/forge_at.cfg"))
+
+        processor = ProjectConstants.PATCHER_POST_PROCESSOR.tool as String
+    }
+
+    // The patch base. Same files as the old ':cleanroom' patcher used, but now every step lives in this project.
+    patches {
+        base = mcpBase
+        patches.set(file("$rootDir/patches/minecraft"))
+        patched.set(layout.buildDirectory.dir('patched'))
+    }
+    patches.apply {
+        basePathPrefix.set('before')
+        modifiedPathPrefix.set('after')
+        // Keep going on rejects so the report lists every failing file instead of stopping at the first one
+        failOnError.set(false)
+    }
+}
+
+tasks.register('mcpInfo') {
+    def base = forgedev.mcpBase
+    def patches = forgedev.patches
+    doLast {
+        println 'srg      : ' + base.unnamedSources.get()
+        println 'named    : ' + base.namedSources.get()
+        println 'patched  : ' + patches.patched.get().asFile
+    }
+}

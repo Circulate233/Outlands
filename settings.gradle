@@ -1,10 +1,27 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Outlands'
+            url = 'https://maven.outlands.top/releases/'
+        }
+        maven {
+            name = 'Forge'
+            url = 'https://maven.minecraftforge.net/'
+        }
+        mavenLocal()
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = 'Cleanroom'
 
 include ':mcp'
 include ':minecraft'
+// Staging project for the ForgeDev based pipeline. Replaces :mcp and :minecraft once :cleanroom is ported.
+include ':mcpbase'
 include ':cleanroom'
 
 project(":mcp").projectDir = file("projects/mcp")
 project(":minecraft").projectDir = file("projects/minecraft")
+project(":mcpbase").projectDir = file("projects/mcpbase")
 project(":cleanroom").projectDir = file("projects/cleanroom")
-

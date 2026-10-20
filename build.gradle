@@ -13,6 +13,9 @@ buildscript {
         classpath('top.outlands:artifactural:3.0.4') {
             transitive = false
         }
+        // ForgeDev (used by ':mcpbase') needs a srgutils that can parse '26.1-snapshot-1' style versions.
+        // FG6 only ships 0.5.x, which throws NumberFormatException while initializing ForgeDev's Util class.
+        classpath 'net.minecraftforge:srgutils:0.6.6'
     }
 }
 
