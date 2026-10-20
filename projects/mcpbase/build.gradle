@@ -60,3 +60,12 @@ tasks.register('mcpInfo') {
         println 'patched  : ' + patches.patched.get().asFile
     }
 }
+
+// Consumable view of the Minecraft libraries, so other projects can put them on their compile classpath
+configurations {
+    mcpbaseLibraries {
+        canBeConsumed = true
+        canBeResolved = true
+        extendsFrom(project(':mcpbase').forgedev.mcpBase.dependencyConfiguration)
+    }
+}

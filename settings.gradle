@@ -20,8 +20,10 @@ include ':minecraft'
 // Staging project for the ForgeDev based pipeline. Replaces :mcp and :minecraft once :cleanroom is ported.
 include ':mcpbase'
 include ':cleanroom'
+include ':outlands'
 
 project(":mcp").projectDir = file("projects/mcp")
 project(":minecraft").projectDir = file("projects/minecraft")
 project(":mcpbase").projectDir = file("projects/mcpbase")
 project(":cleanroom").projectDir = file("projects/cleanroom")
+project(":outlands").projectDir = file("projects/outlands")

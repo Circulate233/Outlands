@@ -1,0 +1,127 @@
+// Outlands: the patched Minecraft + Cleanroom loader project.
+//
+// This replaces the old ForgeGradle 6 chain (:mcp -> :minecraft -> :cleanroom patcher). The MCP layer
+// (decompile -> mcpcleanup -> rename, access transformers included) and the patch application live in
+// ':mcpbase'; this project only adds the loader sources on top and packages everything.
+//
+// source layout:
+//   project(':mcpbase').forgedev.patches.patched  -> patched Minecraft sources (generated)
+//   $rootDir/src/main/java                        -> loader sources
+//   $rootDir/src/main/resources                   -> loader resources
+
+plugins {
+    id 'java-library'
+    id 'top.outlands.forgedev' version '7.0.0-beta.58-cr1'
+}
+
+import com.cleanroommc.gradle.helpers.ProjectConstants
+import com.cleanroommc.gradle.helpers.tasks.Util
+
+def props = project.properties
+
+group = 'top.outlands'
+// Keep the artifact identity of the old ':cleanroom' project
+base {
+    archivesName = 'cleanroom'
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+}
+
+evaluationDependsOn(':mcpbase')
+
+def mcpBase = project(':mcpbase').forgedev.mcpBase
+def patches = project(':mcpbase').forgedev.patches
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        name = 'Outlands'
+        url = 'https://maven.outlands.top/releases/'
+    }
+    maven {
+        url = 'https://maven.arcseekers.com/releases/'
+    }
+    maven {
+        name = 'Cleanroom Maven'
+        url = 'https://repo.cleanroommc.com/releases/'
+    }
+}
+
+ext {
+    lwjglArch = Util.getCurrentArch()
+    // Do not change the order unless it is required so
+    lwjglLibraries = [
+        [
+            'lwjgl-glfw', 'lwjgl-jemalloc', 'lwjgl-openal',
+            'lwjgl-opengl', 'lwjgl-stb', 'lwjgl-tinyfd', 'lwjgl'
+        ],
+
+        [
+            'natives-linux-arm64', 'natives-linux-arm32', 'natives-linux',
+            'natives-macos-arm64', 'natives-macos',
+            'natives-windows-arm64', 'natives-windows-x86', 'natives-windows'
+        ]
+    ]
+}
+
+apply from: 'dependencies.gradle'
+
+dependencies {
+    // Minecraft libraries (including the vanilla assets jars) straight from the mcp config
+    api project(path: ':mcpbase', configuration: 'mcpbaseLibraries')
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = []
+            // generated: patched Minecraft sources
+            srcDir(patches.patched)
+            srcDir("$rootDir/src/main/java")
+        }
+        resources {
+            srcDirs = ["$rootDir/src/main/resources"]
+        }
+    }
+    test {
+        compileClasspath += sourceSets.main.runtimeClasspath
+        runtimeClasspath += sourceSets.main.runtimeClasspath
+        java {
+            srcDirs = ["$rootDir/src/test/java"]
+        }
+        resources {
+            srcDirs = ["$rootDir/src/test/resources"]
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs = options.compilerArgs + ProjectConstants.COMPILER_JVM_ARGUMENTS
+    options.encoding = 'UTF-8'
+}
+
+processResources {
+    inputs.property 'cleanmix_version', props.cleanmix_version
+    filesMatching('cleanmix.info') {
+        expand cleanmix_version: props.cleanmix_version
+    }
+}
+
+test {
+    maxParallelForks = 1
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+    jvmArgs ProjectConstants.JVM_ARGUMENTS + ProjectConstants.COMPILER_JVM_ARGUMENTS
+}
+
+tasks.register('outlandsInfo') {
+    doLast {
+        println 'src    : ' + patches.patched.get().asFile
+        println 'mc     : ' + mcpBase.namedSources.get()
+    }
+}
