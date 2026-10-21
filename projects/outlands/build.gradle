@@ -32,6 +32,8 @@ base {
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
+    // userdev's 'sources' entry points at this jar (patched Minecraft + loader sources)
+    withSourcesJar()
 }
 
 evaluationDependsOn(':mcpbase')
@@ -299,6 +301,37 @@ tasks.named('jar', Jar) {
         rename { 'binpatches.pack.lzma' }
     }
 }
+
+
+// region userdev ------------------------------------------------------------
+// Classic userdev artifact (spec 2): config.json + joined.lzma + patches/ + ats/ + sources.
+// Consumed by ForgeGradle 3-5, the ModDevGradle legacy fork and the Unimined fork.
+forgedev.userDev {
+    base(mcpBase)
+
+    binaryPatches {
+        // The final jar carries binpatches.pack.lzma and deobf data, the patches must not
+        dirty.setFrom(tasks.named('jarForReobf'))
+    }
+
+    config {
+        sources(tasks.named('sourcesJar'))
+        universal(tasks.named('jar'))
+    }
+}
+
+// The patch set is maintained in patches/minecraft, so it is packaged as-is instead of regenerating it.
+// 'before/' + 'after/' prefixes make UserdevConfig write spec 2.
+forgedev.userDev.jar {
+    from(file("$rootDir/patches/minecraft")) {
+        into 'patches'
+    }
+}
+forgedev.userDev.config {
+    patchesOriginalPrefix.set('before')
+    patchesModifiedPrefix.set('after')
+}
+// endregion
 
 tasks.register('outlandsInfo') {
     doLast {
