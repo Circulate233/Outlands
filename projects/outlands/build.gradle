@@ -321,6 +321,9 @@ forgedev.userDev {
     config {
         sources(tasks.named('sourcesJar'))
         universal(tasks.named('jar'))
+        // Consumers that run the mcp config themselves (Unimined, legacy FG) need the variant that carries the
+        // mcpcleanup step, otherwise the patch base is not the one the 543 patches were authored against.
+        getMCPConfig().set("top.outlands:mcp_config:${props.minecraft_version}-${props.mcp_version}@zip")
     }
 }
 

@@ -16,6 +16,15 @@ plugins {
 
 import com.cleanroommc.gradle.helpers.ProjectConstants
 
+repositories {
+    maven {
+        name = 'Outlands'
+        url = 'https://maven.outlands.top/releases/'
+    }
+    mavenLocal()
+    mavenCentral()
+}
+
 def props = project.properties
 
 def mcpArtifactVersion = "${props.minecraft_version}-${props.mcp_version}"
@@ -30,6 +39,9 @@ forgedev {
 
         // mcp_config is published to our own repository
         repositories.add('forge=https://maven.outlands.top/releases/')
+        // the repacked config (with the mcpcleanup step) is installed into mavenLocal by :repackedMcpConfig and is
+        // referenced by the userdev 'mcp' field, so consumers that execute the config themselves run the cleanup
+        repositories.add('local=file://' + new File(System.getProperty('user.home'), '.m2/repository').absolutePath)
 
         // forge_at.cfg uses SRG names (field_/func_/descriptors), so it has to be applied before the rename
         accessTransformers.from(file("$rootDir/src/main/resources/forge_at.cfg"))
@@ -69,3 +81,64 @@ configurations {
         extendsFrom(project(':mcpbase').forgedev.mcpBase.dependencyConfiguration)
     }
 }
+
+// region mcp_config with the mcpcleanup step ---------------------------------
+// Consumers that execute the config themselves (Unimined, ForgeGradle's legacy path) need mcpcleanup inside the
+// pipeline; the 543 patches are authored against the cleaned tree. Mavenizer supports generic function steps, so
+// the cleanup is declared as data instead of a private 'processor' field.
+def mcpConfigVersion = mcpArtifactVersion
+def repackedMcpConfig = tasks.register('repackedMcpConfig') {
+    def cfg = configurations.detachedConfiguration(
+        dependencies.create("de.oceanlabs.mcp:mcp_config:${mcpConfigVersion}@zip")
+    )
+    inputs.files(cfg)
+    def output = layout.buildDirectory.file("mcpconfig/mcp_config-${mcpConfigVersion}.zip")
+    outputs.file(output)
+
+    doLast {
+        def source = cfg.files.find { it.name.endsWith('.zip') }
+        def zip = new java.util.zip.ZipFile(source)
+        def out = output.get().asFile
+        out.parentFile.mkdirs()
+        new java.util.zip.ZipOutputStream(out.newOutputStream()).withCloseable { zos ->
+            zip.entries().each { entry ->
+                if (entry.directory) return
+                def bytes = zip.getInputStream(entry).readAllBytes()
+                if (entry.name == 'config.json') {
+                    def json = new groovy.json.JsonSlurper().parse(bytes)
+                    json.functions = json.functions ?: [:]
+                    json.functions.process = [
+                        version    : 'net.minecraftforge:mcpcleanup:2.3.2:fatjar',
+                        args       : ['--input', '{input}', '--output', '{output}'],
+                        java_version: 8
+                    ]
+                    json.steps.each { side, list ->
+                        if (list.any { it.type == 'patch' }) {
+                            def patchStep = list.findAll { it.type == 'patch' }.last()
+                            def name = patchStep.name ?: 'patch'
+                            list.add([type: 'process', input: "{${name}Output}".toString()])
+                        }
+                    }
+                    bytes = new groovy.json.JsonBuilder(json).toPrettyString().getBytes('UTF-8')
+                }
+                zos.putNextEntry(new java.util.zip.ZipEntry(entry.name))
+                zos.write(bytes)
+                zos.closeEntry()
+            }
+        }
+        zip.close()
+
+        // Publish into mavenLocal so consumers can resolve it by coordinate
+        def m2 = new File(System.getProperty('user.home'), '.m2/repository/top/outlands/mcp_config/' + mcpConfigVersion)
+        m2.mkdirs()
+        out.withInputStream { ins -> new File(m2, "mcp_config-${mcpConfigVersion}.zip").withOutputStream { it << ins } }
+        new File(m2, "mcp_config-${mcpConfigVersion}.pom").text = """<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>top.outlands</groupId>
+  <artifactId>mcp_config</artifactId>
+  <version>${mcpConfigVersion}</version>
+</project>
+"""
+    }
+}
+// endregion
