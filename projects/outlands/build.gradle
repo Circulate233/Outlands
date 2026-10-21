@@ -312,6 +312,8 @@ forgedev.userDev {
     binaryPatches {
         // The final jar carries binpatches.pack.lzma and deobf data, the patches must not
         dirty.setFrom(tasks.named('jarForReobf'))
+        // FG/Unimined look entries up as 'binpatch/<side>/<class>.binpatch'
+        getPrefix().set(['binpatch/joined'])
     }
 
     config {
