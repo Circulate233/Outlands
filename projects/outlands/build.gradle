@@ -11,7 +11,7 @@
 
 plugins {
     id 'java-library'
-    id 'top.outlands.forgedev' version '7.0.0-beta.58-cr1'
+    id 'top.outlands.forgedev' version '7.0.0-beta.59-cr1'
 }
 
 import com.cleanroommc.gradle.helpers.ProjectConstants
@@ -167,6 +167,44 @@ forgedev.runs {
     }
 }
 // endregion
+
+
+// region Reobf + binary patches --------------------------------------------
+// Legacy FML needs a 'reobfuscated' (MCP -> SRG) jar to diff against vanilla when generating binary patches.
+// Intermediate jar for reobf: everything the final jar has except the binary patches themselves
+def jarForReobf = tasks.register('jarForReobf', Jar) {
+    archiveClassifier = 'reobf-input'
+    from sourceSets.main.output
+}
+
+def reobf = tasks.register('reobf', net.minecraftforge.forgedev.tasks.Reobf) {
+    input.from(jarForReobf)
+    mappings.set(layout.file(providers.provider { mcpBase.map2Srg.get() }))
+    output.set(layout.buildDirectory.file("libs/${base.archivesName.get()}-${project.version}-srg.jar"))
+    disableAbstractParams.set(false)
+}
+
+def srgClean = providers.provider { mcpBase.classes.get() }
+
+// Side specific patch sets (used by the installer / applyBinPatches), named after the loader's runtime entries
+['client', 'server'].each { side ->
+    forgedev.binaryPatches(side) {
+        clean(srgClean)
+        create { dirty.from(reobf) }
+    }
+}
+
+// endregion
+
+// FML reads 'binpatch/client' and 'binpatch/server' entries out of the jar, one lzma stream each
+tasks.named('jar', Jar) {
+    from(forgedev.binaryPatches('client').create.flatMap { it.output }) {
+        rename { 'binpatch/client' }
+    }
+    from(forgedev.binaryPatches('server').create.flatMap { it.output }) {
+        rename { 'binpatch/server' }
+    }
+}
 
 tasks.register('outlandsInfo') {
     doLast {

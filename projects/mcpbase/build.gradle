@@ -11,7 +11,7 @@
 // what 'patches/minecraft' is applied to.
 
 plugins {
-    id 'top.outlands.forgedev' version '7.0.0-beta.58-cr1'
+    id 'top.outlands.forgedev' version '7.0.0-beta.59-cr1'
 }
 
 import com.cleanroommc.gradle.helpers.ProjectConstants
