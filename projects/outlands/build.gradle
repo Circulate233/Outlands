@@ -11,6 +11,7 @@
 
 plugins {
     id 'java-library'
+    id 'maven-publish'
     id 'top.outlands.forgedev' version '7.0.0-beta.59-cr1'
 }
 
@@ -346,3 +347,20 @@ tasks.register('outlandsInfo') {
         println 'mc     : ' + mcpBase.namedSources.get()
     }
 }
+
+// region publishing ---------------------------------------------------------
+// top.outlands:outlands (universal), :userdev and :installer are the three artifacts consumers resolve.
+publishing {
+    publications {
+        outlands(MavenPublication) {
+            groupId = project.group
+            artifactId = 'outlands'
+            version = project.version
+            artifact(tasks.named('jar'))
+            artifact(tasks.named('sourcesJar')) { classifier = 'sources'; extension = 'jar' }
+            artifact(tasks.named('userdevJar')) { classifier = 'userdev'; extension = 'jar' }
+            artifact(tasks.named('installerJar')) { classifier = 'installer'; extension = 'jar' }
+        }
+    }
+}
+// endregion
