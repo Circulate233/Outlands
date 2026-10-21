@@ -40,15 +40,20 @@ def mcpBase = project(':mcpbase').forgedev.mcpBase
 def patches = project(':mcpbase').forgedev.patches
 
 // FML / the loader read the MCP -> SRG mappings as plain text, while the mavenizer publishes them gzipped
-def mcpToSrgSrg = layout.buildDirectory.file('mappings/mcpToSrg.tsrg')
+def mcpToSrgSrg = layout.buildDirectory.file('mappings/srg2mcp.tsrg')
 def mcpToSrg = tasks.register('mcpToSrgMappings') {
     def src = providers.provider { mcpBase.map2Srg.get() }
+    def plain = layout.buildDirectory.file('mappings/srg2mcp.tsrg')
     inputs.file(src)
-    outputs.file(mcpToSrgSrg)
+    outputs.files(mcpToSrgSrg, plain)
     doLast {
         new java.util.zip.GZIPInputStream(new FileInputStream(src.get())).withCloseable { ins ->
-            mcpToSrgSrg.get().asFile.withOutputStream { os -> os << ins }
+            plain.get().asFile.withOutputStream { os -> os << ins }
         }
+        // The loader wants SRG -> MCP (it translates the SRG names used by FML's reflection helper
+        // into the MCP names our sources/classes are compiled against)
+        def mapping = net.minecraftforge.srgutils.IMappingFile.load(plain.get().asFile)
+        mapping.reverse().write(mcpToSrgSrg.get().asFile.toPath(), net.minecraftforge.srgutils.IMappingFile.Format.TSRG, false)
     }
 }
 
@@ -123,6 +128,10 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 processResources {
+    // Minecraft locates the asset root through this marker resource (Bootstrap/CraftingManager)
+    from(mcpBase.extra.map { project.zipTree(it) }) {
+        include 'assets/.mcassetsroot'
+    }
     // FML reads '/deobf_data-<mc>.tsrg' from the classpath in a deobfuscated environment
     from(mcpBase.obf2Srg) {
         rename { "deobf_data-${props.minecraft_version}.tsrg" }
@@ -150,6 +159,23 @@ test {
 def mcVersion = props.minecraft_version
 def mcpVersion = props.mcp_version
 
+// The asset index id comes from the version json inside the mcp metadata zip
+def assetIndex = providers.provider {
+    def zip = new java.util.zip.ZipFile(mcpBase.metadata.get())
+    try {
+        def entry = zip.entries().find { !it.directory && it.name.endsWith('.json') }
+        def json = new groovy.json.JsonSlurper().parse(zip.getInputStream(entry))
+        json.get('assetIndex')?.get('id')
+    } finally {
+        zip.close()
+    }
+}
+// Assets/natives caches are shared with the old ForgeGradle setup until :outlands provisions its own
+def assetsDir = providers.gradleProperty('assetDirectory').getOrElse(
+    new File(System.getProperty('user.home'), '.gradle/caches/forge_gradle/assets').absolutePath)
+def nativesDir = providers.gradleProperty('nativesDirectory').getOrElse(
+    layout.buildDirectory.dir('natives').get().asFile.absolutePath)
+
 def loaderEnv = { String target, String tweaker ->
     [
         target          : target,
@@ -159,6 +185,9 @@ def loaderEnv = { String target, String tweaker ->
         MCP_VERSION     : mcpVersion,
         MCP_MAPPINGS    : mcpBase.mappingZip.get().absolutePath,
         MCP_TO_SRG      : mcpToSrgSrg.get().asFile.absolutePath,
+        assetIndex      : assetIndex.get(),
+        assetDirectory  : assetsDir,
+        nativesDirectory: nativesDir,
         FORGE_GROUP     : project.group.toString(),
         FORGE_VERSION   : props.last_forge_version
     ] as Map<String, String>
