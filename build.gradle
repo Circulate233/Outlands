@@ -9,13 +9,9 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath 'top.outlands.gradle:ForgeGradle:6.0.59'
-        classpath('top.outlands:artifactural:3.0.4') {
-            transitive = false
-        }
-        // ForgeDev (used by ':mcpbase') needs a srgutils that can parse '26.1-snapshot-1' style versions.
-        // FG6 only ships 0.5.x, which throws NumberFormatException while initializing ForgeDev's Util class.
-        classpath 'net.minecraftforge:srgutils:0.6.6'
+        // :outlands packs 'binpatches.pack.lzma' (LZMA + jar merging) at build time
+        classpath 'org.apache.commons:commons-compress:1.28.0'
+        classpath 'org.tukaani:xz:1.12'
     }
 }
 
@@ -63,9 +59,9 @@ idea.project.settings.compiler.javac.javacAdditionalOptions = ProjectConstants.C
 
 tasks.register('setup') {
     group = 'setup'
-    // These must be strings so that we can do lazy resolution. Else we need evaluationDependsOnChildren above
-    dependsOn ':minecraft:extractMapped'
-    dependsOn ':cleanroom:extractMapped'
+    description = 'Prepares the patched Minecraft sources and the loader workspace.'
+    // Lazily resolved so we do not need evaluationDependsOnChildren
+    dependsOn ':mcpbase:applyPatches'
 }
 
 subprojects {

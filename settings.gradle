@@ -15,15 +15,10 @@ pluginManagement {
 
 rootProject.name = 'Cleanroom'
 
-include ':mcp'
-include ':minecraft'
-// Staging project for the ForgeDev based pipeline. Replaces :mcp and :minecraft once :cleanroom is ported.
+// MCP layer: decompile -> access transformers -> mcpcleanup -> rename, plus the patch application
 include ':mcpbase'
-include ':cleanroom'
+// The loader: patched Minecraft + loader sources, reobf, binary patches, packaging
 include ':outlands'
 
-project(":mcp").projectDir = file("projects/mcp")
-project(":minecraft").projectDir = file("projects/minecraft")
 project(":mcpbase").projectDir = file("projects/mcpbase")
-project(":cleanroom").projectDir = file("projects/cleanroom")
 project(":outlands").projectDir = file("projects/outlands")

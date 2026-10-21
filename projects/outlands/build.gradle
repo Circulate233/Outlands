@@ -102,8 +102,8 @@ sourceSets {
     main {
         java {
             srcDirs = []
-            // generated: patched Minecraft sources
-            srcDir(patches.patched)
+            // generated: patched Minecraft sources (flatMap keeps the task dependency on applyPatches)
+            srcDir(patches.apply.flatMap { it.outputDirectory })
             srcDir("$rootDir/src/main/java")
         }
         resources {
@@ -297,10 +297,6 @@ def binpatchesPack = tasks.register('binpatchesPack') {
 tasks.named('jar', Jar) {
     from(binpatchesPack) {
         rename { 'binpatches.pack.lzma' }
-    }
-    // The loader ships the obf -> srg mapping for runtime deobfuscation
-    from(mcpBase.obf2Srg) {
-        rename { "deobf_data-${props.minecraft_version}.tsrg" }
     }
 }
 
