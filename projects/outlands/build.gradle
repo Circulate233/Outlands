@@ -25,9 +25,10 @@ import com.cleanroommc.gradle.helpers.tasks.Util
 def props = project.properties
 
 group = 'top.outlands'
-// Keep the artifact identity of the old ':cleanroom' project
+version = rootProject.version
+// Published identity: top.outlands:outlands
 base {
-    archivesName = 'cleanroom'
+    archivesName = 'outlands'
 }
 
 java {
@@ -94,6 +95,7 @@ ext {
 }
 
 apply from: 'dependencies.gradle'
+apply from: 'installer.gradle'
 
 dependencies {
     // Minecraft libraries (including the vanilla assets jars) straight from the mcp config

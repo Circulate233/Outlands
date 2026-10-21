@@ -1,0 +1,180 @@
+// Installer artifacts: install_profile.json + version.json (+ the installer jar that carries them).
+//
+// This is what launchers (MultiMC/Prism), the installer and dev tools (Unimined reads 'version.json' out of
+// the installer jar) consume. Ported from the ForgeGradle build, with the loader/universal jar now coming from
+// this project instead of the FG patcher.
+
+import com.cleanroommc.gradle.helpers.tasks.Util
+import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
+
+def props = project.properties
+def mcVersion = props.minecraft_version
+def mcpVersion = "${props.minecraft_version}-${props.mcp_version}"
+def mcpConfig = "de.oceanlabs.mcp:mcp_config:${mcpVersion}@zip"
+def loaderCoords = "${project.group}:${base.archivesName.get()}:${project.version}"
+
+// region artifact lists -----------------------------------------------------
+// Resolve the 'installer' configuration (the launcher library set) into the JSON shape launchers want.
+tasks.register('installerArtifacts') {
+    def installerCfg = configurations.installer
+    def nativesCfg = configurations.lwjglNatives
+    def testCfg = configurations.findByName('testCompile')
+    inputs.files(installerCfg, nativesCfg)
+    def outputFile = layout.buildDirectory.file('installerArtifacts.json')
+    outputs.file(outputFile)
+
+    doLast {
+        def result = [
+            artifacts   : Util.getArtifacts(installerCfg, true),
+            lwjglNatives: Util.getLWJGLNatives(nativesCfg, testCfg, lwjglLibraries[0], lwjglLibraries[1])
+        ]
+        outputFile.get().asFile.text = new JsonBuilder(result).toPrettyString()
+    }
+}
+
+// region version.json -------------------------------------------------------
+tasks.register('launcherJson') {
+    dependsOn 'installerArtifacts', tasks.named('jar')
+    def artifactsFile = tasks.named('installerArtifacts').flatMap { it.outputs.files.elements.map { it.first().asFile } }
+    def loaderJar = tasks.named('jar', Jar).flatMap { it.archiveFile }
+    def mmcVanilla = rootProject.file('mmcpack-template/patches/net.minecraft.json')
+    def outputFile = layout.buildDirectory.file('version.json')
+    inputs.file(mmcVanilla)
+    inputs.files(loaderJar, artifactsFile)
+    outputs.file(outputFile)
+
+    doLast {
+        def vanilla = new JsonSlurper().parse(mmcVanilla)
+        def jarFile = loaderJar.get().asFile
+        def timestamp = Util.iso8601Now()
+        def json = [
+            _comment_             : [
+                'Please do not automate the download and installation of Outlands.',
+                'Our efforts are supported by ads from the download page.'
+            ],
+            id                    : "1.12.2-Outlands-${project.version}",
+            time                  : timestamp,
+            releaseTime           : timestamp,
+            type                  : 'release',
+            mainClass             : 'top.outlands.foundation.boot.Foundation',
+            assetIndex            : vanilla.assetIndex,
+            assets                : vanilla.assetIndex.id,
+            downloads             : vanilla.downloads,
+            javaVersion           : [component: 'java-runtime-epsilon', majorVersion: 25],
+            complianceLevel       : 1,
+            minimumLauncherVersion: 18,
+            minecraftArguments    : [
+                '--username', '${auth_player_name}',
+                '--version', '${version_name}',
+                '--gameDir', '${game_directory}',
+                '--assetsDir', '${assets_root}',
+                '--assetIndex', '${assets_index_name}',
+                '--uuid', '${auth_uuid}',
+                '--accessToken', '${auth_access_token}',
+                '--userType', '${user_type}',
+                '--tweakClass', 'net.minecraftforge.fml.common.launcher.FMLTweaker',
+                '--versionType', 'Outlands'
+            ].join(' '),
+            libraries             : new ArrayList(vanilla.libraries)
+        ]
+
+        json.libraries.add([
+            name     : loaderCoords,
+            downloads: [
+                artifact: [
+                    path: "${project.group.replace('.', '/')}/${base.archivesName.get()}/${project.version}/${base.archivesName.get()}-${project.version}.jar",
+                    url : '',
+                    sha1: Util.sha1(jarFile),
+                    size: jarFile.length()
+                ]
+            ]
+        ])
+
+        def cache = new JsonSlurper().parse(artifactsFile.get())
+        cache.artifacts.each { key, lib ->
+            def nameParts = (lib.name as String).split(':')
+            if (nameParts.length >= 4) {
+                def rawClassifier = nameParts[3].contains('@') ? nameParts[3].split('@')[0] : nameParts[3]
+                json.libraries.add([
+                    name     : "${nameParts[0]}:${nameParts[1]}:${nameParts[2]}-${rawClassifier}",
+                    downloads: [artifact: lib.downloads.artifact]
+                ])
+            } else {
+                json.libraries.add(lib)
+            }
+        }
+        cache.lwjglNatives.each { key, lib -> json.libraries.add(lib) }
+
+        outputFile.get().asFile.text = new JsonBuilder(json).toPrettyString()
+    }
+}
+
+// region install_profile.json ----------------------------------------------
+tasks.register('installerJson') {
+    dependsOn 'launcherJson', tasks.named('jar')
+    def artifactsFile = tasks.named('installerArtifacts').flatMap { it.outputs.files.elements.map { it.first().asFile } }
+    def loaderJar = tasks.named('jar', Jar).flatMap { it.archiveFile }
+    def launcherJson = tasks.named('launcherJson').flatMap { it.outputs.files.elements.map { it.first().asFile } }
+    def outputFile = layout.buildDirectory.file('install_profile.json')
+    inputs.files(loaderJar, artifactsFile, launcherJson)
+    outputs.file(outputFile)
+
+    doLast {
+        def jarFile = loaderJar.get().asFile
+        def libs = [
+            (loaderCoords): [
+                name     : loaderCoords,
+                downloads: [
+                    artifact: [
+                        path: "${project.group.replace('.', '/')}/${base.archivesName.get()}/${project.version}/${base.archivesName.get()}-${project.version}.jar",
+                        // No URL on purpose: the launcher must fetch it from the version json
+                        url : '',
+                        sha1: Util.sha1(jarFile),
+                        size: jarFile.length()
+                    ]
+                ]
+            ]
+        ]
+        Util.getClasspath(project, libs, mcpConfig)
+
+        def json = [
+            _comment_ : ['Outlands installer profile'],
+            spec      : 0,
+            profile   : rootProject.name,
+            version   : "1.12.2-Outlands-${project.version}",
+            json      : '/version.json',
+            path      : loaderCoords,
+            logo      : '/big_logo.png',
+            minecraft : mcVersion,
+            welcome   : 'installer.welcome.message',
+            data      : [],
+            processors: [],
+            libraries : libs.values().sort { a, b -> a.name <=> b.name }
+        ]
+        outputFile.get().asFile.text = new JsonBuilder(json).toPrettyString()
+    }
+}
+
+// region installer jar -----------------------------------------------------
+tasks.register('installerJar', Zip) {
+    dependsOn 'installerJson', 'launcherJson'
+    archiveClassifier = 'installer'
+    archiveExtension = 'jar'
+    destinationDirectory = layout.buildDirectory.dir('libs')
+    from({ tasks.named('installerJson').get().outputs.files })
+    from({ tasks.named('launcherJson').get().outputs.files })
+    from(tasks.named('jar')) {
+        into "maven/${project.group.replace('.', '/')}/${base.archivesName.get()}/${project.version}/"
+        rename { "${base.archivesName.get()}-${project.version}.jar" }
+    }
+    from(rootProject.file('src/main/resources/forge_logo.png')) {
+        rename { 'big_logo.png' }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.named('assemble') {
+    dependsOn 'installerJar', 'userdevJar'
+}
+// endregion
