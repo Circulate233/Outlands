@@ -14,6 +14,11 @@ plugins {
     id 'top.outlands.forgedev' version '7.0.0-beta.59-cr1'
 }
 
+import java.util.jar.JarEntry
+import java.util.jar.JarInputStream
+import java.util.jar.JarOutputStream
+import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream
+import org.apache.commons.compress.compressors.lzma.LZMACompressorOutputStream
 import com.cleanroommc.gradle.helpers.ProjectConstants
 import com.cleanroommc.gradle.helpers.tasks.Util
 
@@ -33,6 +38,20 @@ evaluationDependsOn(':mcpbase')
 
 def mcpBase = project(':mcpbase').forgedev.mcpBase
 def patches = project(':mcpbase').forgedev.patches
+
+// FML / the loader read the MCP -> SRG mappings as plain text, while the mavenizer publishes them gzipped
+def mcpToSrgSrg = layout.buildDirectory.file('mappings/mcpToSrg.tsrg')
+def mcpToSrg = tasks.register('mcpToSrgMappings') {
+    def src = providers.provider { mcpBase.map2Srg.get() }
+    inputs.file(src)
+    outputs.file(mcpToSrgSrg)
+    doLast {
+        new java.util.zip.GZIPInputStream(new FileInputStream(src.get())).withCloseable { ins ->
+            mcpToSrgSrg.get().asFile.withOutputStream { os -> os << ins }
+        }
+    }
+}
+
 
 repositories {
     mavenLocal()
@@ -104,6 +123,10 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 processResources {
+    // FML reads '/deobf_data-<mc>.tsrg' from the classpath in a deobfuscated environment
+    from(mcpBase.obf2Srg) {
+        rename { "deobf_data-${props.minecraft_version}.tsrg" }
+    }
     inputs.property 'cleanmix_version', props.cleanmix_version
     filesMatching('cleanmix.info') {
         expand cleanmix_version: props.cleanmix_version
@@ -135,7 +158,7 @@ def loaderEnv = { String target, String tweaker ->
         MC_VERSION      : mcVersion,
         MCP_VERSION     : mcpVersion,
         MCP_MAPPINGS    : mcpBase.mappingZip.get().absolutePath,
-        MCP_TO_SRG      : mcpBase.map2Srg.get().absolutePath,
+        MCP_TO_SRG      : mcpToSrgSrg.get().asFile.absolutePath,
         FORGE_GROUP     : project.group.toString(),
         FORGE_VERSION   : props.last_forge_version
     ] as Map<String, String>
@@ -168,6 +191,12 @@ forgedev.runs {
 }
 // endregion
 
+// the run configs need the plain text mappings file on disk
+tasks.configureEach {
+    if (name == 'runCleanroomClient' || name == 'runCleanroomServer')
+        dependsOn(mcpToSrg)
+}
+
 
 // region Reobf + binary patches --------------------------------------------
 // Legacy FML needs a 'reobfuscated' (MCP -> SRG) jar to diff against vanilla when generating binary patches.
@@ -190,19 +219,59 @@ def srgClean = providers.provider { mcpBase.classes.get() }
 ['client', 'server'].each { side ->
     forgedev.binaryPatches(side) {
         clean(srgClean)
-        create { dirty.from(reobf) }
+        create {
+            getPrefix().set(["binpatch/${side}".toString()])
+            dirty.from(reobf)
+        }
     }
 }
 
 // endregion
 
-// FML reads 'binpatch/client' and 'binpatch/server' entries out of the jar, one lzma stream each
-tasks.named('jar', Jar) {
-    from(forgedev.binaryPatches('client').create.flatMap { it.output }) {
-        rename { 'binpatch/client' }
+// FML 1.12.2 reads a single '/binpatches.pack.lzma' resource: an LZMA compressed jar whose entries are
+// 'binpatch/client/<class>.binpatch' and 'binpatch/server/<class>.binpatch'. binarypatcher produces one pack per
+// side, so they get merged here.
+def binpatchesPack = tasks.register('binpatchesPack') {
+    def clientPack = forgedev.binaryPatches('client').create.flatMap { it.output }
+    def serverPack = forgedev.binaryPatches('server').create.flatMap { it.output }
+    inputs.files(clientPack, serverPack)
+    def output = layout.buildDirectory.file('binpatches.pack.lzma')
+    outputs.file(output)
+
+    doLast {
+        def jarBytes = new ByteArrayOutputStream()
+        def jos = new JarOutputStream(jarBytes)
+        try {
+            [clientPack.get().asFile, serverPack.get().asFile].each { pack ->
+                new LZMACompressorInputStream(new FileInputStream(pack)).withCloseable { ins ->
+                    new JarInputStream(ins).withCloseable { jis ->
+                        for (def entry = jis.nextJarEntry; entry != null; entry = jis.nextJarEntry) {
+                            jos.putNextEntry(new JarEntry(entry.name))
+                            jos.write(jis.readAllBytes())
+                            jos.closeEntry()
+                        }
+                    }
+                }
+            }
+        } finally {
+            jos.close()
+        }
+
+        output.get().asFile.withOutputStream { os ->
+            def lz = new LZMACompressorOutputStream(os)
+            lz.write(jarBytes.toByteArray())
+            lz.close()
+        }
     }
-    from(forgedev.binaryPatches('server').create.flatMap { it.output }) {
-        rename { 'binpatch/server' }
+}
+
+tasks.named('jar', Jar) {
+    from(binpatchesPack) {
+        rename { 'binpatches.pack.lzma' }
+    }
+    // The loader ships the obf -> srg mapping for runtime deobfuscation
+    from(mcpBase.obf2Srg) {
+        rename { "deobf_data-${props.minecraft_version}.tsrg" }
     }
 }
 
