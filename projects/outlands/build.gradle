@@ -405,3 +405,19 @@ tasks.register('createMMCPack', com.cleanroommc.gradle.helpers.tasks.CreateMMCPa
 
 tasks.named('assemble') { dependsOn 'createMMCPack' }
 // endregion
+
+// region checks -------------------------------------------------------------
+// The FG6 build shipped its own copies of these (buildSrc CheckPatches/CheckAccessTransformers/CheckSAS), but
+// ForgeDev already provides them: Checks registers checkPatches/checkAts/checkSas/checkExecs lazily and wires them
+// into the standard 'check' lifecycle task. They only need to be opted in.
+def checks = forgedev.checks
+checks.base(project(':mcpbase').forgedev.mcpBase)
+// ats()/sas() are parked: both need extractInheritance, and ForgeDev's Checks.setBase wires its input from
+// ':mcpbase:mcpbaseDependencies', which Gradle 9 refuses to resolve from an ':outlands' task action
+// ("resolution of the configuration ... was attempted without an exclusive lock"). Re-enable once the fork
+// resolves that configuration eagerly (e.g. by passing a FileCollection captured at configuration time).
+// checks.ats {}
+// checks.sas {}
+checks.patches { it.patchDir.set(rootProject.layout.projectDirectory.dir('patches/minecraft')) }
+checks.execs {}
+// endregion
