@@ -96,8 +96,9 @@ tasks.register('launcherJson') {
             def nameParts = (lib.name as String).split(':')
             if (nameParts.length >= 4) {
                 def rawClassifier = nameParts[3].contains('@') ? nameParts[3].split('@')[0] : nameParts[3]
+                // launcher JSON keeps the classifier as a fourth coordinate component
                 json.libraries.add([
-                    name     : "${nameParts[0]}:${nameParts[1]}:${nameParts[2]}-${rawClassifier}",
+                    name     : "${nameParts[0]}:${nameParts[1]}:${nameParts[2]}:${rawClassifier}",
                     downloads: [artifact: lib.downloads.artifact]
                 ])
             } else {

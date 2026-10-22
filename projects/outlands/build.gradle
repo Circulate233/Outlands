@@ -322,9 +322,24 @@ forgedev.userDev {
     config {
         sources(tasks.named('sourcesJar'))
         universal(tasks.named('jar'))
-        // Consumers that run the mcp config themselves (Unimined, legacy FG) need the variant that carries the
-        // mcpcleanup step, otherwise the patch base is not the one the 543 patches were authored against.
-        getMCPConfig().set("top.outlands:mcp_config:${props.minecraft_version}-${props.mcp_version}@zip")
+        // Consumers (Unimined/Loom-style integration) read the launch recipe from here; it mirrors the
+        // launch command in the installer's version.json.
+        runs {
+            client {
+                main = 'top.outlands.foundation.boot.Foundation'
+                args = ['--tweakClass', 'net.minecraftforge.fml.common.launcher.FMLTweaker',
+                        '--versionType', 'Outlands']
+                jvmArgs = ['-Dfml.ignoreInvalidMinecraftCertificates=true',
+                           '-Dfml.ignorePatchDiscrepancies=true']
+                env = ['side': 'client']
+            }
+            server {
+                main = 'top.outlands.foundation.boot.Foundation'
+                args = ['--tweakClass', 'net.minecraftforge.fml.common.launcher.FMLTweaker',
+                        '--versionType', 'Outlands']
+                env = ['side': 'server']
+            }
+        }
     }
 }
 
