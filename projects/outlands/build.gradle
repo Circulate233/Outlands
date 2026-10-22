@@ -384,3 +384,24 @@ publishing {
     }
 }
 // endregion
+
+// region MMC/Prism pack -----------------------------------------------------
+// The launcher-facing distribution: mmc-pack.json + the per-component patch JSONs (forge slot carries the loader,
+// lwjgl3 slot carries our LWJGL build) + the loader jar for local (non-release) builds.
+tasks.register('createMMCPack', com.cleanroommc.gradle.helpers.tasks.CreateMMCPackTask) {
+    group = 'build'
+    description = 'Creates a MultiMC/Prism instance package for Outlands'
+    dependsOn 'launcherJson', 'jar'
+
+    versionJson = tasks.named('launcherJson').get().ext.output
+    templateDir = rootProject.layout.projectDirectory.dir('mmcpack-template')
+    universalJarFile = tasks.named('jar', Jar).flatMap { it.archiveFile }
+    cleanroomVersion = project.version.toString()
+    loaderCoords = "${project.group}:${base.archivesName.get()}".toString()
+    releaseBaseUrl = 'https://maven.outlands.top/releases'
+    isRelease = !project.version.toString().contains('+')
+    outputZip = layout.buildDirectory.file("libs/${base.archivesName.get()}-${project.version}${project.version.toString().contains('+') ? '-local' : ''}.zip")
+}
+
+tasks.named('assemble') { dependsOn 'createMMCPack' }
+// endregion

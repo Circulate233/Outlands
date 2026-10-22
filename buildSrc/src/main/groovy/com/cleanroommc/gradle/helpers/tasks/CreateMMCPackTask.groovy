@@ -28,6 +28,14 @@ abstract class CreateMMCPackTask extends DefaultTask {
     @Input
     abstract Property<Boolean> getIsRelease()
 
+    /** Loader coordinates, e.g. {@code top.outlands:outlands}. */
+    @Input
+    abstract Property<String> getLoaderCoords()
+
+    /** Base URL the published loader jar is served from (release packs only). */
+    @Input
+    abstract Property<String> getReleaseBaseUrl()
+
     @OutputFile
     abstract RegularFileProperty getOutputZip()
 
@@ -38,6 +46,9 @@ abstract class CreateMMCPackTask extends DefaultTask {
         def jarFile = getUniversalJarFile().get().asFile
         def version = getCleanroomVersion().get()
         def isRelease = getIsRelease().get()
+        def loaderGroup = getLoaderCoords().get().split(':')[0]
+        def loaderName = getLoaderCoords().get().split(':')[1]
+        def loaderPath = loaderGroup.replace('.', '/') + '/' + loaderName + '/' + version + '/' + loaderName + '-' + version + '.jar'
 
         def outputDir = new File(getTemporaryDir(), 'mmc-output')
         outputDir.deleteDir()
@@ -77,13 +88,13 @@ abstract class CreateMMCPackTask extends DefaultTask {
                 lwjglLibraries.add(lib)
             } else {
                 def parts = libName.split(':')
-                if (parts.length >= 2 && parts[1] == 'cleanroom') {
+                if (parts.length >= 2 && parts[1] == loaderName) {
                     if (isRelease) {
-                        lib.downloads.artifact.url = "https://repo.cleanroommc.com/releases/com/cleanroommc/cleanroom/${version}/cleanroom-${version}-universal.jar"
+                        lib.downloads.artifact.url = "${getReleaseBaseUrl().get().replaceAll('/+$', '')}/${loaderPath}".toString()
                         forgeLibraries.add(lib)
                     } else {
                         forgeLibraries.add([
-                            name: "com.cleanroommc:cleanroom:${version}-universal",
+                            name: "${loaderGroup}:${loaderName}:${version}".toString(),
                             'MMC-hint': 'local'
                         ])
                     }
@@ -127,7 +138,7 @@ abstract class CreateMMCPackTask extends DefaultTask {
             project.copy {
                 from jarFile
                 into libsDir
-                rename { "cleanroom-${version}-universal.jar" }
+                rename { "${loaderName}-${version}.jar" }
             }
         }
 

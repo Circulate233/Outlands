@@ -40,6 +40,8 @@ tasks.register('launcherJson') {
     def loaderJar = tasks.named('jar', Jar).flatMap { it.archiveFile }
     def mmcVanilla = rootProject.file('mmcpack-template/patches/net.minecraft.json')
     def outputFile = layout.buildDirectory.file('version.json')
+    // consumed by createMMCPack
+    ext.output = outputFile
     inputs.file(mmcVanilla)
     inputs.files(loaderJar, artifactsFile)
     outputs.file(outputFile)
