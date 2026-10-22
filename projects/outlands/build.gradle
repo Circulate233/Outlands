@@ -394,6 +394,10 @@ publishing {
             artifact(tasks.named('loaderSourcesJar')) { extension = 'jar' }
             artifact(tasks.named('userdevJar')) { classifier = 'userdev'; extension = 'jar' }
             artifact(tasks.named('installerJar')) { classifier = 'installer'; extension = 'jar' }
+            // srg-named classes: FG7's MCPBase.getClasses() prefers 'classes.srg'
+            artifact(layout.buildDirectory.file("libs/${base.archivesName.get()}-${project.version}-srg.jar")) {
+                classifier = 'srg'; extension = 'jar'; builtBy tasks.named('reobf')
+            }
         }
     }
 }
