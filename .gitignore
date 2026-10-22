@@ -17,3 +17,8 @@ version.txt
 !/.idea/icon.svg
 
 /tools/**/__pycache__/
+
+# run logs from the dev server/client
+projects/*/logs/
+projects/*/run/
+projects/*/crash-reports/
