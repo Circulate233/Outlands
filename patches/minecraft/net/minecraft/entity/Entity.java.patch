@@ -29,22 +29,23 @@
          }
  
          this.dataManager = new EntityDataManager(this);
-@@ -211,7 +215,15 @@
+@@ -211,8 +215,16 @@
          this.dataManager.register(SILENT, false);
          this.dataManager.register(NO_GRAVITY, false);
          this.entityInit();
 +        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.EntityEvent.EntityConstructing(this));
 +        capabilities = net.minecraftforge.event.ForgeEventFactory.gatherCapabilities(this);
      }
-+
+ 
 +    /** Forge: Used to store custom data for each entity. */
 +    private NBTTagCompound customEntityData;
 +    public boolean captureDrops = false;
 +    public java.util.ArrayList<EntityItem> capturedDrops = new java.util.ArrayList<EntityItem>();
 +    private net.minecraftforge.common.capabilities.CapabilityDispatcher capabilities;
- 
++
      public int getEntityId()
      {
+         return this.entityId;
 @@ -357,6 +369,7 @@
          this.posX = x;
          this.posY = y;
@@ -53,7 +54,83 @@
          float f = this.width / 2.0F;
          float f1 = this.height;
          this.setEntityBoundingBox(new AxisAlignedBB(x - f, y, z - f, x + f, y + f1, z + f));
-@@ -1024,6 +1037,7 @@
+@@ -654,11 +667,10 @@
+ 
+             if ((type == MoverType.SELF || type == MoverType.PLAYER) && this.onGround && this.isSneaking() && this instanceof EntityPlayer)
+             {
+-                double d5 = 0.05;
+-
+-                while (
+-                    x != 0.0 && this.world.getCollisionBoxes(this, this.getEntityBoundingBox().offset(x, -this.stepHeight, 0.0)).isEmpty()
+-                )
++                for (double d5 = 0.05;
++                        x != 0.0 && this.world.getCollisionBoxes(this, this.getEntityBoundingBox().offset(x, -this.stepHeight, 0.0)).isEmpty();
++                        d2 = x
++                    )
+                 {
+                     if (x < 0.05 && x >= -0.05)
+                     {
+@@ -672,8 +684,6 @@
+                     {
+                         x += 0.05;
+                     }
+-
+-                    d2 = x;
+                 }
+ 
+                 for (;
+@@ -786,12 +796,10 @@
+                 double d7 = z;
+                 AxisAlignedBB axisalignedbb1 = this.getEntityBoundingBox();
+                 this.setEntityBoundingBox(axisalignedbb);
+-                x = d2;
+                 y = this.stepHeight;
+-                z = d4;
+-                List<AxisAlignedBB> list = this.world.getCollisionBoxes(this, this.getEntityBoundingBox().expand(x, y, z));
++                List<AxisAlignedBB> list = this.world.getCollisionBoxes(this, this.getEntityBoundingBox().expand(d2, y, d4));
+                 AxisAlignedBB axisalignedbb2 = this.getEntityBoundingBox();
+-                AxisAlignedBB axisalignedbb3 = axisalignedbb2.expand(x, 0.0, z);
++                AxisAlignedBB axisalignedbb3 = axisalignedbb2.expand(d2, 0.0, d4);
+                 double d8 = y;
+                 int j1 = 0;
+ 
+@@ -801,7 +809,7 @@
+                 }
+ 
+                 axisalignedbb2 = axisalignedbb2.offset(0.0, d8, 0.0);
+-                double d18 = x;
++                double d18 = d2;
+                 int l1 = 0;
+ 
+                 for (int i2 = list.size(); l1 < i2; l1++)
+@@ -810,7 +818,7 @@
+                 }
+ 
+                 axisalignedbb2 = axisalignedbb2.offset(d18, 0.0, 0.0);
+-                double d19 = z;
++                double d19 = d4;
+                 int j2 = 0;
+ 
+                 for (int k2 = list.size(); j2 < k2; j2++)
+@@ -829,7 +837,7 @@
+                 }
+ 
+                 AxisAlignedBB axisalignedbb5 = axisalignedbb4.offset(0.0, d20, 0.0);
+-                double d21 = x;
++                double d21 = d2;
+                 int j3 = 0;
+ 
+                 for (int k3 = list.size(); j3 < k3; j3++)
+@@ -838,7 +846,7 @@
+                 }
+ 
+                 AxisAlignedBB axisalignedbb6 = axisalignedbb5.offset(d21, 0.0, 0.0);
+-                double d22 = z;
++                double d22 = d4;
+                 int l3 = 0;
+ 
+                 for (int i4 = list.size(); l3 < i4; l3++)
+@@ -1029,6 +1037,7 @@
          this.posX = (axisalignedbb.minX + axisalignedbb.maxX) / 2.0;
          this.posY = axisalignedbb.minY;
          this.posZ = (axisalignedbb.minZ + axisalignedbb.maxZ) / 2.0;
@@ -61,7 +138,7 @@
      }
  
      protected SoundEvent getSwimSound()
-@@ -1086,7 +1100,7 @@
+@@ -1091,7 +1100,7 @@
  
      protected void playStepSound(BlockPos pos, Block blockIn)
      {
@@ -70,7 +147,7 @@
  
          if (this.world.getBlockState(pos.up()).getBlock() == Blocks.SNOW_LAYER)
          {
-@@ -1320,6 +1334,7 @@
+@@ -1325,6 +1334,7 @@
          BlockPos blockpos = new BlockPos(i, j, k);
          IBlockState iblockstate = this.world.getBlockState(blockpos);
  
@@ -78,7 +155,7 @@
          if (iblockstate.getRenderType() != EnumBlockRenderType.INVISIBLE)
          {
              this.world
-@@ -1348,12 +1363,12 @@
+@@ -1353,12 +1363,12 @@
              BlockPos blockpos = new BlockPos(this.posX, d0, this.posZ);
              IBlockState iblockstate = this.world.getBlockState(blockpos);
  
@@ -95,7 +172,7 @@
              }
              else
              {
-@@ -1457,6 +1472,7 @@
+@@ -1462,6 +1472,7 @@
              this.prevRotationYaw -= 360.0F;
          }
  
@@ -103,7 +180,7 @@
          this.setPosition(this.posX, this.posY, this.posZ);
          this.setRotation(yaw, pitch);
      }
-@@ -1783,6 +1799,7 @@
+@@ -1788,6 +1799,7 @@
              {
                  compound.setBoolean("Glowing", this.glowing);
              }
@@ -111,7 +188,7 @@
  
              if (!this.tags.isEmpty())
              {
-@@ -1796,6 +1813,9 @@
+@@ -1801,6 +1813,9 @@
                  compound.setTag("Tags", nbttaglist);
              }
  
@@ -121,7 +198,7 @@
              this.writeEntityToNBT(compound);
  
              if (this.isBeingRidden())
-@@ -1902,6 +1922,10 @@
+@@ -1907,6 +1922,10 @@
              this.setSilent(compound.getBoolean("Silent"));
              this.setNoGravity(compound.getBoolean("NoGravity"));
              this.setGlowing(compound.getBoolean("Glowing"));
@@ -132,7 +209,7 @@
  
              if (compound.hasKey("Tags", 9))
              {
-@@ -1994,7 +2018,10 @@
+@@ -1999,7 +2018,10 @@
          {
              EntityItem entityitem = new EntityItem(this.world, this.posX, this.posY + offsetY, this.posZ, stack);
              entityitem.setDefaultPickupDelay();
@@ -144,7 +221,7 @@
              return entityitem;
          }
      }
-@@ -2063,6 +2090,7 @@
+@@ -2068,6 +2090,7 @@
              this.motionX = 0.0;
              this.motionY = 0.0;
              this.motionZ = 0.0;
@@ -152,7 +229,7 @@
              this.onUpdate();
  
              if (this.isRiding())
-@@ -2110,6 +2138,7 @@
+@@ -2115,6 +2138,7 @@
              }
          }
  
@@ -160,7 +237,7 @@
          if (force || this.canBeRidden(entityIn) && entityIn.canFitPassenger(this))
          {
              if (this.isRiding())
-@@ -2145,6 +2174,7 @@
+@@ -2150,6 +2174,7 @@
          if (this.ridingEntity != null)
          {
              Entity entity = this.ridingEntity;
@@ -168,7 +245,7 @@
              this.ridingEntity = null;
              entity.removePassenger(this);
          }
-@@ -2612,8 +2642,16 @@
+@@ -2617,8 +2642,16 @@
      @Nullable
      public Entity changeDimension(int dimensionIn)
      {
@@ -185,7 +262,7 @@
              this.world.profiler.startSection("changeDimension");
              MinecraftServer minecraftserver = this.getServer();
              int i = this.dimension;
-@@ -2621,7 +2659,7 @@
+@@ -2626,7 +2659,7 @@
              WorldServer worldserver1 = minecraftserver.getWorld(dimensionIn);
              this.dimension = dimensionIn;
  
@@ -194,7 +271,7 @@
              {
                  worldserver1 = minecraftserver.getWorld(0);
                  this.dimension = 0;
-@@ -2632,17 +2670,18 @@
+@@ -2637,17 +2670,18 @@
              this.world.profiler.startSection("reposition");
              BlockPos blockpos;
  
@@ -217,7 +294,7 @@
                  {
                      d0 = MathHelper.clamp(
                               d0 / 8.0, worldserver1.getWorldBorder().minX() + 16.0, worldserver1.getWorldBorder().maxX() - 16.0
-@@ -2651,7 +2690,7 @@
+@@ -2656,7 +2690,7 @@
                               d1 / 8.0, worldserver1.getWorldBorder().minZ() + 16.0, worldserver1.getWorldBorder().maxZ() - 16.0
                           );
                  }
@@ -226,7 +303,7 @@
                  {
                      d0 = MathHelper.clamp(
                               d0 * 8.0, worldserver1.getWorldBorder().minX() + 16.0, worldserver1.getWorldBorder().maxX() - 16.0
-@@ -2665,8 +2704,7 @@
+@@ -2670,8 +2704,7 @@
                  d1 = MathHelper.clamp((int)d1, -29999872, 29999872);
                  float f = this.rotationYaw;
                  this.setLocationAndAngles(d0, this.posY, d1, 90.0F, 0.0F);
@@ -236,7 +313,7 @@
                  blockpos = new BlockPos(this);
              }
  
-@@ -2678,7 +2716,7 @@
+@@ -2683,7 +2716,7 @@
              {
                  entity.copyDataFromOld(this);
  
@@ -245,7 +322,7 @@
                  {
                      BlockPos blockpos1 = worldserver1.getTopSolidOrLiquidBlock(worldserver1.getSpawnPoint());
                      entity.moveToBlockPosAndAngles(blockpos1, entity.rotationYaw, entity.rotationPitch);
-@@ -2715,7 +2753,7 @@
+@@ -2720,7 +2753,7 @@
  
      public float getExplosionResistance(Explosion explosionIn, World worldIn, BlockPos pos, IBlockState blockStateIn)
      {
@@ -254,11 +331,10 @@
      }
  
      public boolean canExplosionDestroyBlock(Explosion explosionIn, World worldIn, BlockPos pos, IBlockState blockStateIn, float p_174816_5_)
-@@ -3026,6 +3064,218 @@
- 
+@@ -3032,6 +3065,218 @@
          EnchantmentHelper.applyArthropodEnchantments(entityLivingBaseIn, entityIn);
      }
-+
+ 
 +    /* ================================== Forge Start =====================================*/
 +    /**
 +     * Internal use for keeping track of entities that are tracked by a world, to
@@ -470,6 +546,16 @@
 +            && this.width * this.width * this.height > 0.512F;
 +    }
 +    /* ================================== Forge End =====================================*/
- 
++
      public void addTrackingPlayer(EntityPlayerMP player)
      {
+     }
+@@ -3092,7 +3337,7 @@
+ 
+     public List<Entity> getPassengers()
+     {
+-        return this.riddenByEntities.isEmpty() ? Collections.emptyList() : Lists.newArrayList(this.riddenByEntities);
++        return (List<Entity>)(this.riddenByEntities.isEmpty() ? Collections.emptyList() : Lists.newArrayList(this.riddenByEntities));
+     }
+ 
+     public boolean isPassenger(Entity entityIn)

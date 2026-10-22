@@ -16,7 +16,18 @@
      }
  
      public void doExplosionA()
-@@ -122,7 +124,7 @@
+@@ -112,9 +114,8 @@
+                         double d4 = this.x;
+                         double d6 = this.y;
+                         double d8 = this.z;
+-                        float f1 = 0.3F;
+ 
+-                        while (f > 0.0F)
++                        for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F)
+                         {
+                             BlockPos blockpos = new BlockPos(d4, d6, d8);
+                             IBlockState iblockstate = this.world.getBlockState(blockpos);
+@@ -123,7 +124,7 @@
                              {
                                  float f2 = this.exploder != null
                                             ? this.exploder.getExplosionResistance(this, this.world, blockpos, iblockstate)
@@ -25,7 +36,15 @@
                                  f -= (f2 + 0.3F) * 0.3F;
                              }
  
-@@ -149,6 +151,7 @@
+@@ -135,7 +136,6 @@
+                             d4 += d0 * 0.3F;
+                             d6 += d1 * 0.3F;
+                             d8 += d2 * 0.3F;
+-                            f -= 0.22500001F;
+                         }
+                     }
+                 }
+@@ -151,6 +151,7 @@
          int j2 = MathHelper.floor(this.z - f3 - 1.0);
          int j1 = MathHelper.floor(this.z + f3 + 1.0);
          List<Entity> list = this.world.getEntitiesWithinAABBExcludingEntity(this.exploder, new AxisAlignedBB(k1, i2, j2, l1, i1, j1));
@@ -33,7 +52,7 @@
          Vec3d vec3d = new Vec3d(this.x, this.y, this.z);
  
          for (int k2 = 0; k2 < list.size(); k2++)
-@@ -267,8 +270,7 @@
+@@ -269,8 +270,7 @@
                          block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos), 1.0F / this.size, 0);
                      }
  
@@ -43,7 +62,7 @@
                  }
              }
          }
-@@ -318,4 +320,6 @@
+@@ -320,4 +320,6 @@
      {
          return this.affectedBlockPositions;
      }

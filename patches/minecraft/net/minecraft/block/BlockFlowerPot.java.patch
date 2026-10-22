@@ -32,11 +32,11 @@
          super.breakBlock(worldIn, pos, state);
      }
  
-@@ -434,6 +429,32 @@
-     {
+@@ -435,7 +430,33 @@
          return BlockFaceShape.UNDEFINED;
      }
-+
+ 
+-    public enum EnumFlowerType implements IStringSerializable
 +
 +    /*============================FORGE START=====================================*/
 +    @Override
@@ -62,6 +62,8 @@
 +        world.setBlockToAir(pos);
 +    }
 +    /*===========================FORGE END==========================================*/
- 
-     public static enum EnumFlowerType implements IStringSerializable
++
++    public static enum EnumFlowerType implements IStringSerializable
      {
+         EMPTY("empty"),
+         POPPY("rose"),

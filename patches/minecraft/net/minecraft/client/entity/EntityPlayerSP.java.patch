@@ -112,11 +112,33 @@
          boolean flag4 = this.getFoodStats().getFoodLevel() > 6.0F || this.capabilities.allowFlying;
  
          if (this.onGround
-@@ -1243,5 +1267,18 @@
-                 }
+@@ -1168,18 +1192,17 @@
+                                 }
+ 
+                                 float f8 = Math.max(f * 7.0F, 1.0F / f12);
+-                                Vec3d vec3d3 = vec3d;
+                                 Vec3d vec3d4 = vec3d1.add(vec3d12.scale(f8));
+                                 float f9 = this.width;
+                                 float f10 = this.height;
+-                                AxisAlignedBB axisalignedbb = new AxisAlignedBB(vec3d3, vec3d4.add(0.0, f10, 0.0)).grow(f9, 0.0, f9);
+-                                vec3d3 = vec3d3.add(0.0, 0.51F, 0.0);
++                                AxisAlignedBB axisalignedbb = new AxisAlignedBB(vec3d, vec3d4.add(0.0, f10, 0.0)).grow(f9, 0.0, f9);
++                                Vec3d lvt_19_1_ = vec3d.add(0.0, 0.51F, 0.0);
+                                 vec3d4 = vec3d4.add(0.0, 0.51F, 0.0);
+                                 Vec3d vec3d5 = vec3d12.crossProduct(new Vec3d(0.0, 1.0, 0.0));
+                                 Vec3d vec3d6 = vec3d5.scale(f9 * 0.5F);
+-                                Vec3d vec3d7 = vec3d3.subtract(vec3d6);
++                                Vec3d vec3d7 = lvt_19_1_.subtract(vec3d6);
+                                 Vec3d vec3d8 = vec3d4.subtract(vec3d6);
+-                                Vec3d vec3d9 = vec3d3.add(vec3d6);
++                                Vec3d vec3d9 = lvt_19_1_.add(vec3d6);
+                                 Vec3d vec3d10 = vec3d4.add(vec3d6);
+                                 List<AxisAlignedBB> list = this.world.getCollisionBoxes(this, axisalignedbb);
+ 
+@@ -1245,4 +1268,17 @@
              }
          }
-+    }
+     }
 +
 +    public void updateSyncFields(EntityPlayerSP old)
 +    {
@@ -129,5 +151,5 @@
 +        this.serverSneakState = old.serverSneakState;
 +        this.serverSprintState = old.serverSprintState;
 +        this.positionUpdateTicks = old.positionUpdateTicks;
-     }
++    }
  }

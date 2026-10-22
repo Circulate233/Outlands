@@ -52,9 +52,12 @@
      }
  
      protected void sendScoreboard(ServerScoreboard scoreboardIn, EntityPlayerMP playerIn)
-@@ -330,6 +343,7 @@
+@@ -328,8 +341,9 @@
+         if (playerIn.getName().equals(this.server.getServerOwner()) && nbttagcompound != null)
+         {
              nbttagcompound1 = nbttagcompound;
-             playerIn.readFromNBT(nbttagcompound);
+-            playerIn.readFromNBT(nbttagcompound1);
++            playerIn.readFromNBT(nbttagcompound);
              LOGGER.debug("loading single player");
 +            net.minecraftforge.event.ForgeEventFactory.firePlayerLoadingEvent(playerIn, this.playerDataManager, playerIn.getUniqueID().toString());
          }

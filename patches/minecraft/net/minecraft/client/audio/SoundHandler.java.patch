@@ -8,7 +8,7 @@
          for (String s : resourceManager.getResourceDomains())
          {
              try
-@@ -85,7 +86,7 @@
+@@ -85,12 +86,12 @@
  
                          for (Entry<String, SoundList> entry : map.entrySet())
                          {
@@ -17,6 +17,12 @@
                          }
                      }
                      catch (RuntimeException runtimeexception)
+                     {
+-                        LOGGER.warn("Invalid sounds.json", runtimeexception);
++                        LOGGER.warn("Invalid sounds.json", (Throwable)runtimeexception);
+                     }
+                 }
+             }
 @@ -99,6 +100,20 @@
              }
          }
@@ -38,15 +44,66 @@
          for (ResourceLocation resourcelocation : this.soundRegistry.getKeys())
          {
              SoundEventAccessor soundeventaccessor = this.soundRegistry.getObject(resourcelocation);
-@@ -263,6 +278,11 @@
-     public void setListener(EntityPlayer player, float p_147691_2_)
+@@ -128,14 +143,18 @@
+     @Nullable
+     protected Map<String, SoundList> getSoundMap(InputStream stream)
      {
-         this.sndManager.setListener(player, p_147691_2_);
-+    }
++        Map map;
 +
+         try
+         {
+-            return JsonUtils.fromJson(GSON, new InputStreamReader(stream, StandardCharsets.UTF_8), TYPE);
++            map = JsonUtils.fromJson(GSON, new InputStreamReader(stream, StandardCharsets.UTF_8), TYPE);
+         }
+         finally
+         {
+             IOUtils.closeQuietly(stream);
+         }
++
++        return map;
+     }
+ 
+     private void loadSoundResource(ResourceLocation location, SoundList sounds)
+@@ -214,11 +233,13 @@
+     {
+         ResourceLocation resourcelocation = p_184401_1_.getSoundAsOggLocation();
+         IResource iresource = null;
++        boolean flag;
+ 
+         try
+         {
+             iresource = this.resourceManager.getResource(resourcelocation);
+             iresource.getInputStream();
++            return true;
+         }
+         catch (FileNotFoundException filenotfoundexception)
+         {
+@@ -228,14 +249,14 @@
+         catch (IOException ioexception)
+         {
+             LOGGER.warn("Could not load sound file {}, cannot add it to event {}", resourcelocation, p_184401_2_, ioexception);
+-            return false;
++            flag = false;
+         }
+         finally
+         {
+             IOUtils.closeQuietly(iresource);
+         }
+ 
+-        return true;
++        return flag;
+     }
+ 
+     @Nullable
+@@ -259,6 +280,11 @@
+         this.sndManager.setListener(player, p_147691_2_);
+     }
+ 
 +    public void setListener(net.minecraft.entity.Entity entity, float partialTicks)
 +    {
 +        this.sndManager.setListener(entity, partialTicks);
-     }
- 
++    }
++
      public void pauseSounds()
+     {
+         this.sndManager.pauseAllSounds();

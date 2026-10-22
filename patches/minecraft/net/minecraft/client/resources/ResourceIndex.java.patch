@@ -1,6 +1,14 @@
 --- before/net/minecraft/client/resources/ResourceIndex.java
 +++ after/net/minecraft/client/resources/ResourceIndex.java
-@@ -41,7 +41,7 @@
+@@ -9,6 +9,7 @@
+ import java.io.BufferedReader;
+ import java.io.File;
+ import java.io.FileNotFoundException;
++import java.io.Reader;
+ import java.nio.charset.StandardCharsets;
+ import java.util.Map;
+ import java.util.Map.Entry;
+@@ -40,7 +41,7 @@
          try
          {
              bufferedreader = Files.newReader(file2, StandardCharsets.UTF_8);
@@ -9,3 +17,12 @@
              JsonObject jsonobject1 = JsonUtils.getJsonObject(jsonobject, "objects", null);
  
              if (jsonobject1 != null)
+@@ -67,7 +68,7 @@
+         }
+         finally
+         {
+-            IOUtils.closeQuietly(bufferedreader);
++            IOUtils.closeQuietly((Reader)bufferedreader);
+         }
+     }
+ 

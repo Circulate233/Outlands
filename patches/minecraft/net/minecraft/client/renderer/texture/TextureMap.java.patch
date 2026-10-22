@@ -29,26 +29,23 @@
          this.listAnimatedSprites.clear();
          int j = Integer.MAX_VALUE;
          int k = 1 << this.mipmapLevels;
--
--        for (Entry<String, TextureAtlasSprite> entry : this.mapRegisteredSprites.entrySet())
--        {
--            TextureAtlasSprite textureatlassprite = entry.getValue();
--            ResourceLocation resourcelocation = this.getResourceLocation(textureatlassprite);
--            IResource iresource = null;
--
 +        net.minecraftforge.fml.common.FMLLog.log.info("Max texture size: {}", i);
 +        net.minecraftforge.fml.common.ProgressManager.ProgressBar bar = net.minecraftforge.fml.common.ProgressManager.push("Texture stitching", this.mapRegisteredSprites.size());
 +        loadedSprites.clear();
-+
+ 
+-        for (Entry<String, TextureAtlasSprite> entry : this.mapRegisteredSprites.entrySet())
 +        for (Entry<String, TextureAtlasSprite> entry : Maps.newHashMap(this.mapRegisteredSprites).entrySet())
-+        {
+         {
+-            TextureAtlasSprite textureatlassprite = entry.getValue();
+-            ResourceLocation resourcelocation = this.getResourceLocation(textureatlassprite);
+-            IResource iresource = null;
 +            final ResourceLocation location = new ResourceLocation(entry.getKey());
 +            bar.step(location.toString());
 +            j = loadTexture(stitcher, resourceManager, location, entry.getValue(), bar, j, k);
 +        }
 +        finishLoading(stitcher, bar, j, k);
 +    }
-+
+ 
 +    private int loadTexture(Stitcher stitcher, IResourceManager resourceManager, ResourceLocation location, TextureAtlasSprite textureatlassprite, net.minecraftforge.fml.common.ProgressManager.ProgressBar bar, int j, int k)
 +    {
 +        if (loadedSprites.contains(location)) {
@@ -79,7 +76,7 @@
 +                j = loadTexture(stitcher, resourceManager, dependency, depSprite, bar, j, k);
 +            }
              try
-+            {
+             {
 +            if (textureatlassprite.hasCustomLoader(resourceManager, resourcelocation))
 +            {
 +                if (textureatlassprite.load(resourceManager, resourcelocation, l -> mapRegisteredSprites.get(l.toString())))
@@ -88,7 +85,7 @@
 +                }
 +            }
 +            else
-             {
++            {
                  PngSizeInfo pngsizeinfo = PngSizeInfo.makeFromResource(resourceManager.getResource(resourcelocation));
                  iresource = resourceManager.getResource(resourcelocation);
                  boolean flag = iresource.getMetadata("animation") != null;
@@ -131,14 +128,13 @@
  
 +            if (generateMipmaps(resourceManager, textureatlassprite))
              stitcher.addSprite(textureatlassprite);
--        }
 +            return j;
 +        }
 +        finally
 +        {
 +            loadingSprites.removeLast();
 +            loadedSprites.add(location);
-+        }
+         }
 +    }
  
 +    private void finishLoading(Stitcher stitcher, net.minecraftforge.fml.common.ProgressManager.ProgressBar bar, int j, int k)
@@ -181,7 +177,7 @@
              {
                  String s = textureatlassprite1.getIconName();
                  map.remove(s);
-@@ -197,6 +272,8 @@
+@@ -197,31 +272,40 @@
          {
              textureatlassprite2.copyFrom(this.missingImage);
          }
@@ -190,16 +186,57 @@
      }
  
      private boolean generateMipmaps(IResourceManager resourceManager, final TextureAtlasSprite texture)
-@@ -206,7 +283,7 @@
-         label45:
-         {
-             boolean lvt_6_1_;
+     {
+         ResourceLocation resourcelocation = this.getResourceLocation(texture);
+         IResource iresource = null;
 -
+-        try
+-        {
+-            iresource = resourceManager.getResource(resourcelocation);
+-            texture.loadSpriteFrames(iresource, this.mipmapLevels + 1);
+-        }
+-        catch (RuntimeException runtimeexception)
+-        {
+-            LOGGER.error("Unable to parse metadata from {}", resourcelocation, runtimeexception);
+-            return false;
+-        }
+-        catch (IOException ioexception)
++        label45:
+         {
+-            LOGGER.error("Using missing texture, unable to load {}", resourcelocation, ioexception);
+-            return false;
+-        }
+-        finally
+-        {
+-            IOUtils.closeQuietly(iresource);
++            boolean lvt_6_1_;
 +            if (texture.hasCustomLoader(resourceManager, resourcelocation)) break label45;
-             try
-             {
-                 iresource = resourceManager.getResource(resourcelocation);
-@@ -302,7 +379,7 @@
++            try
++            {
++                iresource = resourceManager.getResource(resourcelocation);
++                texture.loadSpriteFrames(iresource, this.mipmapLevels + 1);
++                break label45;
++            }
++            catch (RuntimeException runtimeexception)
++            {
++                LOGGER.error("Unable to parse metadata from {}", resourcelocation, runtimeexception);
++                return false;
++            }
++            catch (IOException ioexception)
++            {
++                LOGGER.error("Using missing texture, unable to load {}", resourcelocation, ioexception);
++                lvt_6_1_ = false;
++            }
++            finally
++            {
++                IOUtils.closeQuietly(iresource);
++            }
++
++            return lvt_6_1_;
+         }
+ 
+         try
+@@ -295,7 +379,7 @@
          }
          else
          {
@@ -208,11 +245,10 @@
  
              if (textureatlassprite == null)
              {
-@@ -328,5 +405,53 @@
-     public TextureAtlasSprite getMissingSprite()
+@@ -322,4 +406,52 @@
      {
          return this.missingImage;
-+    }
+     }
 +
 +    //===================================================================================================
 +    //                                           Forge Start
@@ -260,5 +296,5 @@
 +    public int getMipmapLevels()
 +    {
 +        return mipmapLevels;
-     }
++    }
  }

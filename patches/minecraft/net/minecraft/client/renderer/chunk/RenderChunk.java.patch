@@ -40,7 +40,28 @@
              }
  
              for (BlockRenderLayer blockrenderlayer : BlockRenderLayer.values())
-@@ -289,14 +293,16 @@
+@@ -269,38 +273,40 @@
+     public ChunkCompileTaskGenerator makeCompileTaskChunk()
+     {
+         this.lockCompileTask.lock();
++        ChunkCompileTaskGenerator chunkcompiletaskgenerator;
+ 
+         try
+         {
+             this.finishCompileTask();
+             this.compileTask = new ChunkCompileTaskGenerator(this, ChunkCompileTaskGenerator.Type.REBUILD_CHUNK, this.getDistanceSq());
+             this.rebuildWorldView();
+-            return this.compileTask;
++            chunkcompiletaskgenerator = this.compileTask;
+         }
+         finally
+         {
+             this.lockCompileTask.unlock();
+         }
++
++        return chunkcompiletaskgenerator;
+     }
+ 
      private void rebuildWorldView()
      {
          int i = 1;
@@ -54,33 +75,39 @@
      public ChunkCompileTaskGenerator makeCompileTaskTransparency()
      {
          this.lockCompileTask.lock();
--        Object object;
 +        ChunkCompileTaskGenerator chunkcompiletaskgenerator;
  
          try
          {
-@@ -313,14 +319,14 @@
+-            if (this.compileTask != null && this.compileTask.getStatus() == ChunkCompileTaskGenerator.Status.PENDING)
+-            {
+-                return null;
+-            }
+-            else
++            if (this.compileTask == null || this.compileTask.getStatus() != ChunkCompileTaskGenerator.Status.PENDING)
+             {
+                 if (this.compileTask != null && this.compileTask.getStatus() != ChunkCompileTaskGenerator.Status.DONE)
+                 {
+@@ -312,11 +318,15 @@
+                 this.compileTask.setCompiledChunk(this.compiledChunk);
                  return this.compileTask;
              }
- 
--            object = null;
++
 +            chunkcompiletaskgenerator = null;
          }
          finally
          {
              this.lockCompileTask.unlock();
          }
- 
--        return (ChunkCompileTaskGenerator)object;
++
 +        return chunkcompiletaskgenerator;
      }
  
      protected double getDistanceSq()
-@@ -438,6 +444,26 @@
-     {
+@@ -435,6 +445,26 @@
          return this.needsUpdate && this.needsImmediateUpdate;
      }
-+
+ 
 +    /* ======================================== FORGE START =====================================*/
 +    /**
 +     * Creates a new RegionRenderCache instance.<br>
@@ -100,6 +127,7 @@
 +        return new ChunkCache(world, from, to, subtract);
 +    }
 +    /* ========================================= FORGE END ======================================*/
- 
++
      public BlockPos getBlockPosOffset16(EnumFacing facing)
      {
+         return this.mapEnumFacing[facing.ordinal()];

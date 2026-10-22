@@ -1,9 +1,10 @@
 --- before/net/minecraft/block/BlockTrapDoor.java
 +++ after/net/minecraft/block/BlockTrapDoor.java
-@@ -298,6 +298,18 @@
+@@ -298,14 +298,26 @@
                 : BlockFaceShape.UNDEFINED;
      }
  
+-    public enum DoorHalf implements IStringSerializable
 +    @Override
 +    public boolean isLadder(IBlockState state, IBlockAccess world, BlockPos pos, EntityLivingBase entity)
 +    {
@@ -16,6 +17,15 @@
 +        return false;
 +    }
 +
-     public static enum DoorHalf implements IStringSerializable
++    public static enum DoorHalf implements IStringSerializable
      {
          TOP("top"),
+         BOTTOM("bottom");
+ 
+         private final String name;
+ 
+-        DoorHalf(String name)
++        private DoorHalf(String name)
+         {
+             this.name = name;
+         }

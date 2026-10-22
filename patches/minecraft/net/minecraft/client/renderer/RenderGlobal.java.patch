@@ -1,6 +1,25 @@
 --- before/net/minecraft/client/renderer/RenderGlobal.java
 +++ after/net/minecraft/client/renderer/RenderGlobal.java
-@@ -560,8 +560,10 @@
+@@ -428,13 +428,11 @@
+                     double d20 = 0.0;
+                     double d21 = d18 * d16 - d19 * d15;
+                     double d22 = d19 * d16 + d18 * d15;
+-                    double d23 = d22;
+-                    double d24 = d21 * d12 + 0.0 * d13;
+-                    double d25 = 0.0 * d12 - d21 * d13;
+-                    double d26 = d25 * d9 - d23 * d10;
+-                    double d27 = d24;
+-                    double d28 = d23 * d9 + d25 * d10;
+-                    bufferBuilderIn.pos(d5 + d26, d6 + d27, d7 + d28).endVertex();
++                    double d23 = d21 * d12 + 0.0 * d13;
++                    double d24 = 0.0 * d12 - d21 * d13;
++                    double d25 = d24 * d9 - d22 * d10;
++                    double d26 = d22 * d9 + d24 * d10;
++                    bufferBuilderIn.pos(d5 + d25, d6 + d23, d7 + d26).endVertex();
+                 }
+             }
+         }
+@@ -562,8 +560,10 @@
  
      public void renderEntities(Entity renderViewEntity, ICamera camera, float partialTicks)
      {
@@ -11,7 +30,7 @@
              this.renderEntitiesStartupCounter--;
          }
          else
-@@ -588,9 +590,12 @@
+@@ -590,9 +590,12 @@
                  this.mc.gameSettings,
                  partialTicks
              );
@@ -24,7 +43,7 @@
              Entity entity = this.mc.getRenderViewEntity();
              double d3 = entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * partialTicks;
              double d4 = entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * partialTicks;
-@@ -602,11 +607,15 @@
+@@ -604,11 +607,15 @@
              this.mc.entityRenderer.enableLightmap();
              this.world.profiler.endStartSection("global");
              List<Entity> list = this.world.getLoadedEntityList();
@@ -40,7 +59,7 @@
                  this.countEntitiesRendered++;
  
                  if (entity1.isInRangeToRender3d(d0, d1, d2))
-@@ -632,6 +641,7 @@
+@@ -634,6 +641,7 @@
                  {
                      for (Entity entity2 : classinheritancemultimap)
                      {
@@ -48,7 +67,7 @@
                          boolean flag = this.renderManager.shouldRender(entity2, camera, d0, d1, d2) || entity2.isRidingOrBeingRiddenBy(this.mc.player);
  
                          if (flag)
-@@ -675,6 +685,7 @@
+@@ -677,6 +685,7 @@
                  }
              }
  
@@ -56,7 +75,7 @@
              if (this.isRenderEntityOutlines() && (!list1.isEmpty() || this.entityOutlinesRendered))
              {
                  this.world.profiler.endStartSection("entityOutlines");
-@@ -714,6 +725,7 @@
+@@ -716,6 +725,7 @@
              this.world.profiler.endStartSection("blockentities");
              RenderHelper.enableStandardItemLighting();
  
@@ -64,7 +83,7 @@
              for (RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation1 : this.renderInfos)
              {
                  List<TileEntity> list3 = renderglobal$containerlocalrenderinformation1.renderChunk.getCompiledChunk().getTileEntities();
-@@ -722,6 +734,7 @@
+@@ -724,6 +734,7 @@
                  {
                      for (TileEntity tileentity2 : list3)
                      {
@@ -72,7 +91,7 @@
                          TileEntityRendererDispatcher.instance.render(tileentity2, partialTicks, -1);
                      }
                  }
-@@ -731,9 +744,11 @@
+@@ -733,9 +744,11 @@
              {
                  for (TileEntity tileentity : this.setTileEntities)
                  {
@@ -84,7 +103,7 @@
  
              this.preRenderDamagedBlocks();
  
-@@ -951,7 +966,7 @@
+@@ -953,7 +966,7 @@
                      {
                          RenderChunk renderchunk1 = this.viewFrustum.getRenderChunk(new BlockPos((j << 4) + 8, i, (k << 4) + 8));
  
@@ -93,7 +112,7 @@
                          {
                              renderchunk1.setFrameIndex(frameCount);
                              queue.add(new RenderGlobal.ContainerLocalRenderInformation(renderchunk1, null, 0));
-@@ -1013,7 +1028,7 @@
+@@ -1015,7 +1028,7 @@
                  BlockPos blockpos2 = renderchunk4.getPosition().add(8, 8, 8);
                  boolean flag3 = blockpos2.distanceSq(blockpos1) < 768.0;
  
@@ -102,7 +121,7 @@
                  {
                      this.chunksToUpdate.add(renderchunk4);
                  }
-@@ -1316,6 +1331,13 @@
+@@ -1318,6 +1331,13 @@
  
      public void renderSky(float partialTicks, int pass)
      {
@@ -116,7 +135,38 @@
          if (this.mc.world.provider.getDimensionType().getId() == 1)
          {
              this.renderSkyEnd();
-@@ -1542,6 +1564,7 @@
+@@ -1500,22 +1520,21 @@
+                 float f18 = 1.0F;
+                 float f19 = -((float)(d0 + 65.0));
+                 float f20 = -1.0F;
+-                f22 = f19;
+                 bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
+-                bufferbuilder.pos(-1.0, f22, 1.0).color(0, 0, 0, 255).endVertex();
+-                bufferbuilder.pos(1.0, f22, 1.0).color(0, 0, 0, 255).endVertex();
++                bufferbuilder.pos(-1.0, f19, 1.0).color(0, 0, 0, 255).endVertex();
++                bufferbuilder.pos(1.0, f19, 1.0).color(0, 0, 0, 255).endVertex();
+                 bufferbuilder.pos(1.0, -1.0, 1.0).color(0, 0, 0, 255).endVertex();
+                 bufferbuilder.pos(-1.0, -1.0, 1.0).color(0, 0, 0, 255).endVertex();
+                 bufferbuilder.pos(-1.0, -1.0, -1.0).color(0, 0, 0, 255).endVertex();
+                 bufferbuilder.pos(1.0, -1.0, -1.0).color(0, 0, 0, 255).endVertex();
+-                bufferbuilder.pos(1.0, f22, -1.0).color(0, 0, 0, 255).endVertex();
+-                bufferbuilder.pos(-1.0, f22, -1.0).color(0, 0, 0, 255).endVertex();
++                bufferbuilder.pos(1.0, f19, -1.0).color(0, 0, 0, 255).endVertex();
++                bufferbuilder.pos(-1.0, f19, -1.0).color(0, 0, 0, 255).endVertex();
+                 bufferbuilder.pos(1.0, -1.0, -1.0).color(0, 0, 0, 255).endVertex();
+                 bufferbuilder.pos(1.0, -1.0, 1.0).color(0, 0, 0, 255).endVertex();
+-                bufferbuilder.pos(1.0, f22, 1.0).color(0, 0, 0, 255).endVertex();
+-                bufferbuilder.pos(1.0, f22, -1.0).color(0, 0, 0, 255).endVertex();
+-                bufferbuilder.pos(-1.0, f22, -1.0).color(0, 0, 0, 255).endVertex();
+-                bufferbuilder.pos(-1.0, f22, 1.0).color(0, 0, 0, 255).endVertex();
++                bufferbuilder.pos(1.0, f19, 1.0).color(0, 0, 0, 255).endVertex();
++                bufferbuilder.pos(1.0, f19, -1.0).color(0, 0, 0, 255).endVertex();
++                bufferbuilder.pos(-1.0, f19, -1.0).color(0, 0, 0, 255).endVertex();
++                bufferbuilder.pos(-1.0, f19, 1.0).color(0, 0, 0, 255).endVertex();
+                 bufferbuilder.pos(-1.0, -1.0, 1.0).color(0, 0, 0, 255).endVertex();
+                 bufferbuilder.pos(-1.0, -1.0, -1.0).color(0, 0, 0, 255).endVertex();
+                 bufferbuilder.pos(-1.0, -1.0, -1.0).color(0, 0, 0, 255).endVertex();
+@@ -1545,6 +1564,7 @@
  
      public void renderClouds(float partialTicks, int pass, double x, double y, double z)
      {
@@ -124,7 +174,47 @@
          if (this.mc.world.provider.isSurfaceWorld())
          {
              if (this.mc.gameSettings.shouldRenderClouds() == 2)
-@@ -2046,7 +2069,7 @@
+@@ -1584,14 +1604,13 @@
+                 float f9 = 4.8828125E-4F;
+                 double d2 = this.cloudTickCounter + partialTicks;
+                 double d0 = x + d2 * 0.03F;
+-                double d1 = z;
+                 int k = MathHelper.floor(d0 / 2048.0);
+-                int l = MathHelper.floor(d1 / 2048.0);
++                int l = MathHelper.floor(z / 2048.0);
+                 d0 -= k * 2048;
+-                d1 -= l * 2048;
++                double lvt_22_1_ = z - l * 2048;
+                 float f6 = this.world.provider.getCloudHeight() - (float)y + 0.33F;
+                 float f7 = (float)(d0 * 4.8828125E-4);
+-                float f8 = (float)(d1 * 4.8828125E-4);
++                float f8 = (float)(lvt_22_1_ * 4.8828125E-4);
+                 bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+ 
+                 for (int i1 = -256; i1 < 256; i1 += 32)
+@@ -1960,8 +1979,8 @@
+             float f6 = 128.0F;
+             bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
+             bufferbuilder.setTranslation(-d2, -d3, -d4);
+-            double d5 = Math.max(MathHelper.floor(d4 - d0), worldborder.minZ());
+-            double d6 = Math.min(MathHelper.ceil(d4 + d0), worldborder.maxZ());
++            double d5 = Math.max((double)MathHelper.floor(d4 - d0), worldborder.minZ());
++            double d6 = Math.min((double)MathHelper.ceil(d4 + d0), worldborder.maxZ());
+ 
+             if (d2 > worldborder.maxX() - d0)
+             {
+@@ -1995,8 +2014,8 @@
+                 }
+             }
+ 
+-            d5 = Math.max(MathHelper.floor(d2 - d0), worldborder.minX());
+-            d6 = Math.min(MathHelper.ceil(d2 + d0), worldborder.maxX());
++            d5 = Math.max((double)MathHelper.floor(d2 - d0), worldborder.minX());
++            d6 = Math.min((double)MathHelper.ceil(d2 + d0), worldborder.maxX());
+ 
+             if (d4 > worldborder.maxZ() - d0)
+             {
+@@ -2050,7 +2069,7 @@
          );
          GlStateManager.enableBlend();
          GlStateManager.color(1.0F, 1.0F, 1.0F, 0.5F);
@@ -133,7 +223,7 @@
          GlStateManager.enablePolygonOffset();
          GlStateManager.alphaFunc(516, 0.1F);
          GlStateManager.enableAlpha();
-@@ -2086,8 +2109,13 @@
+@@ -2090,8 +2109,13 @@
                  double d4 = blockpos.getY() - d1;
                  double d5 = blockpos.getZ() - d2;
                  Block block = this.world.getBlockState(blockpos).getBlock();
@@ -148,7 +238,22 @@
                  {
                      if (d3 * d3 + d4 * d4 + d5 * d5 > 1024.0)
                      {
-@@ -2820,7 +2848,7 @@
+@@ -2351,9 +2375,11 @@
+                 this.mc.ingameGUI.setRecordPlayingMessage(itemrecord.getRecordNameLocal());
+             }
+ 
+-            isound = PositionedSoundRecord.getRecordSoundRecord(soundIn, pos.getX(), pos.getY(), pos.getZ());
+-            this.mapSoundPositions.put(pos, isound);
+-            this.mc.getSoundHandler().playSound(isound);
++            ISound positionedsoundrecord = PositionedSoundRecord.getRecordSoundRecord(
++                                               soundIn, pos.getX(), pos.getY(), pos.getZ()
++                                           );
++            this.mapSoundPositions.put(pos, positionedsoundrecord);
++            this.mc.getSoundHandler().playSound(positionedsoundrecord);
+         }
+ 
+         this.setPartying(this.world, pos, soundIn != null);
+@@ -2822,7 +2848,7 @@
  
                  if (block.getDefaultState().getMaterial() != Material.AIR)
                  {

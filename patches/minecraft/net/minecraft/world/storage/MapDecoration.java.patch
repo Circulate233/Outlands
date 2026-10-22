@@ -1,9 +1,10 @@
 --- before/net/minecraft/world/storage/MapDecoration.java
 +++ after/net/minecraft/world/storage/MapDecoration.java
-@@ -89,6 +89,17 @@
+@@ -89,7 +89,18 @@
          return 31 * i + this.rotation;
      }
  
+-    public enum Type
 +    /**
 +     * Renders this decoration, useful for custom sprite sheets.
 +     * @param index The index of this icon in the MapData's list. Used by vanilla to offset the Z-coordinate to prevent Z-fighting
@@ -15,6 +16,7 @@
 +        return false;
 +    }
 +
-     public static enum Type
++    public static enum Type
      {
          PLAYER(false),
+         FRAME(true),

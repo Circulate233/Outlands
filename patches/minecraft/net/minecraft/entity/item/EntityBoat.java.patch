@@ -1,19 +1,72 @@
 --- before/net/minecraft/entity/item/EntityBoat.java
 +++ after/net/minecraft/entity/item/EntityBoat.java
-@@ -475,6 +475,12 @@
-                             blockpos$pooledmutableblockpos.setPos(l1, k1, i2);
-                             IBlockState iblockstate = this.world.getBlockState(blockpos$pooledmutableblockpos);
+@@ -459,34 +459,50 @@
  
+         try
+         {
+-            label84:
++            label87:
+ 
+             for (int k1 = k; k1 < l; k1++)
+             {
+                 float f = 0.0F;
++                int l1 = i;
+ 
+-                for (int l1 = i; l1 < j; l1++)
++                while (true)
+                 {
+-                    for (int i2 = i1; i2 < j1; i2++)
++                    if (l1 < j)
+                     {
+-                        blockpos$pooledmutableblockpos.setPos(l1, k1, i2);
+-                        IBlockState iblockstate = this.world.getBlockState(blockpos$pooledmutableblockpos);
+-
+-                        if (iblockstate.getMaterial() == Material.WATER)
++                        for (int i2 = i1; i2 < j1; i2++)
+                         {
+-                            f = Math.max(f, BlockLiquid.getBlockLiquidHeight(iblockstate, this.world, blockpos$pooledmutableblockpos));
++                            blockpos$pooledmutableblockpos.setPos(l1, k1, i2);
++                            IBlockState iblockstate = this.world.getBlockState(blockpos$pooledmutableblockpos);
++
 +                            Boolean result = iblockstate.getBlock().isAABBInsideMaterial(world, blockpos$pooledmutableblockpos, new AxisAlignedBB(blockpos$pooledmutableblockpos), Material.WATER);
 +                            if (result != null) {
 +                                if (!result) continue;
 +                                f = Math.max(f, iblockstate.getBlock().getBlockLiquidHeight(world, blockpos$pooledmutableblockpos, iblockstate, Material.WATER) + blockpos$pooledmutableblockpos.getY());
 +                            }
 +                            
-                             if (iblockstate.getMaterial() == Material.WATER)
-                             {
-                                 f = Math.max(f, BlockLiquid.getBlockLiquidHeight(iblockstate, this.world, blockpos$pooledmutableblockpos));
-@@ -550,7 +556,7 @@
++                            if (iblockstate.getMaterial() == Material.WATER)
++                            {
++                                f = Math.max(f, BlockLiquid.getBlockLiquidHeight(iblockstate, this.world, blockpos$pooledmutableblockpos));
++                            }
++
++                            if (f >= 1.0F)
++                            {
++                                continue label87;
++                            }
+                         }
+ 
+-                        if (f >= 1.0F)
++                        l1++;
++                    }
++                    else
++                    {
++                        if (f < 1.0F)
+                         {
+-                            continue label84;
++                            return blockpos$pooledmutableblockpos.getY() + f;
+                         }
+-                    }
+-                }
+ 
+-                if (f < 1.0F)
+-                {
+-                    return blockpos$pooledmutableblockpos.getY() + f;
++                        break;
++                    }
+                 }
+             }
+ 
+@@ -540,7 +556,7 @@
  
                                  if (!list.isEmpty())
                                  {
@@ -22,7 +75,7 @@
                                      k1++;
                                  }
  
-@@ -592,7 +598,16 @@
+@@ -582,11 +598,20 @@
                      {
                          blockpos$pooledmutableblockpos.setPos(k1, l1, i2);
                          IBlockState iblockstate = this.world.getBlockState(blockpos$pooledmutableblockpos);
@@ -39,7 +92,12 @@
                          if (iblockstate.getMaterial() == Material.WATER)
                          {
                              float f = BlockLiquid.getLiquidHeight(iblockstate, this.world, blockpos$pooledmutableblockpos);
-@@ -636,6 +651,18 @@
+-                            this.waterLevel = Math.max(f, this.waterLevel);
++                            this.waterLevel = Math.max((double)f, this.waterLevel);
+                             flag |= axisalignedbb.minY < f;
+                         }
+                     }
+@@ -626,6 +651,18 @@
                          blockpos$pooledmutableblockpos.setPos(k1, l1, i2);
                          IBlockState iblockstate = this.world.getBlockState(blockpos$pooledmutableblockpos);
  
@@ -58,12 +116,11 @@
                          if (iblockstate.getMaterial() == Material.WATER
                                  && d0 < BlockLiquid.getLiquidHeight(iblockstate, this.world, blockpos$pooledmutableblockpos))
                          {
-@@ -967,6 +994,22 @@
-         this.rightInputDown = p_184442_2_;
-         this.forwardInputDown = p_184442_3_;
+@@ -959,7 +996,23 @@
          this.backInputDown = p_184442_4_;
-+    }
-+
+     }
+ 
+-    public enum Status
 +    // Forge: Fix MC-119811 by instantly completing lerp on board
 +    @Override
 +    protected void addPassenger(Entity passenger)
@@ -78,6 +135,9 @@
 +            this.rotationYaw = (float)this.lerpYaw;
 +            this.rotationPitch = (float)this.lerpPitch;
 +        }
-     }
- 
-     public static enum Status
++    }
++
++    public static enum Status
+     {
+         IN_WATER,
+         UNDER_WATER,

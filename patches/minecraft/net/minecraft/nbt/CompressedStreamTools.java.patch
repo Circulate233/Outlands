@@ -1,6 +1,6 @@
 --- before/net/minecraft/nbt/CompressedStreamTools.java
 +++ after/net/minecraft/nbt/CompressedStreamTools.java
-@@ -18,8 +18,6 @@
+@@ -18,23 +18,24 @@
  import net.minecraft.crash.CrashReport;
  import net.minecraft.crash.CrashReportCategory;
  import net.minecraft.util.ReportedException;
@@ -9,7 +9,26 @@
  
  public class CompressedStreamTools
  {
-@@ -54,7 +52,6 @@
+     public static NBTTagCompound readCompressed(InputStream is) throws IOException
+     {
+         DataInputStream datainputstream = new DataInputStream(new BufferedInputStream(new GZIPInputStream(is)));
++        NBTTagCompound nbttagcompound;
+ 
+         try
+         {
+-            return read(datainputstream, NBTSizeTracker.INFINITE);
++            nbttagcompound = read(datainputstream, NBTSizeTracker.INFINITE);
+         }
+         finally
+         {
+             datainputstream.close();
+         }
++
++        return nbttagcompound;
+     }
+ 
+     public static void writeCompressed(NBTTagCompound compound, OutputStream outputStream) throws IOException
+@@ -51,7 +52,6 @@
          }
      }
  
@@ -17,7 +36,7 @@
      public static void safeWrite(NBTTagCompound compound, File fileIn) throws IOException
      {
          File file1 = new File(fileIn.getAbsolutePath() + "_tmp");
-@@ -81,7 +78,6 @@
+@@ -78,7 +78,6 @@
          }
      }
  
@@ -25,7 +44,7 @@
      public static void write(NBTTagCompound compound, File fileIn) throws IOException
      {
          DataOutputStream dataoutputstream = new DataOutputStream(new FileOutputStream(fileIn));
-@@ -97,7 +93,6 @@
+@@ -94,7 +93,6 @@
      }
  
      @Nullable
@@ -33,7 +52,27 @@
      public static NBTTagCompound read(File fileIn) throws IOException
      {
          if (!fileIn.exists())
-@@ -160,6 +155,7 @@
+@@ -104,15 +102,18 @@
+         else
+         {
+             DataInputStream datainputstream = new DataInputStream(new FileInputStream(fileIn));
++            NBTTagCompound nbttagcompound;
+ 
+             try
+             {
+-                return read(datainputstream, NBTSizeTracker.INFINITE);
++                nbttagcompound = read(datainputstream, NBTSizeTracker.INFINITE);
+             }
+             finally
+             {
+                 datainputstream.close();
+             }
++
++            return nbttagcompound;
+         }
+     }
+ 
+@@ -154,6 +155,7 @@
      private static NBTBase read(DataInput input, int depth, NBTSizeTracker accounter) throws IOException
      {
          byte b0 = input.readByte();
@@ -41,7 +80,7 @@
  
          if (b0 == 0)
          {
-@@ -167,7 +163,8 @@
+@@ -161,7 +163,8 @@
          }
          else
          {

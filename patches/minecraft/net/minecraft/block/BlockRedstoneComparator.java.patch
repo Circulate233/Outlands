@@ -1,9 +1,10 @@
 --- before/net/minecraft/block/BlockRedstoneComparator.java
 +++ after/net/minecraft/block/BlockRedstoneComparator.java
-@@ -385,6 +385,21 @@
+@@ -385,14 +385,29 @@
                 .withProperty(MODE, BlockRedstoneComparator.Mode.COMPARE);
      }
  
+-    public enum Mode implements IStringSerializable
 +    @Override
 +    public void onNeighborChange(IBlockAccess world, BlockPos pos, BlockPos neighbor)
 +    {
@@ -19,6 +20,15 @@
 +        return true;
 +    }
 +
-     public static enum Mode implements IStringSerializable
++    public static enum Mode implements IStringSerializable
      {
          COMPARE("compare"),
+         SUBTRACT("subtract");
+ 
+         private final String name;
+ 
+-        Mode(String name)
++        private Mode(String name)
+         {
+             this.name = name;
+         }

@@ -9,11 +9,189 @@
  {
      protected final WorldServer world;
      protected final Random random;
-@@ -449,5 +449,14 @@
-             super(pos.getX(), pos.getY(), pos.getZ());
+@@ -104,7 +104,7 @@
+                         {
+                             for (blockpos2 = blockpos1.down();
+                                     this.world.getBlockState(blockpos2).getBlock() == Blocks.PORTAL;
+-                                    blockpos2 = blockpos1.down()
++                                    blockpos2 = blockpos2.down()
+                                 )
+                             {
+                                 blockpos1 = blockpos2;
+@@ -299,52 +299,52 @@
+             {
+                 double d3 = l5 + 0.5 - entityIn.posX;
+ 
+-                for (int k6 = l - 16; k6 <= l + 16; k6++)
++                for (int j6 = l - 16; j6 <= l + 16; j6++)
+                 {
+-                    double d4 = k6 + 0.5 - entityIn.posZ;
++                    double d4 = j6 + 0.5 - entityIn.posZ;
+                     label233:
+ 
+-                    for (int j7 = this.world.getActualHeight() - 1; j7 >= 0; j7--)
++                    for (int i7 = this.world.getActualHeight() - 1; i7 >= 0; i7--)
+                     {
+-                        if (this.world.isAirBlock(blockpos$mutableblockpos.setPos(l5, j7, k6)))
++                        if (this.world.isAirBlock(blockpos$mutableblockpos.setPos(l5, i7, j6)))
+                         {
+-                            while (j7 > 0 && this.world.isAirBlock(blockpos$mutableblockpos.setPos(l5, j7 - 1, k6)))
++                            while (i7 > 0 && this.world.isAirBlock(blockpos$mutableblockpos.setPos(l5, i7 - 1, j6)))
+                             {
+-                                j7--;
++                                i7--;
+                             }
+ 
+-                            for (int l7 = i2; l7 < i2 + 2; l7++)
++                            for (int k7 = i2; k7 < i2 + 2; k7++)
+                             {
+-                                int k8 = l7 % 2;
+-                                int k9 = 1 - k8;
++                                int j8 = k7 % 2;
++                                int j9 = 1 - j8;
+ 
+-                                for (int k10 = 0; k10 < 4; k10++)
++                                for (int j10 = 0; j10 < 4; j10++)
+                                 {
+-                                    for (int k11 = -1; k11 < 4; k11++)
++                                    for (int j11 = -1; j11 < 4; j11++)
+                                     {
+-                                        int k12 = l5 + (k10 - 1) * k8;
+-                                        int j13 = j7 + k11;
+-                                        int k13 = k6 + (k10 - 1) * k9;
+-                                        blockpos$mutableblockpos.setPos(k12, j13, k13);
++                                        int j12 = l5 + (j10 - 1) * j8;
++                                        int i13 = i7 + j11;
++                                        int j13 = j6 + (j10 - 1) * j9;
++                                        blockpos$mutableblockpos.setPos(j12, i13, j13);
+ 
+-                                        if (k11 < 0 && !this.world.getBlockState(blockpos$mutableblockpos).getMaterial().isSolid()
+-                                                || k11 >= 0 && !this.world.isAirBlock(blockpos$mutableblockpos))
++                                        if (j11 < 0 && !this.world.getBlockState(blockpos$mutableblockpos).getMaterial().isSolid()
++                                                || j11 >= 0 && !this.world.isAirBlock(blockpos$mutableblockpos))
+                                         {
+                                             continue label233;
+                                         }
+                                     }
+                                 }
+ 
+-                                double d6 = j7 + 0.5 - entityIn.posY;
++                                double d6 = i7 + 0.5 - entityIn.posY;
+                                 double d8 = d3 * d3 + d6 * d6 + d4 * d4;
+ 
+                                 if (d0 < 0.0 || d8 < d0)
+                                 {
+                                     d0 = d8;
+                                     i1 = l5;
+-                                    j1 = j7;
+-                                    k1 = k6;
+-                                    l1 = l7 % 2;
++                                    j1 = i7;
++                                    k1 = j6;
++                                    l1 = k7 % 2;
+                                 }
+                             }
+                         }
+@@ -353,16 +353,15 @@
+             }
+         }
+ 
+-        int i6 = l1;
+-        int j6 = i1;
++        int i6 = i1;
+         int k2 = j1;
+-        int l6 = k1;
+-        int i7 = i6 % 2;
+-        int i3 = 1 - i7;
++        int k6 = k1;
++        int l6 = l1 % 2;
++        int i3 = 1 - l6;
+ 
+-        if (i6 % 4 >= 2)
++        if (l1 % 4 >= 2)
+         {
+-            i7 = -i7;
++            l6 = -l6;
+             i3 = -i3;
+         }
+ 
+@@ -371,18 +370,18 @@
+             j1 = MathHelper.clamp(j1, 70, this.world.getActualHeight() - 10);
+             k2 = j1;
+ 
+-            for (int k7 = -1; k7 <= 1; k7++)
++            for (int j7 = -1; j7 <= 1; j7++)
+             {
+-                for (int i8 = 1; i8 < 3; i8++)
++                for (int l7 = 1; l7 < 3; l7++)
+                 {
+-                    for (int l8 = -1; l8 < 3; l8++)
++                    for (int k8 = -1; k8 < 3; k8++)
+                     {
+-                        int l9 = j6 + (i8 - 1) * i7 + k7 * i3;
+-                        int l10 = k2 + l8;
+-                        int l11 = l6 + (i8 - 1) * i3 - k7 * i7;
+-                        boolean flag = l8 < 0;
++                        int k9 = i6 + (l7 - 1) * l6 + j7 * i3;
++                        int k10 = k2 + k8;
++                        int k11 = k6 + (l7 - 1) * i3 - j7 * l6;
++                        boolean flag = k8 < 0;
+                         this.world
+-                        .setBlockState(new BlockPos(l9, l10, l11), flag ? Blocks.OBSIDIAN.getDefaultState() : Blocks.AIR.getDefaultState());
++                        .setBlockState(new BlockPos(k9, k10, k11), flag ? Blocks.OBSIDIAN.getDefaultState() : Blocks.AIR.getDefaultState());
+                     }
+                 }
+             }
+@@ -390,30 +389,30 @@
+ 
+         IBlockState iblockstate = Blocks.PORTAL
+                                   .getDefaultState()
+-                                  .withProperty(BlockPortal.AXIS, i7 == 0 ? EnumFacing.Axis.Z : EnumFacing.Axis.X);
++                                  .withProperty(BlockPortal.AXIS, l6 == 0 ? EnumFacing.Axis.Z : EnumFacing.Axis.X);
+ 
+-        for (int j8 = 0; j8 < 4; j8++)
++        for (int i8 = 0; i8 < 4; i8++)
+         {
+-            for (int i9 = 0; i9 < 4; i9++)
++            for (int l8 = 0; l8 < 4; l8++)
+             {
+-                for (int i10 = -1; i10 < 4; i10++)
++                for (int l9 = -1; l9 < 4; l9++)
+                 {
+-                    int i11 = j6 + (i9 - 1) * i7;
+-                    int i12 = k2 + i10;
+-                    int l12 = l6 + (i9 - 1) * i3;
+-                    boolean flag1 = i9 == 0 || i9 == 3 || i10 == -1 || i10 == 3;
+-                    this.world.setBlockState(new BlockPos(i11, i12, l12), flag1 ? Blocks.OBSIDIAN.getDefaultState() : iblockstate, 2);
++                    int l10 = i6 + (l8 - 1) * l6;
++                    int l11 = k2 + l9;
++                    int k12 = k6 + (l8 - 1) * i3;
++                    boolean flag1 = l8 == 0 || l8 == 3 || l9 == -1 || l9 == 3;
++                    this.world.setBlockState(new BlockPos(l10, l11, k12), flag1 ? Blocks.OBSIDIAN.getDefaultState() : iblockstate, 2);
+                 }
+             }
+ 
+-            for (int j9 = 0; j9 < 4; j9++)
++            for (int i9 = 0; i9 < 4; i9++)
+             {
+-                for (int j10 = -1; j10 < 4; j10++)
++                for (int i10 = -1; i10 < 4; i10++)
+                 {
+-                    int j11 = j6 + (j9 - 1) * i7;
+-                    int j12 = k2 + j10;
+-                    int i13 = l6 + (j9 - 1) * i3;
+-                    BlockPos blockpos = new BlockPos(j11, j12, i13);
++                    int i11 = i6 + (i9 - 1) * l6;
++                    int i12 = k2 + i10;
++                    int l12 = k6 + (i9 - 1) * i3;
++                    BlockPos blockpos = new BlockPos(i11, i12, l12);
+                     this.world.notifyNeighborsOfStateChange(blockpos, this.world.getBlockState(blockpos).getBlock(), false);
+                 }
+             }
+@@ -451,4 +450,13 @@
              this.lastUpdateTime = lastUpdate;
          }
-+    }
+     }
 +
 +    @Override
 +    public void placeEntity(World world, Entity entity, float yaw)
@@ -22,5 +200,5 @@
 +            placeInPortal(entity, yaw);
 +        else
 +            placeInExistingPortal(entity, yaw);
-     }
++    }
  }

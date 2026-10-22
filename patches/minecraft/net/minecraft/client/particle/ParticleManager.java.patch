@@ -8,7 +8,36 @@
          this.queue.add(effect);
      }
  
-@@ -420,7 +421,7 @@
+@@ -338,7 +339,6 @@
+                         {
+                             CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Rendering Particle");
+                             CrashReportCategory crashreportcategory = crashreport.makeCategory("Particle being rendered");
+-                            final int k = i;
+                             crashreportcategory.addDetail("Particle", new ICrashReportDetail<String>()
+                             {
+                                 public String call() throws Exception
+@@ -350,17 +350,17 @@
+                             {
+                                 public String call() throws Exception
+                                 {
+-                                    if (k == 0)
++                                    if (i == 0)
+                                     {
+                                         return "MISC_TEXTURE";
+                                     }
+-                                    else if (k == 1)
++                                    else if (i == 1)
+                                     {
+                                         return "TERRAIN_TEXTURE";
+                                     }
+                                     else
+                                     {
+-                                        return k == 3 ? "ENTITY_PARTICLE_TEXTURE" : "Unknown - " + k;
++                                        return i == 3 ? "ENTITY_PARTICLE_TEXTURE" : "Unknown - " + i;
+                                     }
+                                 }
+                             });
+@@ -421,7 +421,7 @@
  
      public void addBlockDestroyEffects(BlockPos pos, IBlockState state)
      {
@@ -17,7 +46,7 @@
          {
              state = state.getActualState(this.world, pos);
              int i = 4;
-@@ -527,4 +528,13 @@
+@@ -528,4 +528,13 @@
  
          return "" + i;
      }

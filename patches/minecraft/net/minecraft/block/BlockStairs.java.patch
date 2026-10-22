@@ -1,9 +1,10 @@
 --- before/net/minecraft/block/BlockStairs.java
 +++ after/net/minecraft/block/BlockStairs.java
-@@ -556,6 +556,29 @@
+@@ -556,14 +556,37 @@
          return new BlockStateContainer(this, FACING, HALF, SHAPE);
      }
  
+-    public enum EnumHalf implements IStringSerializable
 +    @Override
 +    public boolean doesSideBlockRendering(IBlockState state, IBlockAccess world, BlockPos pos, EnumFacing face)
 +    {
@@ -27,6 +28,15 @@
 +        return false;
 +    }
 +
-     public static enum EnumHalf implements IStringSerializable
++    public static enum EnumHalf implements IStringSerializable
      {
          TOP("top"),
+         BOTTOM("bottom");
+ 
+         private final String name;
+ 
+-        EnumHalf(String name)
++        private EnumHalf(String name)
+         {
+             this.name = name;
+         }

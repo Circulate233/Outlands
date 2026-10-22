@@ -23,7 +23,8 @@
 -            if (state.getMaterial() != Material.AIR)
 +            if (!state.getBlock().isAir(state, world, pos))
              {
-                 double d0 = Math.min((double)(0.2F + f / 15.0F), 2.5);
+-                double d0 = Math.min(0.2F + f / 15.0F, 2.5);
++                double d0 = Math.min((double)(0.2F + f / 15.0F), 2.5);
                  int i = (int)(150.0 * d0);
 +                if (!state.getBlock().addLandingEffects(state, (WorldServer)this.world, pos, state, this, i))
                  ((WorldServer)this.world)
@@ -248,7 +249,7 @@
                  this.playSound(soundtype.getFallSound(), soundtype.getVolume() * 0.5F, soundtype.getPitch() * 0.75F);
              }
          }
-@@ -1437,16 +1472,19 @@
+@@ -1437,18 +1472,20 @@
      {
          if (!this.isEntityInvulnerable(damageSrc))
          {
@@ -256,20 +257,30 @@
 +            if (damageAmount <= 0) return;
              damageAmount = this.applyArmorCalculations(damageSrc, damageAmount);
              damageAmount = this.applyPotionDamageCalculations(damageSrc, damageAmount);
-             float f1 = Math.max(damageAmount - this.getAbsorptionAmount(), 0.0F);
-             this.setAbsorptionAmount(this.getAbsorptionAmount() - (damageAmount - f1));
+-            float f = damageAmount;
+-            damageAmount = Math.max(damageAmount - this.getAbsorptionAmount(), 0.0F);
+-            this.setAbsorptionAmount(this.getAbsorptionAmount() - (f - damageAmount));
+-
+-            if (damageAmount != 0.0F)
+-            {
+-                float f1 = this.getHealth();
+-                this.setHealth(f1 - damageAmount);
+-                this.getCombatTracker().trackDamage(damageSrc, f1, damageAmount);
+-                this.setAbsorptionAmount(this.getAbsorptionAmount() - damageAmount);
++            float f1 = Math.max(damageAmount - this.getAbsorptionAmount(), 0.0F);
++            this.setAbsorptionAmount(this.getAbsorptionAmount() - (damageAmount - f1));
 +            f1 = net.minecraftforge.common.ForgeHooks.onLivingDamage(this, damageSrc, f1);
- 
-             if (f1 != 0.0F)
-             {
-                 float f = this.getHealth();
--                this.setHealth(f - f1);
-                 this.getCombatTracker().trackDamage(damageSrc, f, f1);
++
++            if (f1 != 0.0F)
++            {
++                float f = this.getHealth();
++                this.getCombatTracker().trackDamage(damageSrc, f, f1);
 +                this.setHealth(f - f1); // Forge: moved to fix MC-121048
-                 this.setAbsorptionAmount(this.getAbsorptionAmount() - f1);
++                this.setAbsorptionAmount(this.getAbsorptionAmount() - f1);
              }
          }
-@@ -1503,6 +1541,11 @@
+     }
+@@ -1504,6 +1541,11 @@
  
      public void swingArm(EnumHand hand)
      {
@@ -281,7 +292,7 @@
          if (!this.isSwingInProgress || this.swingProgressInt >= this.getArmSwingAnimationEnd() / 2 || this.swingProgressInt < 0)
          {
              this.swingProgressInt = -1;
-@@ -1763,7 +1806,7 @@
+@@ -1764,7 +1806,7 @@
  
                      if (!this.world.collidesWithAnyBlock(axisalignedbb1))
                      {
@@ -290,7 +301,7 @@
                          {
                              this.setPositionAndUpdate(d11, this.posY + 1.0, d12);
                              return;
-@@ -1771,7 +1814,7 @@
+@@ -1772,7 +1814,7 @@
  
                          BlockPos blockpos = new BlockPos(d11, this.posY - 1.0, d12);
  
@@ -299,7 +310,7 @@
                                  || this.world.getBlockState(blockpos).getMaterial() == Material.WATER)
                          {
                              d1 = d11;
-@@ -1780,7 +1823,7 @@
+@@ -1781,7 +1823,7 @@
                          }
                      }
                      else if (!this.world.collidesWithAnyBlock(axisalignedbb1.offset(0.0, 1.0, 0.0))
@@ -308,7 +319,7 @@
                      {
                          d1 = d11;
                          d13 = this.posY + 2.0;
-@@ -1853,16 +1896,17 @@
+@@ -1854,16 +1896,17 @@
          }
  
          this.isAirBorne = true;
@@ -328,7 +339,7 @@
      }
  
      protected float getWaterSlowDown()
-@@ -1948,7 +1992,8 @@
+@@ -1949,7 +1992,8 @@
  
                          if (this.onGround)
                          {
@@ -338,7 +349,7 @@
                          }
  
                          float f7 = 0.16277136F / (f6 * f6 * f6);
-@@ -1968,12 +2013,13 @@
+@@ -1969,12 +2013,13 @@
  
                          if (this.onGround)
                          {
@@ -355,7 +366,7 @@
                                   * 0.91F;
                          }
  
-@@ -2138,6 +2184,7 @@
+@@ -2139,6 +2184,7 @@
      @Override
      public void onUpdate()
      {
@@ -363,7 +374,7 @@
          super.onUpdate();
          this.updateActiveHand();
  
-@@ -2180,9 +2227,11 @@
+@@ -2181,9 +2227,11 @@
  
                  if (!ItemStack.areItemStacksEqual(itemstack1, itemstack))
                  {
@@ -375,7 +386,7 @@
  
                      if (!itemstack.isEmpty())
                      {
-@@ -2683,6 +2732,40 @@
+@@ -2684,6 +2732,40 @@
          this.potionsNeedUpdate = true;
      }
  
@@ -416,7 +427,7 @@
      public abstract EnumHandSide getPrimaryHand();
  
      public boolean isHandActive()
-@@ -2700,15 +2783,23 @@
+@@ -2701,15 +2783,23 @@
          if (this.isHandActive())
          {
              ItemStack itemstack = this.getHeldItem(this.getActiveHand());
@@ -441,7 +452,7 @@
                  {
                      this.onItemUseFinish();
                  }
-@@ -2726,8 +2817,10 @@
+@@ -2727,8 +2817,10 @@
  
          if (!itemstack.isEmpty() && !this.isHandActive())
          {
@@ -453,7 +464,7 @@
  
              if (!this.world.isRemote)
              {
-@@ -2834,7 +2927,10 @@
+@@ -2835,7 +2927,10 @@
          if (!this.activeItemStack.isEmpty() && this.isHandActive())
          {
              this.updateItemUse(this.activeItemStack, 16);
@@ -465,7 +476,7 @@
              this.resetActiveHand();
          }
      }
-@@ -2858,7 +2954,8 @@
+@@ -2859,7 +2954,8 @@
      {
          if (!this.activeItemStack.isEmpty())
          {
@@ -475,7 +486,7 @@
          }
  
          this.resetActiveHand();
-@@ -2978,6 +3075,31 @@
+@@ -2979,6 +3075,31 @@
          return true;
      }
  
@@ -507,11 +518,10 @@
      public boolean attackable()
      {
          return true;
-@@ -2986,5 +3108,31 @@
-     @SideOnly(Side.CLIENT)
+@@ -2988,4 +3109,30 @@
      public void setPartying(BlockPos pos, boolean isPartying)
      {
-+    }
+     }
 +    
 +    @Override
 +    public void moveRelative(float strafe, float up, float forward, float friction)
@@ -537,5 +547,5 @@
 +            this.motionY += (double)up;
 +            this.motionZ += (double)(forward * f2 + strafe * f1);
 +        }
-     }
++    }
  }

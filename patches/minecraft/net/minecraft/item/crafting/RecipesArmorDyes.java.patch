@@ -36,7 +36,17 @@
                      int l1 = (int)(afloat[0] * 255.0F);
                      int i2 = (int)(afloat[1] * 255.0F);
                      int j2 = (int)(afloat[2] * 255.0F);
-@@ -147,11 +145,7 @@
+@@ -126,8 +124,7 @@
+             i1 = (int)(i1 * f3 / f4);
+             j1 = (int)(j1 * f3 / f4);
+             k1 = (int)(k1 * f3 / f4);
+-            int k2 = i1;
+-            k2 = (k2 << 8) + j1;
++            int k2 = (i1 << 8) + j1;
+             k2 = (k2 << 8) + k1;
+             itemarmor.setColor(itemstack, k2);
+             return itemstack;
+@@ -148,11 +145,7 @@
          for (int i = 0; i < nonnulllist.size(); i++)
          {
              ItemStack itemstack = inv.getStackInSlot(i);
@@ -49,7 +59,7 @@
          }
  
          return nonnulllist;
-@@ -163,7 +157,6 @@
+@@ -164,7 +157,6 @@
          return true;
      }
  

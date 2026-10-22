@@ -94,7 +94,7 @@
      @Override
      public void saveChunk(World worldIn, Chunk chunkIn) throws MinecraftException, IOException
      {
-@@ -132,7 +180,10 @@
+@@ -132,12 +180,15 @@
              NBTTagCompound nbttagcompound1 = new NBTTagCompound();
              nbttagcompound.setTag("Level", nbttagcompound1);
              nbttagcompound.setInteger("DataVersion", 1343);
@@ -105,7 +105,42 @@
              this.addChunkToPending(chunkIn.getPos(), nbttagcompound);
          }
          catch (Exception exception)
-@@ -323,11 +374,19 @@
+         {
+-            LOGGER.error("Failed to save chunk", exception);
++            LOGGER.error("Failed to save chunk", (Throwable)exception);
+         }
+     }
+ 
+@@ -166,6 +217,7 @@
+         else
+         {
+             ChunkPos chunkpos = this.chunksToSave.keySet().iterator().next();
++            boolean lvt_3_1_;
+ 
+             try
+             {
+@@ -180,16 +232,18 @@
+                     }
+                     catch (Exception exception)
+                     {
+-                        LOGGER.error("Failed to save chunk", exception);
++                        LOGGER.error("Failed to save chunk", (Throwable)exception);
+                     }
+                 }
+ 
+-                return true;
++                lvt_3_1_ = true;
+             }
+             finally
+             {
+                 this.chunksBeingSaved.remove(chunkpos);
+             }
++
++            return lvt_3_1_;
+         }
+     }
+ 
+@@ -320,11 +374,19 @@
              {
                  NBTTagCompound nbttagcompound2 = new NBTTagCompound();
  
@@ -125,7 +160,7 @@
              }
          }
  
-@@ -336,8 +395,16 @@
+@@ -333,8 +395,16 @@
  
          for (TileEntity tileentity : chunkIn.getTileEntityMap().values())
          {
@@ -142,7 +177,7 @@
          }
  
          compound.setTag("TileEntities", nbttaglist2);
-@@ -363,6 +430,18 @@
+@@ -360,6 +430,18 @@
  
              compound.setTag("TileTicks", nbttaglist3);
          }
@@ -161,7 +196,7 @@
      }
  
      private Chunk readChunkFromNBT(World worldIn, NBTTagCompound compound)
-@@ -406,6 +485,16 @@
+@@ -403,6 +485,16 @@
              chunk.setBiomeArray(compound.getByteArray("Biomes"));
          }
  
@@ -178,7 +213,7 @@
          NBTTagList nbttaglist1 = compound.getTagList("Entities", 10);
  
          for (int j1 = 0; j1 < nbttaglist1.tagCount(); j1++)
-@@ -454,8 +543,6 @@
+@@ -451,8 +543,6 @@
                  );
              }
          }
@@ -187,7 +222,7 @@
      }
  
      @Nullable
-@@ -588,4 +675,9 @@
+@@ -585,4 +675,9 @@
              return entity;
          }
      }

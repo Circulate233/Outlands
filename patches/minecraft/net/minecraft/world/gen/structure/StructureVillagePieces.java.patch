@@ -19,7 +19,49 @@
  
          return structurevillagepieces$village;
      }
-@@ -1821,6 +1826,7 @@
+@@ -826,7 +831,6 @@
+                 this.setBlockState(worldIn, iblockstate4, 8, 4, 3, structureBoundingBoxIn);
+                 IBlockState iblockstate7 = iblockstate1;
+                 IBlockState iblockstate8 = iblockstate2;
+-                IBlockState iblockstate9 = iblockstate3;
+ 
+                 for (int i = -1; i <= 2; i++)
+                 {
+@@ -853,7 +857,7 @@
+                 this.setBlockState(worldIn, Blocks.WOODEN_PRESSURE_PLATE.getDefaultState(), 2, 2, 3, structureBoundingBoxIn);
+                 this.setBlockState(worldIn, iblockstate4, 1, 1, 4, structureBoundingBoxIn);
+                 this.setBlockState(worldIn, iblockstate7, 2, 1, 4, structureBoundingBoxIn);
+-                this.setBlockState(worldIn, iblockstate9, 1, 1, 3, structureBoundingBoxIn);
++                this.setBlockState(worldIn, iblockstate3, 1, 1, 3, structureBoundingBoxIn);
+                 this.fillWithBlocks(worldIn, structureBoundingBoxIn, 5, 0, 1, 7, 0, 3, Blocks.DOUBLE_STONE_SLAB.getDefaultState(), Blocks.DOUBLE_STONE_SLAB.getDefaultState(), false);
+                 this.setBlockState(worldIn, Blocks.DOUBLE_STONE_SLAB.getDefaultState(), 6, 1, 1, structureBoundingBoxIn);
+                 this.setBlockState(worldIn, Blocks.DOUBLE_STONE_SLAB.getDefaultState(), 6, 1, 2, structureBoundingBoxIn);
+@@ -1000,11 +1004,10 @@
+                 this.fillWithBlocks(worldIn, structureBoundingBoxIn, 1, 3, 4, 7, 3, 4, Blocks.BOOKSHELF.getDefaultState(), Blocks.BOOKSHELF.getDefaultState(), false);
+                 this.setBlockState(worldIn, iblockstate4, 7, 1, 4, structureBoundingBoxIn);
+                 this.setBlockState(worldIn, iblockstate3, 7, 1, 3, structureBoundingBoxIn);
+-                IBlockState iblockstate7 = iblockstate1;
+-                this.setBlockState(worldIn, iblockstate7, 6, 1, 4, structureBoundingBoxIn);
+-                this.setBlockState(worldIn, iblockstate7, 5, 1, 4, structureBoundingBoxIn);
+-                this.setBlockState(worldIn, iblockstate7, 4, 1, 4, structureBoundingBoxIn);
+-                this.setBlockState(worldIn, iblockstate7, 3, 1, 4, structureBoundingBoxIn);
++                this.setBlockState(worldIn, iblockstate1, 6, 1, 4, structureBoundingBoxIn);
++                this.setBlockState(worldIn, iblockstate1, 5, 1, 4, structureBoundingBoxIn);
++                this.setBlockState(worldIn, iblockstate1, 4, 1, 4, structureBoundingBoxIn);
++                this.setBlockState(worldIn, iblockstate1, 3, 1, 4, structureBoundingBoxIn);
+                 this.setBlockState(worldIn, iblockstate6, 6, 1, 3, structureBoundingBoxIn);
+                 this.setBlockState(worldIn, Blocks.WOODEN_PRESSURE_PLATE.getDefaultState(), 6, 2, 3, structureBoundingBoxIn);
+                 this.setBlockState(worldIn, iblockstate6, 4, 1, 3, structureBoundingBoxIn);
+@@ -1297,7 +1300,7 @@
+ 
+                 this.setBlockState(worldIn, iblockstate5, 6, 6, 3, structureBoundingBoxIn);
+                 this.setBlockState(worldIn, iblockstate5, 7, 5, 4, structureBoundingBoxIn);
+-                this.setBlockState(worldIn, iblockstate9, 6, 6, 4, structureBoundingBoxIn);
++                this.setBlockState(worldIn, iblockstate4, 6, 6, 4, structureBoundingBoxIn);
+ 
+                 for (int l = 6; l <= 8; l++)
+                 {
+@@ -1823,6 +1826,7 @@
              public List<StructureVillagePieces.PieceWeight> structureVillageWeightedPieceList;
              public List<StructureComponent> pendingHouses = Lists.newArrayList();
              public List<StructureComponent> pendingRoads = Lists.newArrayList();
@@ -27,7 +69,7 @@
  
              public Start()
              {
-@@ -1841,6 +1847,8 @@
+@@ -1843,6 +1847,8 @@
                  this.structureVillageWeightedPieceList = p_i2104_6_;
                  this.terrainType = p_i2104_7_;
                  Biome biome = biomeProviderIn.getBiome(new BlockPos(p_i2104_4_, 0, p_i2104_5_), Biomes.DEFAULT);
@@ -36,7 +78,7 @@
  
                  if (biome instanceof BiomeDesert)
                  {
-@@ -1922,6 +1930,7 @@
+@@ -1924,6 +1930,7 @@
              private int villagersSpawned;
              protected int structureType;
              protected boolean isZombieInfested;
@@ -44,7 +86,7 @@
  
              public Village()
              {
-@@ -1935,6 +1944,7 @@
+@@ -1937,6 +1944,7 @@
                  {
                      this.structureType = start.structureType;
                      this.isZombieInfested = start.isZombieInfested;
@@ -52,7 +94,7 @@
                  }
              }
  
-@@ -2140,7 +2150,7 @@
+@@ -2142,7 +2150,7 @@
                              EntityZombieVillager entityzombievillager = new EntityZombieVillager(worldIn);
                              entityzombievillager.setLocationAndAngles(j + 0.5, k, l + 0.5, 0.0F, 0.0F);
                              entityzombievillager.onInitialSpawn(worldIn.getDifficultyForLocation(new BlockPos(entityzombievillager)), null);
@@ -61,7 +103,7 @@
                              entityzombievillager.enablePersistence();
                              worldIn.spawnEntity(entityzombievillager);
                          }
-@@ -2148,7 +2158,8 @@
+@@ -2150,7 +2158,8 @@
                          {
                              EntityVillager entityvillager = new EntityVillager(worldIn);
                              entityvillager.setLocationAndAngles(j + 0.5, k, l + 0.5, 0.0F, 0.0F);
@@ -71,7 +113,7 @@
                              entityvillager.finalizeMobSpawn(worldIn.getDifficultyForLocation(new BlockPos(entityvillager)), null, false);
                              worldIn.spawnEntity(entityvillager);
                          }
-@@ -2156,13 +2167,21 @@
+@@ -2158,13 +2167,21 @@
                  }
              }
  

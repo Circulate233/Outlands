@@ -12,12 +12,11 @@
                  }
              }
          }
-@@ -79,6 +79,18 @@
-             default:
-                 return state;
+@@ -81,7 +81,19 @@
          }
-+    }
-+
+     }
+ 
+-    public enum EnumAxis implements IStringSerializable
 +    @Override
 +    public boolean canSustainLeaves(IBlockState state, net.minecraft.world.IBlockAccess world, BlockPos pos)
 +    {
@@ -28,6 +27,9 @@
 +    public boolean isWood(net.minecraft.world.IBlockAccess world, BlockPos pos)
 +    {
 +        return true;
-     }
- 
-     public static enum EnumAxis implements IStringSerializable
++    }
++
++    public static enum EnumAxis implements IStringSerializable
+     {
+         X("x"),
+         Y("y"),

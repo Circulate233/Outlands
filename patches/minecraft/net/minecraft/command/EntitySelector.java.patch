@@ -20,7 +20,60 @@
  
                          if ("s".equalsIgnoreCase(s))
                          {
-@@ -802,6 +808,11 @@
+@@ -363,10 +369,9 @@
+             s = s.substring(1);
+         }
+ 
+-        final String s1 = s;
+-
+         if (s != null)
+         {
++            final String s2 = s;
+             list.add(new Predicate<Entity>()
+             {
+                 public boolean apply(@Nullable Entity p_apply_1_)
+@@ -379,8 +384,8 @@
+                     {
+                         EntityLivingBase entitylivingbase = (EntityLivingBase)p_apply_1_;
+                         Team team = entitylivingbase.getTeam();
+-                        String s2 = team == null ? "" : team.getName();
+-                        return s2.equals(s1) != flag;
++                        String s1 = team == null ? "" : team.getName();
++                        return s1.equals(s2) != flag;
+                     }
+                 }
+             });
+@@ -392,7 +397,7 @@
+     private static List<Predicate<Entity>> getScorePredicates(final ICommandSender sender, Map<String, String> params)
+     {
+         final Map<String, Integer> map = getScoreMap(params);
+-        return map.isEmpty() ? Collections.emptyList() : Lists.newArrayList(new Predicate<Entity>()
++        return (List<Predicate<Entity>>)(map.isEmpty() ? Collections.emptyList() : Lists.newArrayList(new Predicate<Entity>()
+         {
+             public boolean apply(@Nullable Entity p_apply_1_)
+             {
+@@ -446,7 +451,7 @@
+                     return true;
+                 }
+             }
+-        });
++        }));
+     }
+ 
+     private static List<Predicate<Entity>> getNamePredicates(Map<String, String> params)
+@@ -460,10 +465,9 @@
+             s = s.substring(1);
+         }
+ 
+-        final String s1 = s;
+-
+         if (s != null)
+         {
++            final String s1 = s;
+             list.add(new Predicate<Entity>()
+             {
+                 public boolean apply(@Nullable Entity p_apply_1_)
+@@ -804,6 +808,11 @@
  
      public static boolean matchesMultiplePlayers(String selectorStr) throws CommandException
      {
@@ -32,15 +85,15 @@
          Matcher matcher = TOKEN_PATTERN.matcher(selectorStr);
  
          if (!matcher.matches())
-@@ -818,6 +829,11 @@
-     }
+@@ -821,6 +830,11 @@
  
      public static boolean isSelector(String selectorStr)
-+    {
+     {
 +        return net.minecraftforge.common.command.SelectorHandlerManager.isSelector(selectorStr);
 +    }
 +
 +    public static boolean isSelectorDefault(String selectorStr)
-     {
++    {
          return TOKEN_PATTERN.matcher(selectorStr).matches();
      }
+ 

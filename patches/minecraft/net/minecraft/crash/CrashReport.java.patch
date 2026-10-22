@@ -8,8 +8,14 @@
      }
  
      public String getDescription()
-@@ -198,13 +199,14 @@
-             IOUtils.closeQuietly((Writer)printwriter);
+@@ -194,17 +195,18 @@
+         }
+         finally
+         {
+-            IOUtils.closeQuietly(stringwriter);
+-            IOUtils.closeQuietly(printwriter);
++            IOUtils.closeQuietly((Writer)stringwriter);
++            IOUtils.closeQuietly((Writer)printwriter);
          }
  
 -        return s;
@@ -24,3 +30,27 @@
          stringbuilder.append("// ");
          stringbuilder.append(getWittyComment());
          stringbuilder.append("\n\n");
+@@ -247,6 +249,7 @@
+             }
+ 
+             Writer writer = null;
++            boolean flag;
+ 
+             try
+             {
+@@ -258,12 +261,14 @@
+             catch (Throwable throwable)
+             {
+                 LOGGER.error("Could not save crash report to {}", toFile, throwable);
+-                return false;
++                flag = false;
+             }
+             finally
+             {
+                 IOUtils.closeQuietly(writer);
+             }
++
++            return flag;
+         }
+     }
+ 

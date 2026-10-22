@@ -15,11 +15,11 @@
          boolean flag4 = flag && !flag1 && flag2 && !flag3 || !flag && flag1 && !flag2 && flag3;
          return state.withProperty(UP, !flag4 || !worldIn.isAirBlock(pos.up()))
                 .withProperty(NORTH, flag)
-@@ -251,6 +251,23 @@
-     {
+@@ -252,7 +252,24 @@
          return face != EnumFacing.UP && face != EnumFacing.DOWN ? BlockFaceShape.MIDDLE_POLE_THICK : BlockFaceShape.CENTER_BIG;
      }
-+
+ 
+-    public enum EnumType implements IStringSerializable
 +    /* ======================================== FORGE START ======================================== */
 +
 +    @Override
@@ -36,6 +36,8 @@
 +    }
 +
 +    /* ======================================== FORGE END ======================================== */
- 
-     public static enum EnumType implements IStringSerializable
++
++    public static enum EnumType implements IStringSerializable
      {
+         NORMAL(0, "cobblestone", "normal"),
+         MOSSY(1, "mossy_cobblestone", "mossy");

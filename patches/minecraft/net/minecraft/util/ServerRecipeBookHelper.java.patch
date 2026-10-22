@@ -12,7 +12,22 @@
  
              if (this.field_194335_f != null && this.field_194336_g != null)
              {
-@@ -196,11 +201,11 @@
+@@ -152,12 +157,10 @@
+                 }
+             }
+ 
+-            i1 = j1;
+-
+-            if (this.field_194331_b.canCraft(this.field_194333_d, intlist, i1))
++            if (this.field_194331_b.canCraft(this.field_194333_d, intlist, j1))
+             {
+                 this.func_194326_a();
+-                this.func_194323_a(i1, intlist);
++                this.func_194323_a(j1, intlist);
+             }
+         }
+     }
+@@ -198,11 +201,11 @@
          int i = this.field_194336_g.getWidth();
          int j = this.field_194336_g.getHeight();
  

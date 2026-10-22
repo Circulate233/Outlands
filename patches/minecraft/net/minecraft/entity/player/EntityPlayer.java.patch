@@ -247,7 +247,7 @@
  
                  if (enumhand == EnumHand.MAIN_HAND)
                  {
-@@ -1100,10 +1164,14 @@
+@@ -1100,22 +1164,25 @@
      {
          if (!this.isEntityInvulnerable(damageSrc))
          {
@@ -257,13 +257,33 @@
 +            damageAmount = net.minecraftforge.common.ISpecialArmor.ArmorProperties.applyArmor(this, inventory.armorInventory, damageSrc, damageAmount);
 +            if (damageAmount <= 0) return;
              damageAmount = this.applyPotionDamageCalculations(damageSrc, damageAmount);
-             float f1 = Math.max(damageAmount - this.getAbsorptionAmount(), 0.0F);
-             this.setAbsorptionAmount(this.getAbsorptionAmount() - (damageAmount - f1));
+-            float f = damageAmount;
+-            damageAmount = Math.max(damageAmount - this.getAbsorptionAmount(), 0.0F);
+-            this.setAbsorptionAmount(this.getAbsorptionAmount() - (f - damageAmount));
++            float f1 = Math.max(damageAmount - this.getAbsorptionAmount(), 0.0F);
++            this.setAbsorptionAmount(this.getAbsorptionAmount() - (damageAmount - f1));
 +            f1 = net.minecraftforge.common.ForgeHooks.onLivingDamage(this, damageSrc, f1);
  
-             if (f1 != 0.0F)
+-            if (damageAmount != 0.0F)
++            if (f1 != 0.0F)
              {
-@@ -1169,6 +1237,8 @@
+                 this.addExhaustion(damageSrc.getHungerDamage());
+-                float f1 = this.getHealth();
+-                this.setHealth(this.getHealth() - damageAmount);
+-                this.getCombatTracker().trackDamage(damageSrc, f1, damageAmount);
++                float f = this.getHealth();
++                this.setHealth(this.getHealth() - f1);
++                this.getCombatTracker().trackDamage(damageSrc, f, f1);
+ 
+-                if (damageAmount < 3.4028235E37F)
++                if (f1 < 3.4028235E37F)
+                 {
+-                    this.addStat(StatList.DAMAGE_TAKEN, Math.round(damageAmount * 10.0F));
++                    this.addStat(StatList.DAMAGE_TAKEN, Math.round(f1 * 10.0F));
+                 }
+             }
+         }
+@@ -1170,6 +1237,8 @@
          }
          else
          {
@@ -272,7 +292,7 @@
              ItemStack itemstack = this.getHeldItem(hand);
              ItemStack itemstack1 = itemstack.isEmpty() ? ItemStack.EMPTY : itemstack.copy();
  
-@@ -1178,7 +1248,10 @@
+@@ -1179,7 +1248,10 @@
                  {
                      itemstack.setCount(itemstack1.getCount());
                  }
@@ -284,7 +304,7 @@
                  return EnumActionResult.SUCCESS;
              }
              else
-@@ -1194,6 +1267,7 @@
+@@ -1195,6 +1267,7 @@
                      {
                          if (itemstack.isEmpty() && !this.capabilities.isCreativeMode)
                          {
@@ -292,7 +312,7 @@
                              this.setHeldItem(hand, ItemStack.EMPTY);
                          }
  
-@@ -1221,6 +1295,7 @@
+@@ -1222,6 +1295,7 @@
  
      public void attackTargetEntityWithCurrentItem(Entity targetEntity)
      {
@@ -300,7 +320,7 @@
          if (targetEntity.canBeAttackedWithItem())
          {
              if (!targetEntity.hitByEntity(this))
-@@ -1269,9 +1344,11 @@
+@@ -1270,9 +1344,11 @@
                                      && targetEntity instanceof EntityLivingBase;
                      flag2 = flag2 && !this.isSprinting();
  
@@ -313,7 +333,7 @@
                      }
  
                      f += f1;
-@@ -1429,10 +1506,12 @@
+@@ -1430,10 +1506,12 @@
  
                          if (!itemstack1.isEmpty() && entity instanceof EntityLivingBase)
                          {
@@ -326,7 +346,7 @@
                                  this.setHeldItem(EnumHand.MAIN_HAND, ItemStack.EMPTY);
                              }
                          }
-@@ -1495,7 +1574,7 @@
+@@ -1496,7 +1574,7 @@
  
          if (this.rand.nextFloat() < f)
          {
@@ -335,7 +355,7 @@
              this.resetActiveHand();
              this.world.setEntityState(this, (byte)30);
          }
-@@ -1566,7 +1645,11 @@
+@@ -1567,7 +1645,11 @@
  
      public EntityPlayer.SleepResult trySleep(BlockPos bedLocation)
      {
@@ -348,7 +368,7 @@
  
          if (!this.world.isRemote)
          {
-@@ -1580,7 +1663,7 @@
+@@ -1581,7 +1663,7 @@
                  return EntityPlayer.SleepResult.NOT_POSSIBLE_HERE;
              }
  
@@ -357,7 +377,7 @@
              {
                  return EntityPlayer.SleepResult.NOT_POSSIBLE_NOW;
              }
-@@ -1620,7 +1703,7 @@
+@@ -1621,7 +1703,7 @@
          this.spawnShoulderEntities();
          this.setSize(0.2F, 0.2F);
  
@@ -366,7 +386,7 @@
          {
              float f1 = 0.5F + enumfacing.getXOffset() * 0.4F;
              float f = 0.5F + enumfacing.getZOffset() * 0.4F;
-@@ -1655,6 +1738,7 @@
+@@ -1656,6 +1738,7 @@
          {
              return true;
          }
@@ -374,7 +394,7 @@
          else
          {
              BlockPos blockpos = p_190774_1_.offset(p_190774_2_.getOpposite());
-@@ -1672,13 +1756,14 @@
+@@ -1673,13 +1756,14 @@
  
      public void wakeUpPlayer(boolean immediately, boolean updateWorldFlag, boolean setSpawn)
      {
@@ -393,7 +413,7 @@
  
              if (blockpos == null)
              {
-@@ -1687,6 +1772,10 @@
+@@ -1688,6 +1772,10 @@
  
              this.setPosition(blockpos.getX() + 0.5F, blockpos.getY() + 0.1F, blockpos.getZ() + 0.5F);
          }
@@ -404,7 +424,7 @@
  
          this.sleeping = false;
  
-@@ -1705,15 +1794,16 @@
+@@ -1706,15 +1794,16 @@
  
      private boolean isInBed()
      {
@@ -424,7 +444,7 @@
          {
              if (!forceSpawn)
              {
-@@ -1728,16 +1818,17 @@
+@@ -1729,16 +1818,17 @@
          }
          else
          {
@@ -445,7 +465,7 @@
  
              switch (enumfacing)
              {
-@@ -1778,16 +1869,24 @@
+@@ -1779,16 +1869,24 @@
  
      public BlockPos getBedLocation()
      {
@@ -472,7 +492,7 @@
          if (pos != null)
          {
              this.spawnPos = pos;
-@@ -1984,6 +2083,10 @@
+@@ -1985,6 +2083,10 @@
  
              super.fall(distance, damageMultiplier);
          }
@@ -483,7 +503,7 @@
      }
  
      @Override
-@@ -2340,7 +2443,10 @@
+@@ -2341,7 +2443,10 @@
      @Override
      public ITextComponent getDisplayName()
      {
@@ -495,7 +515,7 @@
          itextcomponent.getStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/msg " + this.getName() + " "));
          itextcomponent.getStyle().setHoverEvent(this.getHoverEvent());
          itextcomponent.getStyle().setInsertion(this.getName());
-@@ -2350,7 +2456,7 @@
+@@ -2351,7 +2456,7 @@
      @Override
      public float getEyeHeight()
      {
@@ -504,11 +524,11 @@
  
          if (this.isPlayerSleeping())
          {
-@@ -2588,6 +2694,168 @@
-     {
+@@ -2590,7 +2695,169 @@
          return this.capabilities.isCreativeMode && this.canUseCommand(2, "");
      }
-+
+ 
+-    public enum EnumChatVisibility
 +    /**
 +     * Opens a GUI with this player, uses FML's IGuiHandler system.
 +     * Allows for extension by modders.
@@ -670,6 +690,8 @@
 +    public void setSpawnDimension(@Nullable Integer dimension) { this.spawnDimension = dimension; }
 +
 +    /* ======================================== FORGE END  =====================================*/
- 
-     public static enum EnumChatVisibility
++
++    public static enum EnumChatVisibility
      {
+         FULL(0, "options.chat.visibility.full"),
+         SYSTEM(1, "options.chat.visibility.system"),

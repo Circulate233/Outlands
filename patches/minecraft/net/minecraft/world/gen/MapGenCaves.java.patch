@@ -1,6 +1,17 @@
 --- before/net/minecraft/world/gen/MapGenCaves.java
 +++ after/net/minecraft/world/gen/MapGenCaves.java
-@@ -201,9 +201,7 @@
+@@ -75,9 +75,8 @@
+         }
+ 
+         int j = random.nextInt(p_180702_16_ / 2) + p_180702_16_ / 4;
+-        boolean flag = random.nextInt(6) == 0;
+ 
+-        while (p_180702_15_ < p_180702_16_)
++        for (boolean flag = random.nextInt(6) == 0; p_180702_15_ < p_180702_16_; p_180702_15_++)
+         {
+             double d2 = 1.5 + MathHelper.sin(p_180702_15_ * (float) Math.PI / p_180702_16_) * p_180702_12_;
+             double d3 = d2 * p_180702_17_;
+@@ -202,9 +201,7 @@
                              {
                                  if (l1 >= 0 && l1 < 256)
                                  {
@@ -11,7 +22,7 @@
                                      {
                                          flag3 = true;
                                      }
-@@ -241,33 +239,12 @@
+@@ -242,33 +239,12 @@
                                              IBlockState iblockstate1 = p_180702_5_.getBlockState(j3, j2, i2);
                                              IBlockState iblockstate2 = MoreObjects.firstNonNull(p_180702_5_.getBlockState(j3, j2 + 1, i2), BLK_AIR);
  
@@ -47,13 +58,19 @@
                                          }
                                      }
                                  }
-@@ -362,6 +339,68 @@
+@@ -282,8 +258,6 @@
+                     }
                  }
+             }
+-
+-            p_180702_15_++;
+         }
+     }
  
-                 this.addTunnel(this.rand.nextLong(), originalX, originalZ, chunkPrimerIn, d0, d1, d2, f2, f, f1, 0, 0, 1.0);
-+            }
-+        }
-+    }
+@@ -368,4 +342,66 @@
+             }
+         }
+     }
 +
 +    protected boolean isOceanBlock(ChunkPrimer data, int x, int y, int z, int chunkX, int chunkZ)
 +    {
@@ -113,6 +130,7 @@
 +                {
 +                    data.setBlockState(x, y - 1, z, top.getBlock().getDefaultState());
 +                }
-             }
-         }
-     }
++            }
++        }
++    }
+ }

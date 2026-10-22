@@ -1,14 +1,6 @@
 --- before/net/minecraft/network/NetHandlerPlayServer.java
 +++ after/net/minecraft/network/NetHandlerPlayServer.java
-@@ -370,6 +370,7 @@
-                 d7 = d4 - this.lowestRiddenY1 - 1.0E-6;
-                 d8 = d5 - this.lowestRiddenZ1;
-                 entity.move(MoverType.PLAYER, d6, d7, d8);
-+                double d11 = d7;
-                 d6 = d3 - entity.posX;
-                 d7 = d4 - entity.posY;
- 
-@@ -389,11 +390,13 @@
+@@ -390,11 +390,13 @@
                  }
  
                  entity.setPositionAndRotation(d3, d4, d5, f, f1);
@@ -22,33 +14,22 @@
                      this.netManager.sendPacket(new SPacketMoveVehicle(entity));
                      return;
                  }
-@@ -401,7 +404,7 @@
-                 this.server.getPlayerList().serverUpdateMovingPlayer(this.player);
-                 this.player
-                 .addMovementStat(this.player.posX - d0, this.player.posY - d1, this.player.posZ - d2);
--                this.vehicleFloating = d7 >= -0.03125
-+                this.vehicleFloating = d11 >= -0.03125
-                                       && !this.server.isFlightAllowed()
-                                       && !worldserver.checkBlockCollision(entity.getEntityBoundingBox().grow(0.0625).expand(0.0, -0.55, 0.0));
-                 this.lowestRiddenX1 = entity.posX;
-@@ -600,6 +603,7 @@
+@@ -678,12 +680,12 @@
  
-                             this.player.move(MoverType.PLAYER, d7, d8, d9);
-                             this.player.onGround = packetIn.isOnGround();
-+                            double d12 = d8;
-                             d7 = d4 - this.player.posX;
-                             d8 = d5 - this.player.posY;
+         if (relativeSet.contains(SPacketPlayerPosLook.EnumFlags.Y_ROT))
+         {
+-            f += this.player.rotationYaw;
++            f = yaw + this.player.rotationYaw;
+         }
  
-@@ -637,7 +641,7 @@
-                                 }
-                             }
+         if (relativeSet.contains(SPacketPlayerPosLook.EnumFlags.X_ROT))
+         {
+-            f1 += this.player.rotationPitch;
++            f1 = pitch + this.player.rotationPitch;
+         }
  
--                            this.floating = d8 >= -0.03125;
-+                            this.floating = d12 >= -0.03125;
-                             this.floating = this.floating & (!this.server.isFlightAllowed() && !this.player.capabilities.allowFlying);
-                             this.floating = this.floating
-                                                   & (
-@@ -743,7 +747,10 @@
+         if (++this.teleportId == Integer.MAX_VALUE)
+@@ -745,7 +747,10 @@
                  double d2 = this.player.posZ - (blockpos.getZ() + 0.5);
                  double d3 = d0 * d0 + d1 * d1 + d2 * d2;
  
@@ -60,7 +41,7 @@
                  {
                      return;
                  }
-@@ -803,8 +810,10 @@
+@@ -805,8 +810,10 @@
          if (blockpos.getY() < this.server.getBuildLimit() - 1
                  || enumfacing != EnumFacing.UP && blockpos.getY() < this.server.getBuildLimit())
          {
@@ -72,7 +53,7 @@
                      && !this.server.isBlockProtected(worldserver, blockpos, this.player)
                      && worldserver.getWorldBorder().contains(blockpos))
              {
-@@ -880,19 +889,20 @@
+@@ -882,19 +889,20 @@
                  {
                      this.player.setPositionAndUpdate(entity.posX, entity.posY, entity.posZ);
                  }
@@ -97,7 +78,7 @@
                      this.server.getPlayerList().updatePermissionLevel(this.player);
                      worldserver1.removeEntityDangerously(this.player);
                      this.player.isDead = false;
-@@ -911,6 +921,7 @@
+@@ -913,6 +921,7 @@
                      this.player.interactionManager.setWorld(worldserver2);
                      this.server.getPlayerList().updateTimeAndWeatherForPlayer(this.player, worldserver2);
                      this.server.getPlayerList().syncPlayerInventory(this.player);
@@ -105,7 +86,7 @@
                  }
              }
          }
-@@ -1036,7 +1047,9 @@
+@@ -1038,7 +1047,9 @@
              }
              else
              {
@@ -116,7 +97,7 @@
                  this.server.getPlayerList().sendMessage(itextcomponent, false);
              }
  
-@@ -1175,6 +1188,7 @@
+@@ -1177,6 +1188,7 @@
                  else if (packetIn.getAction() == CPacketUseEntity.Action.INTERACT_AT)
                  {
                      EnumHand enumhand1 = packetIn.getHand();
@@ -124,7 +105,7 @@
                      entity.applyPlayerInteraction(this.player, packetIn.getHitVec(), enumhand1);
                  }
                  else if (packetIn.getAction() == CPacketUseEntity.Action.ATTACK)
-@@ -1216,7 +1230,7 @@
+@@ -1218,7 +1230,7 @@
                          return;
                      }
  
@@ -133,7 +114,7 @@
  
                      if (this.server.isHardcore())
                      {
-@@ -1264,7 +1278,7 @@
+@@ -1266,7 +1278,7 @@
                                         .openContainer
                                         .slotClick(packetIn.getSlotId(), packetIn.getUsedButton(), packetIn.getClickType(), this.player);
  
@@ -142,3 +123,75 @@
                  {
                      this.player.connection.sendPacket(new SPacketConfirmTransaction(packetIn.getWindowId(), packetIn.getActionNumber(), true));
                      this.player.isChangingQuantityOnly = true;
+@@ -1523,7 +1535,7 @@
+             }
+             catch (Exception exception6)
+             {
+-                LOGGER.error("Couldn't handle book info", exception6);
++                LOGGER.error("Couldn't handle book info", (Throwable)exception6);
+             }
+         }
+         else if ("MC|BSign".equals(s))
+@@ -1572,7 +1584,7 @@
+             }
+             catch (Exception exception7)
+             {
+-                LOGGER.error("Couldn't sign book", exception7);
++                LOGGER.error("Couldn't sign book", (Throwable)exception7);
+             }
+         }
+         else if ("MC|TrSel".equals(s))
+@@ -1589,7 +1601,7 @@
+             }
+             catch (Exception exception5)
+             {
+-                LOGGER.error("Couldn't select trade", exception5);
++                LOGGER.error("Couldn't select trade", (Throwable)exception5);
+             }
+         }
+         else if ("MC|AdvCmd".equals(s))
+@@ -1653,7 +1665,7 @@
+             }
+             catch (Exception exception4)
+             {
+-                LOGGER.error("Couldn't set command block", exception4);
++                LOGGER.error("Couldn't set command block", (Throwable)exception4);
+             }
+         }
+         else if ("MC|AutoCmd".equals(s))
+@@ -1749,7 +1761,7 @@
+             }
+             catch (Exception exception3)
+             {
+-                LOGGER.error("Couldn't set command block", exception3);
++                LOGGER.error("Couldn't set command block", (Throwable)exception3);
+             }
+         }
+         else if ("MC|Beacon".equals(s))
+@@ -1775,7 +1787,7 @@
+                 }
+                 catch (Exception exception2)
+                 {
+-                    LOGGER.error("Couldn't set beacon", exception2);
++                    LOGGER.error("Couldn't set beacon", (Throwable)exception2);
+                 }
+             }
+         }
+@@ -1886,7 +1898,7 @@
+             }
+             catch (Exception exception1)
+             {
+-                LOGGER.error("Couldn't set structure block", exception1);
++                LOGGER.error("Couldn't set structure block", (Throwable)exception1);
+             }
+         }
+         else if ("MC|PickItem".equals(s))
+@@ -1911,7 +1923,7 @@
+             }
+             catch (Exception exception)
+             {
+-                LOGGER.error("Couldn't pick item", exception);
++                LOGGER.error("Couldn't pick item", (Throwable)exception);
+             }
+         }
+     }

@@ -12,7 +12,24 @@
      @Override
      public void channelActive(ChannelHandlerContext p_channelActive_1_) throws Exception
      {
-@@ -210,7 +215,7 @@
+@@ -136,14 +141,13 @@
+         this.closeChannel(textcomponenttranslation);
+     }
+ 
+-    protected void channelRead0(ChannelHandlerContext p_channelRead0_1_, Packet<?> p_channelRead0_2_) throws Exception
++    protected void channelRead0(ChannelHandlerContext p_channelRead0_1_, Packet p_channelRead0_2_) throws Exception
+     {
+         if (this.channel.isOpen())
+         {
+             try
+             {
+-                Packet packet = p_channelRead0_2_;
+-                packet.processPacket(this.packetListener);
++                p_channelRead0_2_.processPacket(this.packetListener);
+             }
+             catch (ThreadQuickExitException threadquickexitexception)
+             {
+@@ -211,7 +215,7 @@
          final EnumConnectionState enumconnectionstate = EnumConnectionState.getFromPacket(inPacket);
          final EnumConnectionState enumconnectionstate1 = this.channel.attr(PROTOCOL_ATTRIBUTE_KEY).get();
  
@@ -21,7 +38,7 @@
          {
              LOGGER.debug("Disabled auto read");
              this.channel.config().setAutoRead(false);
-@@ -218,7 +223,7 @@
+@@ -219,7 +223,7 @@
  
          if (this.channel.eventLoop().inEventLoop())
          {
@@ -30,7 +47,7 @@
              {
                  this.setConnectionState(enumconnectionstate);
              }
-@@ -239,7 +244,7 @@
+@@ -240,7 +244,7 @@
                  @Override
                  public void run()
                  {
@@ -39,7 +56,7 @@
                      {
                          NetworkManager.this.setConnectionState(enumconnectionstate);
                      }
-@@ -317,6 +322,7 @@
+@@ -318,6 +322,7 @@
      @SideOnly(Side.CLIENT)
      public static NetworkManager createNetworkManagerAndConnect(InetAddress address, int serverPort, boolean useNativeTransport)
      {
@@ -47,15 +64,15 @@
          final NetworkManager networkmanager = new NetworkManager(EnumPacketDirection.CLIENTBOUND);
          Class <? extends SocketChannel > oclass;
          LazyLoadBase <? extends EventLoopGroup > lazyloadbase;
-@@ -475,6 +481,11 @@
-                 }
-             }
+@@ -478,6 +483,11 @@
          }
-+    }
-+
+     }
+ 
 +    public Channel channel()
 +    {
 +        return channel;
-     }
- 
++    }
++
      static class InboundHandlerTuplePacketListener
+         {
+             private final Packet<?> packet;

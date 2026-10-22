@@ -37,54 +37,37 @@
              boolean flag = false;
  
 -            if (!worldIn.getBlockState(pos.down()).isTopSolid())
--            {
--                flag = true;
--            }
--
++            if (!worldIn.getBlockState(pos.down()).isSideSolid(worldIn, pos.down(), EnumFacing.UP))
+             {
+                 flag = true;
+             }
+ 
 -            if (blockrailbase$enumraildirection == BlockRailBase.EnumRailDirection.ASCENDING_EAST
 -                    && !worldIn.getBlockState(pos.east()).isTopSolid())
--            {
--                flag = true;
--            }
++            if (blockrailbase$enumraildirection == BlockRailBase.EnumRailDirection.ASCENDING_EAST && !worldIn.getBlockState(pos.east()).isSideSolid(worldIn, pos.east(), EnumFacing.UP))
+             {
+                 flag = true;
+             }
 -            else if (blockrailbase$enumraildirection == BlockRailBase.EnumRailDirection.ASCENDING_WEST
 -                     && !worldIn.getBlockState(pos.west()).isTopSolid())
--            {
--                flag = true;
--            }
++            else if (blockrailbase$enumraildirection == BlockRailBase.EnumRailDirection.ASCENDING_WEST && !worldIn.getBlockState(pos.west()).isSideSolid(worldIn, pos.west(), EnumFacing.UP))
+             {
+                 flag = true;
+             }
 -            else if (blockrailbase$enumraildirection == BlockRailBase.EnumRailDirection.ASCENDING_NORTH
 -                     && !worldIn.getBlockState(pos.north()).isTopSolid())
--            {
--                flag = true;
--            }
++            else if (blockrailbase$enumraildirection == BlockRailBase.EnumRailDirection.ASCENDING_NORTH && !worldIn.getBlockState(pos.north()).isSideSolid(worldIn, pos.north(), EnumFacing.UP))
+             {
+                 flag = true;
+             }
 -            else if (blockrailbase$enumraildirection == BlockRailBase.EnumRailDirection.ASCENDING_SOUTH
 -                     && !worldIn.getBlockState(pos.south()).isTopSolid())
--            {
--                flag = true;
--            }
--
--            if (flag && !worldIn.isAirBlock(pos))
-+            if (!worldIn.getBlockState(pos.down()).isSideSolid(worldIn, pos.down(), EnumFacing.UP))
-+            {
-+                flag = true;
-+            }
-+
-+            if (blockrailbase$enumraildirection == BlockRailBase.EnumRailDirection.ASCENDING_EAST && !worldIn.getBlockState(pos.east()).isSideSolid(worldIn, pos.east(), EnumFacing.UP))
-+            {
-+                flag = true;
-+            }
-+            else if (blockrailbase$enumraildirection == BlockRailBase.EnumRailDirection.ASCENDING_WEST && !worldIn.getBlockState(pos.west()).isSideSolid(worldIn, pos.west(), EnumFacing.UP))
-+            {
-+                flag = true;
-+            }
-+            else if (blockrailbase$enumraildirection == BlockRailBase.EnumRailDirection.ASCENDING_NORTH && !worldIn.getBlockState(pos.north()).isSideSolid(worldIn, pos.north(), EnumFacing.UP))
-+            {
-+                flag = true;
-+            }
 +            else if (blockrailbase$enumraildirection == BlockRailBase.EnumRailDirection.ASCENDING_SOUTH && !worldIn.getBlockState(pos.south()).isSideSolid(worldIn, pos.south(), EnumFacing.UP))
-+            {
-+                flag = true;
-+            }
-+
+             {
+                 flag = true;
+             }
+ 
+-            if (flag && !worldIn.isAirBlock(pos))
 +            if (flag && !currentState.getBlock().isAir(currentState, worldIn, pos))
              {
                  this.dropBlockAsItem(worldIn, pos, state, 0);
@@ -98,13 +81,14 @@
          {
              worldIn.notifyNeighborsOfStateChange(pos.up(), this, false);
          }
-@@ -185,8 +182,102 @@
+@@ -185,9 +182,103 @@
          }
      }
  
 +    //Forge: Use getRailDirection(IBlockAccess, BlockPos, IBlockState, EntityMinecart) for enhanced ability
      public abstract IProperty<BlockRailBase.EnumRailDirection> getShapeProperty();
  
+-    public enum EnumRailDirection implements IStringSerializable
 +    /* ======================================== FORGE START =====================================*/
 +    /**
 +     * Return true if the rail can make corners.
@@ -198,9 +182,10 @@
 +
 +    /* ======================================== FORGE END =====================================*/
 +
-     public static enum EnumRailDirection implements IStringSerializable
++    public static enum EnumRailDirection implements IStringSerializable
      {
          NORTH_SOUTH(0, "north_south"),
+         EAST_WEST(1, "east_west"),
 @@ -259,6 +350,7 @@
          private IBlockState state;
          private final boolean isPowered;
@@ -221,7 +206,43 @@
              this.updateConnectedRails(blockrailbase$enumraildirection);
          }
  
-@@ -461,7 +554,7 @@
+@@ -351,27 +444,26 @@
+         @Nullable
+         private BlockRailBase.Rail findRailAt(BlockPos pos)
+         {
+-            BlockPos blockpos = pos;
+-            IBlockState iblockstate = this.world.getBlockState(blockpos);
++            IBlockState iblockstate = this.world.getBlockState(pos);
+ 
+             if (BlockRailBase.isRailBlock(iblockstate))
+             {
+-                return BlockRailBase.this.new Rail(this.world, blockpos, iblockstate);
++                return BlockRailBase.this.new Rail(this.world, pos, iblockstate);
+             }
+             else
+             {
+-                blockpos = pos.up();
+-                iblockstate = this.world.getBlockState(blockpos);
++                BlockPos lvt_2_1_ = pos.up();
++                iblockstate = this.world.getBlockState(lvt_2_1_);
+ 
+                 if (BlockRailBase.isRailBlock(iblockstate))
+                 {
+-                    return BlockRailBase.this.new Rail(this.world, blockpos, iblockstate);
++                    return BlockRailBase.this.new Rail(this.world, lvt_2_1_, iblockstate);
+                 }
+                 else
+                 {
+-                    blockpos = pos.down();
+-                    iblockstate = this.world.getBlockState(blockpos);
+-                    return BlockRailBase.isRailBlock(iblockstate) ? BlockRailBase.this.new Rail(this.world, blockpos, iblockstate) : null;
++                    lvt_2_1_ = pos.down();
++                    iblockstate = this.world.getBlockState(lvt_2_1_);
++                    return BlockRailBase.isRailBlock(iblockstate) ? BlockRailBase.this.new Rail(this.world, lvt_2_1_, iblockstate) : null;
+                 }
+             }
+         }
+@@ -462,7 +554,7 @@
                  }
              }
  
@@ -230,7 +251,7 @@
              {
                  if (BlockRailBase.isRailBlock(this.world, blockpos.up()))
                  {
-@@ -474,7 +567,7 @@
+@@ -475,7 +567,7 @@
                  }
              }
  
@@ -239,7 +260,7 @@
              {
                  if (BlockRailBase.isRailBlock(this.world, blockpos3.up()))
                  {
-@@ -617,7 +710,7 @@
+@@ -618,7 +710,7 @@
                  }
              }
  
@@ -248,7 +269,7 @@
              {
                  if (BlockRailBase.isRailBlock(this.world, blockpos.up()))
                  {
-@@ -630,7 +723,7 @@
+@@ -631,7 +723,7 @@
                  }
              }
  

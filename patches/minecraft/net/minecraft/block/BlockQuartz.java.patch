@@ -8,12 +8,11 @@
  import net.minecraft.block.properties.PropertyEnum;
  import net.minecraft.block.state.BlockStateContainer;
  import net.minecraft.block.state.IBlockState;
-@@ -129,6 +130,27 @@
-     protected BlockStateContainer createBlockState()
-     {
+@@ -131,7 +132,28 @@
          return new BlockStateContainer(this, VARIANT);
-+    }
-+
+     }
+ 
+-    public enum EnumType implements IStringSerializable
 +    @Override
 +    public boolean rotateBlock(World world, BlockPos pos, EnumFacing axis)
 +    {
@@ -33,6 +32,9 @@
 +            }
 +        }
 +        return false;
-     }
- 
-     public static enum EnumType implements IStringSerializable
++    }
++
++    public static enum EnumType implements IStringSerializable
+     {
+         DEFAULT(0, "default", "default"),
+         CHISELED(1, "chiseled", "chiseled"),

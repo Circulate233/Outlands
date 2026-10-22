@@ -9,7 +9,30 @@
                          worldIn.playSound(
                              player,
                              pos,
-@@ -155,7 +155,7 @@
+@@ -117,7 +117,6 @@
+     @Override
+     public boolean canPlaceBlockOnSide(World worldIn, BlockPos pos, EnumFacing side, EntityPlayer player, ItemStack stack)
+     {
+-        BlockPos blockpos = pos;
+         IProperty<?> iproperty = this.singleSlab.getVariantProperty();
+         Comparable<?> comparable = this.singleSlab.getTypeForItem(stack);
+         IBlockState iblockstate = worldIn.getBlockState(pos);
+@@ -132,11 +131,11 @@
+             }
+         }
+ 
+-        pos = pos.offset(side);
+-        IBlockState iblockstate1 = worldIn.getBlockState(pos);
++        BlockPos blockpos = pos.offset(side);
++        IBlockState iblockstate1 = worldIn.getBlockState(blockpos);
+         return iblockstate1.getBlock() == this.singleSlab && comparable == iblockstate1.getValue(iproperty)
+                ? true
+-               : super.canPlaceBlockOnSide(worldIn, blockpos, side, player, stack);
++               : super.canPlaceBlockOnSide(worldIn, pos, side, player, stack);
+     }
+ 
+     private boolean tryPlace(EntityPlayer player, ItemStack stack, World worldIn, BlockPos pos, Object itemSlabType)
+@@ -156,7 +155,7 @@
                          && worldIn.checkNoEntityCollision(axisalignedbb.offset(pos))
                          && worldIn.setBlockState(pos, iblockstate1, 11))
                  {

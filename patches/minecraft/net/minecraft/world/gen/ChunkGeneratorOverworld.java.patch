@@ -35,7 +35,23 @@
      }
  
      public void setBlocksInChunk(int x, int z, ChunkPrimer primer)
-@@ -163,6 +184,7 @@
+@@ -132,13 +153,12 @@
+                         for (int k2 = 0; k2 < 4; k2++)
+                         {
+                             double d14 = 0.25;
+-                            double d15 = d10;
+                             double d16 = (d11 - d10) * 0.25;
+-                            d15 -= d16;
++                            double lvt_45_1_ = d10 - d16;
+ 
+                             for (int l2 = 0; l2 < 4; l2++)
+                             {
+-                                if ((d15 += d16) > 0.0)
++                                if ((lvt_45_1_ += d16) > 0.0)
+                                 {
+                                     primer.setBlockState(i * 4 + k2, i2 * 8 + j2, l * 4 + l2, STONE);
+                                 }
+@@ -164,6 +184,7 @@
  
      public void replaceBiomeBlocks(int x, int z, ChunkPrimer primer, Biome[] biomesIn)
      {
@@ -43,7 +59,7 @@
          double d0 = 0.03125;
          this.depthBuffer = this.surfaceNoise.getRegion(this.depthBuffer, x * 16, z * 16, 16, 16, 0.0625, 0.0625, 1.0);
  
-@@ -396,6 +418,8 @@
+@@ -397,6 +418,8 @@
          boolean flag = false;
          ChunkPos chunkpos = new ChunkPos(x, z);
  
@@ -52,7 +68,7 @@
          if (this.mapFeaturesEnabled)
          {
              if (this.settings.useMineShafts)
-@@ -434,6 +458,7 @@
+@@ -435,6 +458,7 @@
                  && this.settings.useWaterLakes
                  && !flag
                  && this.rand.nextInt(this.settings.waterLakeChance) == 0)
@@ -60,7 +76,7 @@
          {
              int i1 = this.rand.nextInt(16) + 8;
              int j1 = this.rand.nextInt(256);
-@@ -442,6 +467,7 @@
+@@ -443,6 +467,7 @@
          }
  
          if (!flag && this.rand.nextInt(this.settings.lavaLakeChance / 10) == 0 && this.settings.useLavaLakes)
@@ -68,7 +84,7 @@
          {
              int i2 = this.rand.nextInt(16) + 8;
              int l2 = this.rand.nextInt(this.rand.nextInt(248) + 8);
-@@ -454,6 +480,7 @@
+@@ -455,6 +480,7 @@
          }
  
          if (this.settings.useDungeons)
@@ -76,7 +92,7 @@
          {
              for (int j2 = 0; j2 < this.settings.dungeonChance; j2++)
              {
-@@ -465,9 +492,12 @@
+@@ -466,9 +492,12 @@
          }
  
          biome.decorate(this.world, this.rand, new BlockPos(i, 0, j));
@@ -89,7 +105,7 @@
          for (int k2 = 0; k2 < 16; k2++)
          {
              for (int j3 = 0; j3 < 16; j3++)
-@@ -486,6 +516,9 @@
+@@ -487,6 +516,9 @@
                  }
              }
          }

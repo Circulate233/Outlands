@@ -63,16 +63,90 @@
              }
          }
      }
-@@ -270,7 +281,7 @@
+@@ -265,11 +276,12 @@
+     private ModelBlockDefinition loadModelBlockDefinition(ResourceLocation location, IResource resource)
+     {
+         InputStream inputstream = null;
++        ModelBlockDefinition lvt_4_1_;
+ 
          try
          {
              inputstream = resource.getInputStream();
--            lvt_4_1_ = ModelBlockDefinition.parseFromReader(new InputStreamReader(inputstream, StandardCharsets.UTF_8));
+-            return ModelBlockDefinition.parseFromReader(new InputStreamReader(inputstream, StandardCharsets.UTF_8));
 +            lvt_4_1_ = ModelBlockDefinition.parseFromReader(new InputStreamReader(inputstream, StandardCharsets.UTF_8), location);
          }
          catch (Exception exception)
          {
-@@ -443,6 +454,7 @@
+@@ -288,6 +300,8 @@
+         {
+             IOUtils.closeQuietly(inputstream);
+         }
++
++        return lvt_4_1_;
+     }
+ 
+     private ResourceLocation getBlockstateLocation(ResourceLocation location)
+@@ -340,6 +354,7 @@
+     {
+         Reader reader = null;
+         IResource iresource = null;
++        ModelBlock modelblock;
+ 
+         try
+         {
+@@ -349,23 +364,20 @@
+             {
+                 return MODEL_GENERATED;
+             }
+-            else if ("builtin/entity".equals(s))
+-            {
+-                return MODEL_ENTITY;
+-            }
+-            else
++
++            if (!"builtin/entity".equals(s))
+             {
+                 if (s.startsWith("builtin/"))
+                 {
+-                    String s1 = s.substring("builtin/".length());
+-                    String s2 = BUILT_IN_MODELS.get(s1);
++                    String s2 = s.substring("builtin/".length());
++                    String s1 = BUILT_IN_MODELS.get(s2);
+ 
+-                    if (s2 == null)
++                    if (s1 == null)
+                     {
+                         throw new FileNotFoundException(location.toString());
+                     }
+ 
+-                    reader = new StringReader(s2);
++                    reader = new StringReader(s1);
+                 }
+                 else
+                 {
+@@ -373,16 +385,20 @@
+                     reader = new InputStreamReader(iresource.getInputStream(), StandardCharsets.UTF_8);
+                 }
+ 
+-                ModelBlock modelblock = ModelBlock.deserialize(reader);
++                modelblock = ModelBlock.deserialize(reader);
+                 modelblock.name = location.toString();
+                 return modelblock;
+             }
++
++            modelblock = MODEL_ENTITY;
+         }
+         finally
+         {
+             IOUtils.closeQuietly(reader);
+             IOUtils.closeQuietly(iresource);
+         }
++
++        return modelblock;
+     }
+ 
+     protected ResourceLocation getModelLocation(ResourceLocation location)
+@@ -438,6 +454,7 @@
  
      protected void registerVariantNames()
      {
@@ -80,7 +154,7 @@
          this.variantNames
          .put(
              Item.getItemFromBlock(Blocks.STONE),
-@@ -697,6 +709,10 @@
+@@ -692,6 +709,10 @@
          this.variantNames.put(Items.OAK_DOOR, Lists.newArrayList("oak_door"));
          this.variantNames.put(Items.BOAT, Lists.newArrayList("oak_boat"));
          this.variantNames.put(Items.TOTEM_OF_UNDYING, Lists.newArrayList("totem"));
@@ -91,7 +165,7 @@
      }
  
      protected List<String> getVariantNames(Item stack)
-@@ -713,7 +729,7 @@
+@@ -708,7 +729,7 @@
  
      protected ResourceLocation getItemLocation(String location)
      {
@@ -100,7 +174,7 @@
          return new ResourceLocation(resourcelocation.getNamespace(), "item/" + resourcelocation.getPath());
      }
  
-@@ -818,7 +834,7 @@
+@@ -813,7 +834,7 @@
          for (Entry<String, ResourceLocation> entry : this.itemLocations.entrySet())
          {
              ResourceLocation resourcelocation = entry.getValue();
@@ -109,7 +183,7 @@
              ModelBlock modelblock = this.models.get(resourcelocation);
  
              if (modelblock == null || !modelblock.isResolved())
-@@ -905,6 +921,11 @@
+@@ -900,6 +921,11 @@
      @Nullable
      private IBakedModel bakeModel(ModelBlock modelBlockIn, ModelRotation modelRotationIn, boolean uvLocked)
      {
@@ -121,7 +195,7 @@
          TextureAtlasSprite textureatlassprite = this.sprites.get(new ResourceLocation(modelBlockIn.resolveTextureName("particle")));
          SimpleBakedModel.Builder simplebakedmodel$builder = new SimpleBakedModel.Builder(modelBlockIn, modelBlockIn.createOverrides())
          .setTexture(textureatlassprite);
-@@ -922,7 +943,7 @@
+@@ -917,7 +943,7 @@
                      BlockPartFace blockpartface = blockpart.mapFaces.get(enumfacing);
                      TextureAtlasSprite textureatlassprite1 = this.sprites.get(new ResourceLocation(modelBlockIn.resolveTextureName(blockpartface.texture)));
  
@@ -130,7 +204,7 @@
                      {
                          simplebakedmodel$builder.addGeneralQuad(
                              this.makeBakedQuad(blockpart, blockpartface, textureatlassprite1, enumfacing, modelRotationIn, uvLocked)
-@@ -931,7 +952,7 @@
+@@ -926,7 +952,7 @@
                      else
                      {
                          simplebakedmodel$builder.addFaceQuad(
@@ -139,7 +213,7 @@
                              this.makeBakedQuad(blockpart, blockpartface, textureatlassprite1, enumfacing, modelRotationIn, uvLocked)
                          );
                      }
-@@ -946,18 +967,12 @@
+@@ -941,18 +967,12 @@
          BlockPart blockPartt, BlockPartFace blockPartFaceIn, TextureAtlasSprite sprite, EnumFacing face, ModelRotation transform, boolean uvLocked
      )
      {
@@ -164,11 +238,10 @@
      }
  
      private void loadModelsCheck()
-@@ -1182,5 +1197,24 @@
-         BUILT_IN_MODELS.put("missing", MISSING_MODEL_MESH);
+@@ -1178,4 +1198,23 @@
          MODEL_GENERATED.name = "generation marker";
          MODEL_ENTITY.name = "block entity marker";
-+    }
+     }
 +
 +    protected void registerMultipartVariant(ModelBlockDefinition definition, Collection<ModelResourceLocation> locations)
 +    {
@@ -187,5 +260,5 @@
 +        {
 +            customVariantNames.get(item.delegate).add(name.toString());
 +        }
-     }
++    }
  }

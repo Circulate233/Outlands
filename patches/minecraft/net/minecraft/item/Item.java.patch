@@ -55,18 +55,21 @@
      }
  
      protected RayTraceResult rayTrace(World worldIn, EntityPlayer playerIn, boolean useLiquids)
-@@ -401,8 +405,8 @@
+@@ -400,10 +404,9 @@
+         float f4 = -MathHelper.cos(-f * (float)(Math.PI / 180.0));
          float f5 = MathHelper.sin(-f * (float)(Math.PI / 180.0));
          float f6 = f3 * f4;
-         float f7 = f2 * f4;
+-        float f7 = f5;
+-        float f8 = f2 * f4;
 -        double d3 = 5.0;
--        Vec3d vec3d1 = vec3d.add(f6 * 5.0, f5 * 5.0, f7 * 5.0);
+-        Vec3d vec3d1 = vec3d.add(f6 * 5.0, f7 * 5.0, f8 * 5.0);
++        float f7 = f2 * f4;
 +        double d3 = playerIn.getEntityAttribute(EntityPlayer.REACH_DISTANCE).getAttributeValue();
 +        Vec3d vec3d1 = vec3d.add(f6 * d3, f5 * d3, f7 * d3);
          return worldIn.rayTraceBlocks(vec3d, vec3d1, useLiquids, !useLiquids, false);
      }
  
-@@ -421,6 +425,9 @@
+@@ -422,6 +425,9 @@
  
      protected boolean isInCreativeTab(CreativeTabs targetTab)
      {
@@ -76,7 +79,7 @@
          CreativeTabs creativetabs = this.getCreativeTab();
          return creativetabs != null && (targetTab == CreativeTabs.SEARCH || targetTab == creativetabs);
      }
-@@ -447,11 +454,784 @@
+@@ -448,11 +454,784 @@
          return false;
      }
  
@@ -861,16 +864,19 @@
      public static void registerItems()
      {
          registerItemBlock(Blocks.AIR, new ItemAir(Blocks.AIR));
-@@ -1041,6 +1821,8 @@
+@@ -1042,8 +1821,10 @@
          private final float efficiency;
          private final float attackDamage;
          private final int enchantability;
 +        //Added by forge for custom Tool materials.
 +        private ItemStack repairMaterial = ItemStack.EMPTY;
  
-         private ToolMaterial(int harvestLevel, int maxUses, float efficiency, float damageVsEntity, int enchantability)
+-        ToolMaterial(int harvestLevel, int maxUses, float efficiency, float damageVsEntity, int enchantability)
++        private ToolMaterial(int harvestLevel, int maxUses, float efficiency, float damageVsEntity, int enchantability)
          {
-@@ -1076,6 +1858,7 @@
+             this.harvestLevel = harvestLevel;
+             this.maxUses = maxUses;
+@@ -1077,6 +1858,7 @@
              return this.enchantability;
          }
  
@@ -878,11 +884,10 @@
          public Item getRepairItem()
          {
              if (this == WOOD)
-@@ -1098,6 +1881,22 @@
-             {
+@@ -1100,5 +1882,21 @@
                  return this == DIAMOND ? Items.DIAMOND : null;
              }
-+        }
+         }
 +
 +        public ToolMaterial setRepairItem(ItemStack stack)
 +        {
@@ -898,6 +903,6 @@
 +            Item ret = this.getRepairItem();
 +            if (ret != null) repairMaterial = new ItemStack(ret, 1, net.minecraftforge.oredict.OreDictionary.WILDCARD_VALUE);
 +            return repairMaterial;
-         }
++        }
      }
  }

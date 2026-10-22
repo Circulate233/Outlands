@@ -1,6 +1,14 @@
 --- before/net/minecraft/client/resources/AbstractResourcePack.java
 +++ after/net/minecraft/client/resources/AbstractResourcePack.java
-@@ -77,7 +77,7 @@
+@@ -9,6 +9,7 @@
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.io.InputStreamReader;
++import java.io.Reader;
+ import java.nio.charset.StandardCharsets;
+ import net.minecraft.client.renderer.texture.TextureUtil;
+ import net.minecraft.client.resources.data.IMetadataSection;
+@@ -76,7 +77,7 @@
          try
          {
              bufferedreader = new BufferedReader(new InputStreamReader(p_110596_1_, StandardCharsets.UTF_8));
@@ -9,13 +17,21 @@
          }
          catch (RuntimeException runtimeexception)
          {
-@@ -101,5 +101,9 @@
-     public String getPackName()
+@@ -84,7 +85,7 @@
+         }
+         finally
+         {
+-            IOUtils.closeQuietly(bufferedreader);
++            IOUtils.closeQuietly((Reader)bufferedreader);
+         }
+ 
+         return metadataSerializer.parseMetadataSection(sectionName, jsonobject);
+@@ -101,4 +102,8 @@
      {
          return this.resourcePackFile.getName();
-+    }
+     }
 +    
 +    public File getResourcePackFile() {
 +        return resourcePackFile;
-     }
++    }
  }

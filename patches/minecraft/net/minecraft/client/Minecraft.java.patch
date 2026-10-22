@@ -16,6 +16,15 @@
          this.isDemo = gameConfig.gameInfo.isDemo;
          this.displayWidth = gameConfig.displayInfo.width > 0 ? gameConfig.displayInfo.width : 1;
          this.displayHeight = gameConfig.displayInfo.height > 0 ? gameConfig.displayInfo.height : 1;
+@@ -416,7 +416,7 @@
+             {
+                 this.addGraphicsAndWorldToCrashReport(reportedexception.getCrashReport());
+                 this.freeMemory();
+-                LOGGER.fatal("Reported exception thrown!", reportedexception);
++                LOGGER.fatal("Reported exception thrown!", (Throwable)reportedexception);
+                 this.displayCrashReport(reportedexception.getCrashReport());
+             }
+             catch (Throwable throwable1)
 @@ -460,10 +460,10 @@
          this.resourceManager = new SimpleReloadableResourceManager(this.metadataSerializer);
          this.languageManager = new LanguageManager(this.metadataSerializer, this.gameSettings.language);
@@ -104,14 +113,15 @@
      {
          Display.setResizable(true);
 -        Display.setTitle("Minecraft 1.12.2");
--
++        Display.setTitle("Cleanroom");
+ 
 -        try
 -        {
 -            Display.create(new PixelFormat().withDepthBits(24));
 -        }
 -        catch (LWJGLException lwjglexception)
 -        {
--            LOGGER.error("Couldn't set pixel format", (Throwable)lwjglexception);
+-            LOGGER.error("Couldn't set pixel format", lwjglexception);
 -
 -            try
 -            {
@@ -128,8 +138,6 @@
 -
 -            Display.create();
 -        }
-+        Display.setTitle("Cleanroom");
-+
 +        Display.create((new PixelFormat()).withDepthBits(24));
 +        net.minecraftforge.client.ForgeHooksClient.initializeWindowsInformation();
 +        net.minecraftforge.client.ForgeHooksClient.setWindowStyle(fullscreen);
@@ -137,6 +145,15 @@
      }
  
      private void setInitialDisplayMode() throws LWJGLException
+@@ -666,7 +659,7 @@
+             }
+             catch (IOException ioexception)
+             {
+-                LOGGER.error("Couldn't set icon", ioexception);
++                LOGGER.error("Couldn't set icon", (Throwable)ioexception);
+             }
+             finally
+             {
 @@ -710,6 +703,7 @@
  
      private void startTimerHackThread()
@@ -188,6 +205,15 @@
      public void refreshResources()
      {
          List<IResourcePack> list = Lists.newArrayList(this.defaultResourcePacks);
+@@ -790,7 +788,7 @@
+         }
+         catch (RuntimeException runtimeexception)
+         {
+-            LOGGER.info("Caught error stitching, removing all assigned resourcepacks", runtimeexception);
++            LOGGER.info("Caught error stitching, removing all assigned resourcepacks", (Throwable)runtimeexception);
+             list.clear();
+             list.addAll(this.defaultResourcePacks);
+             this.resourcePackRepository.setRepositories(Collections.emptyList());
 @@ -964,11 +962,6 @@
  
      public void displayGuiScreen(@Nullable GuiScreen guiScreenIn)
@@ -290,7 +316,7 @@
          try
          {
              this.fullscreen = !this.fullscreen;
-@@ -1655,6 +1666,11 @@
+@@ -1655,12 +1666,17 @@
              }
  
              Display.setFullscreen(this.fullscreen);
@@ -302,6 +328,13 @@
              Display.setVSyncEnabled(this.gameSettings.enableVsync);
              this.updateDisplay();
          }
+         catch (Exception exception)
+         {
+-            LOGGER.error("Couldn't toggle fullscreen", exception);
++            LOGGER.error("Couldn't toggle fullscreen", (Throwable)exception);
+         }
+     }
+ 
 @@ -1701,6 +1717,8 @@
              this.rightClickDelayTimer--;
          }
@@ -695,14 +728,13 @@
      public boolean isReducedDebug()
      {
          return this.player != null && this.player.hasReducedDebug() || this.gameSettings.reducedDebugInfo;
-@@ -3397,5 +3307,10 @@
-     public Tutorial getTutorial()
+@@ -3398,4 +3308,9 @@
      {
          return this.tutorial;
-+    }
+     }
 +
 +    public SearchTreeManager getSearchTreeManager()
 +    {
 +        return this.searchTreeManager;
-     }
++    }
  }

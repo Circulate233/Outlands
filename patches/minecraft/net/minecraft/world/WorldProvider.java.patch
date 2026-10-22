@@ -48,7 +48,19 @@
      }
  
      public boolean canCoordinateBeSpawn(int x, int z)
-@@ -180,7 +147,7 @@
+@@ -119,9 +86,8 @@
+             f--;
+         }
+ 
+-        float f1 = f;
+-        f = 1.0F - (float)((Math.cos(f * Math.PI) + 1.0) / 2.0);
+-        return f1 + (f - f1) / 3.0F;
++        float f1 = 1.0F - (float)((Math.cos(f * Math.PI) + 1.0) / 2.0);
++        return f + (f1 - f) / 3.0F;
+     }
+ 
+     public int getMoonPhase(long worldTime)
+@@ -181,7 +147,7 @@
      @SideOnly(Side.CLIENT)
      public float getCloudHeight()
      {
@@ -57,7 +69,7 @@
      }
  
      @SideOnly(Side.CLIENT)
-@@ -197,13 +164,13 @@
+@@ -198,13 +164,13 @@
  
      public int getAverageGroundLevel()
      {
@@ -73,12 +85,10 @@
      }
  
      @SideOnly(Side.CLIENT)
-@@ -240,6 +207,371 @@
-     public WorldBorder createWorldBorder()
-     {
+@@ -243,6 +209,371 @@
          return new WorldBorder();
-+    }
-+
+     }
+ 
 +    /*======================================= Forge Start =========================================*/
 +    private net.minecraftforge.client.IRenderHandler skyRenderer = null;
 +    private net.minecraftforge.client.IRenderHandler cloudRenderer = null;
@@ -442,6 +452,8 @@
 +    public boolean canDoRainSnowIce(net.minecraft.world.chunk.Chunk chunk)
 +    {
 +        return true;
-     }
- 
++    }
++
      public void onPlayerAdded(EntityPlayerMP player)
+     {
+     }

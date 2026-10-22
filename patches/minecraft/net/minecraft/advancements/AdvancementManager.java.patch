@@ -1,6 +1,14 @@
 --- before/net/minecraft/advancements/AdvancementManager.java
 +++ after/net/minecraft/advancements/AdvancementManager.java
-@@ -74,6 +74,7 @@
+@@ -11,6 +11,7 @@
+ import java.io.BufferedReader;
+ import java.io.File;
+ import java.io.IOException;
++import java.io.Reader;
+ import java.lang.reflect.Type;
+ import java.net.URI;
+ import java.net.URISyntaxException;
+@@ -73,6 +74,7 @@
          ADVANCEMENT_LIST.clear();
          Map<ResourceLocation, Advancement.Builder> map = this.loadCustomAdvancements();
          this.loadBuiltInAdvancements(map);
@@ -8,3 +16,53 @@
          ADVANCEMENT_LIST.loadAdvancements(map);
  
          for (Advancement advancement : ADVANCEMENT_LIST.getRoots())
+@@ -124,14 +126,14 @@
+                             map.put(resourcelocation, advancement$builder);
+                         }
+                     }
+-                    catch (JsonParseException | IllegalArgumentException runtimeexception)
++                    catch (IllegalArgumentException | JsonParseException jsonparseexception)
+                     {
+-                        LOGGER.error("Parsing error loading custom advancement " + resourcelocation, runtimeexception);
++                        LOGGER.error("Parsing error loading custom advancement " + resourcelocation, (Throwable)jsonparseexception);
+                         this.hasErrored = true;
+                     }
+                     catch (IOException ioexception)
+                     {
+-                        LOGGER.error("Couldn't read custom advancement " + resourcelocation + " from " + file1, ioexception);
++                        LOGGER.error("Couldn't read custom advancement " + resourcelocation + " from " + file1, (Throwable)ioexception);
+                         this.hasErrored = true;
+                     }
+                 }
+@@ -199,26 +201,26 @@
+                             }
+                             catch (JsonParseException jsonparseexception)
+                             {
+-                                LOGGER.error("Parsing error loading built-in advancement " + resourcelocation, jsonparseexception);
++                                LOGGER.error("Parsing error loading built-in advancement " + resourcelocation, (Throwable)jsonparseexception);
+                                 this.hasErrored = true;
+                             }
+                             catch (IOException ioexception)
+                             {
+-                                LOGGER.error("Couldn't read advancement " + resourcelocation + " from " + path1, ioexception);
++                                LOGGER.error("Couldn't read advancement " + resourcelocation + " from " + path1, (Throwable)ioexception);
+                                 this.hasErrored = true;
+                             }
+                             finally
+                             {
+-                                IOUtils.closeQuietly(bufferedreader);
++                                IOUtils.closeQuietly((Reader)bufferedreader);
+                             }
+                         }
+                     }
+                 }
+             }
+         }
+-        catch (URISyntaxException | IOException exception)
++        catch (IOException | URISyntaxException urisyntaxexception)
+         {
+-            LOGGER.error("Couldn't get a list of all built-in advancement files", exception);
++            LOGGER.error("Couldn't get a list of all built-in advancement files", (Throwable)urisyntaxexception);
+             this.hasErrored = true;
+         }
+         finally

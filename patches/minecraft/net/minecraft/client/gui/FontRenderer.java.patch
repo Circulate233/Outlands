@@ -220,7 +220,7 @@
      String wrapFormattedStringToWidth(String str, int wrapWidth)
      {
          int i = this.sizeStringToWidth(str, wrapWidth);
-@@ -740,6 +829,7 @@
+@@ -740,15 +829,15 @@
          }
      }
  
@@ -228,12 +228,29 @@
      private int sizeStringToWidth(String str, int wrapWidth)
      {
          int i = str.length();
-@@ -838,6 +928,26 @@
-     public boolean getBidiFlag()
-     {
+         int j = 0;
+         int k = 0;
+         int l = -1;
+-        boolean flag = false;
+ 
+-        while (k < i)
++        for (boolean flag = false; k < i; k++)
+         {
+             char c0 = str.charAt(k);
+ 
+@@ -795,8 +884,6 @@
+             {
+                 break;
+             }
+-
+-            k++;
+         }
+ 
+         return k != i && l != -1 && l < k ? l : k;
+@@ -843,6 +930,26 @@
          return this.bidiFlag;
-+    }
-+
+     }
+ 
 +    protected void setColor(float r, float g, float b, float a)
 +    {
 +        GlStateManager.color(r,g,b,a);
@@ -252,6 +269,8 @@
 +    protected IResource getResource(ResourceLocation location) throws IOException
 +    {
 +        return Minecraft.getMinecraft().getResourceManager().getResource(location);
-     }
- 
++    }
++
      public int getColorCode(char character)
+     {
+         int i = "0123456789abcdef".indexOf(character);
