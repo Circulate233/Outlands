@@ -103,12 +103,17 @@ dependencies {
     api project(path: ':mcpbase', configuration: 'mcpbaseLibraries')
 }
 
+// The loader reports its own version at runtime (crash reports, mod metadata, isCleanroom checks), so the class has
+// to be generated from the current project version instead of being a stale checked-out file.
+def genVersion = tasks.register('genVersion', com.cleanroommc.gradle.helpers.tasks.GenVersionTask)
+
 sourceSets {
     main {
         java {
             srcDirs = []
             // generated: patched Minecraft sources (flatMap keeps the task dependency on applyPatches)
             srcDir(patches.apply.flatMap { it.outputDirectory })
+            srcDir(genVersion.map { it.versionClass.parentFile.parentFile.parentFile.parentFile })
             srcDir("$rootDir/src/main/java")
         }
         resources {
