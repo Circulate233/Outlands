@@ -315,6 +315,18 @@ tasks.named('jar', Jar) {
 // region userdev ------------------------------------------------------------
 // Classic userdev artifact (spec 2): config.json + joined.lzma + patches/ + ats/ + sources.
 // Consumed by ForgeGradle 3-5, the ModDevGradle legacy fork and the Unimined fork.
+// region loader sources -----------------------------------------------------
+// The userdev 'sources' artifact is what the consumer injects into its Minecraft tree, so it must contain the
+// loader's own sources only. The patched Minecraft sources are already produced by mcp_config; shipping them here
+// duplicates every minecraft class (and breaks patch application downstream).
+tasks.register('loaderSourcesJar', Jar) {
+    archiveClassifier = 'sources'
+    from("$rootDir/src/main/java") {
+        exclude 'net/minecraft/**'
+    }
+}
+// endregion
+
 forgedev.userDev {
     base(mcpBase)
 
@@ -326,7 +338,7 @@ forgedev.userDev {
     }
 
     config {
-        sources(tasks.named('sourcesJar'))
+        sources(tasks.named('loaderSourcesJar'))
         universal(tasks.named('jar'))
         // Consumers (Unimined/Loom-style integration) read the launch recipe from here; it mirrors the
         // launch command in the installer's version.json.
@@ -356,6 +368,7 @@ forgedev.userDev.jar {
         into 'patches'
     }
 }
+
 forgedev.userDev.config {
     patchesOriginalPrefix.set('before')
     patchesModifiedPrefix.set('after')
@@ -378,7 +391,7 @@ publishing {
             artifactId = 'outlands'
             version = project.version
             artifact(tasks.named('jar'))
-            artifact(tasks.named('sourcesJar')) { classifier = 'sources'; extension = 'jar' }
+            artifact(tasks.named('loaderSourcesJar')) { extension = 'jar' }
             artifact(tasks.named('userdevJar')) { classifier = 'userdev'; extension = 'jar' }
             artifact(tasks.named('installerJar')) { classifier = 'installer'; extension = 'jar' }
         }
