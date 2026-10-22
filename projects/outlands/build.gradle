@@ -112,7 +112,8 @@ sourceSets {
         java {
             srcDirs = []
             // generated: patched Minecraft sources (flatMap keeps the task dependency on applyPatches)
-            srcDir(patches.apply.flatMap { it.outputDirectory })
+            // patched sources are srg named (the pipeline runs with 'stable' mappings); the loader is written in mcp
+            srcDir(project(':mcpbase').layout.buildDirectory.dir('patched-mcp/src'))
             srcDir(genVersion.map { it.versionClass.parentFile.parentFile.parentFile.parentFile })
             srcDir("$rootDir/src/main/java")
         }
@@ -404,6 +405,7 @@ tasks.register('createMMCPack', com.cleanroommc.gradle.helpers.tasks.CreateMMCPa
 }
 
 tasks.named('assemble') { dependsOn 'createMMCPack' }
+tasks.named('compileJava') { dependsOn ':mcpbase:renamePatchedSources' }
 // endregion
 
 // region checks -------------------------------------------------------------

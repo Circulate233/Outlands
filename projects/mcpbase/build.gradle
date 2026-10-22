@@ -84,3 +84,40 @@ configurations {
 // The patch set is maintained in MCP names (it predates this build and lives in patches/minecraft that way).
 // A SRG-named copy for distribution is produced by the userdev task instead, see 'srgPatches' below.
 
+// region mcp rename for the patched tree ------------------------------------
+// The patch set is written in mcp names, but the mcp_config pipeline produces srg sources ('stable' mappings are
+// srg names). Renaming srg -> mcp on sources is exactly what the mavenizer does for the vanilla tree, so the same
+// code path is reused here through its small CLI instead of any heuristic.
+configurations {
+    renameTool {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+dependencies {
+    renameTool 'top.outlands:minecraft-mavenizer:0.5.22-cr3'
+}
+
+tasks.register('renamePatchedSources', JavaExec) {
+    def patched = tasks.named('applyPatches').flatMap { it.outputDirectory }
+    def mappings = forgedev.mcpBase.mappingZip
+    inputs.files(patched, mappings)
+    def output = layout.buildDirectory.file('patched-mcp/minecraft-sources.jar')
+    outputs.file(output)
+    dependsOn 'applyPatches'
+    classpath = configurations.renameTool
+    mainClass = 'net.minecraftforge.mcmaven.impl.tasks.RenameSourcesCli'
+    def sourceDir = layout.buildDirectory.dir('patched-mcp/src')
+    doLast {
+        project.copy { from project.zipTree(output.get().asFile); into sourceDir }
+    }
+    doFirst {
+        output.get().asFile.parentFile.mkdirs()
+        // the patched tree is a directory, the cli reads a jar
+        def jar = layout.buildDirectory.file('patched-mcp/minecraft-sources-srg.jar').get().asFile
+        jar.parentFile.mkdirs()
+        project.ant.zip(destfile: jar.absolutePath, basedir: patched.get().asFile.absolutePath)
+        args = ['--mappings', mappings.get().absolutePath, '--in', jar.absolutePath, '--out', output.get().asFile.absolutePath]
+    }
+}
+// endregion
