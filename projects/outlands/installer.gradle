@@ -179,3 +179,51 @@ tasks.named('assemble') {
     dependsOn 'installerJar', 'userdevJar'
 }
 // endregion
+
+// region stale library guard ------------------------------------------------
+// 1.12.2's own library set is only needed on the decompile classpath (the mcp_config 'listLibraries' output).
+// Several of those modules were renamed rather than upgraded, so Gradle's version conflict resolution cannot
+// see the problem: 'netty-all' (an io.netty.* fat jar) happily coexists next to the split 4.2 modules and wins
+// or loses the classpath race at random, which shows up as NoSuchMethodError at compile time or
+// AbstractMethodError at runtime. Keep this list in sync with CleanroomMinecraftTransformer.vanillaExcludesSet.
+def staleVanillaModules = [
+    'io.netty:netty-all',
+    'org.lwjgl.lwjgl:lwjgl',
+    'org.lwjgl.lwjgl:lwjgl_util',
+    'org.lwjgl.lwjgl:lwjgl-platform',
+    'com.ibm.icu:icu4j-core-mojang',
+    'net.java.dev.jna:platform',
+    'net.java.jinput:jinput-platform',
+    'com.mojang:patchy',
+    'net.java.jutils:jutils',
+    'oshi-project:oshi-core',
+] as Set
+
+tasks.register('verifyNoStaleLibraries') {
+    group = 'verification'
+    description = 'Fails when a 1.12.2-only library (needed for decompiling) leaks onto the launch classpath.'
+    dependsOn 'installerArtifacts', 'launcherJson'
+    def artifactsFile = tasks.named('installerArtifacts').flatMap { it.outputs.files.elements.map { it.first().asFile } }
+    def versionJsonFile = layout.buildDirectory.file('version.json')
+    inputs.files(artifactsFile, versionJsonFile)
+
+    doLast {
+        def problems = []
+        def artifacts = new JsonSlurper().parse(artifactsFile.get()).artifacts
+        def fromArtifacts = artifacts.keySet().findAll { it in staleVanillaModules }
+        if (fromArtifacts) problems << "installer artifacts: ${fromArtifacts.sort()}"
+
+        def launchLibraries = new JsonSlurper().parse(versionJsonFile.get().asFile)
+            .libraries.collect { it.name.split(':')[0] + ':' + it.name.split(':')[1] }
+        def fromJson = launchLibraries.findAll { it in staleVanillaModules }
+        if (fromJson) problems << "version.json: ${fromJson.sort()}"
+
+        if (!problems.isEmpty()) {
+            throw new GradleException("1.12.2-only libraries leaked onto the launch/dev classpath (>"
+                + "replaced by upgraded modules, module names differ so Gradle cannot arbitrate):\n  "
+                + problems.join('\n  '))
+        }
+        logger.lifecycle("verifyNoStaleLibraries: launch classpath is free of the ${staleVanillaModules.size()} 1.12.2-only modules")
+    }
+}
+// endregion
