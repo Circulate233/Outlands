@@ -60,27 +60,7 @@ forgedev {
     }
 }
 
-// The patch set is maintained in MCP names, but a distributable patch set has to be in SRG names (MCP names may not
-// be redistributed, and srg is what FG3 expects when it applies patches). Converting the tree - not the patch text -
-// keeps the mapping positional, so parameter renames come along too.
-tasks.register('srgPatchedSources', com.cleanroommc.gradle.helpers.tasks.ConvertPatchedSourcesTask) {
-    patched.set(tasks.named('applyPatches').flatMap { it.outputDirectory })
-    mcpBase.set(forgedev.mcpBase.namedSources.map { project.layout.projectDirectory.file(it.absolutePath) })
-    srgBase.set(forgedev.mcpBase.unnamedSources.map { project.layout.projectDirectory.file(it.absolutePath) })
-    output.set(layout.buildDirectory.dir('patched-srg'))
-}
 
-// A second patch set (and its apply task) that works on the srg trees, used only for distribution.
-def srgPatchSet = forgedev.getPatches('srg')
-srgPatchSet.base = forgedev.mcpBase
-srgPatchSet.patches.set(layout.buildDirectory.dir('patches-srg'))
-srgPatchSet.patched.set(tasks.named('srgPatchedSources').flatMap { it.output })
-tasks.named('applyPatchesSrg') {
-    input.setFrom(forgedev.mcpBase.unnamedSources)
-}
-tasks.named('makePatchesSrg') {
-    input.setFrom(forgedev.mcpBase.unnamedSources)
-}
 
 tasks.register('mcpInfo') {
     def base = forgedev.mcpBase
@@ -103,3 +83,4 @@ configurations {
 
 // The patch set is maintained in MCP names (it predates this build and lives in patches/minecraft that way).
 // A SRG-named copy for distribution is produced by the userdev task instead, see 'srgPatches' below.
+
