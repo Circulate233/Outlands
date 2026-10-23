@@ -165,8 +165,17 @@ Not waiting (-PnoWait): ${version} is being built and published.
         }
 
         def finished = awaitCompletion(run.id as long)
-        if (finished.conclusion != 'success') fail(failedRun(finished, version))
-        verify(version, finished)
+        boolean published = verify(version)
+        if (finished.conclusion != 'success') {
+            // A red run does not have to mean a failed release: the workflow may have broken after publishing
+            // (its own verification step, the CHANGELOG commit, ...). What counts is whether the artifacts and the
+            // release are actually there.
+            if (!published) fail(failedRun(finished, version))
+            println("> warning: the run ended as '${finished.conclusion}' after the release was published:")
+            println(">   ${finished.html_url}")
+        } else if (!published) {
+            fail("""The run reported success, but ${version} is not where it should be - see ${finished.html_url}""")
+        }
         println("""
 released ${version} in ${elapsed()}
   https://github.com/${getRepository().get()}/releases/tag/${version}
@@ -249,17 +258,18 @@ next time. Follow it at:
   https://github.com/${getRepository().get()}/actions/runs/${runId}""")
     }
 
-    private void verify(String version, Map run) {
-        String release = "${apiBase()}/releases/tags/${version}".toString()
-        if (Http.get(release, Http.github(token)).status != 200) {
-            fail("""The run finished, but GitHub has no release for ${version}:
-  ${run.html_url}""")
+    /** True when the release and the published artifacts are actually there. */
+    private boolean verify(String version) {
+        List<String> problems = []
+        if (Http.get("${apiBase()}/releases/tags/${version}".toString(), Http.github(token)).status != 200) {
+            problems << "GitHub has no release for ${version}"
         }
         def metadata = Http.get(getMavenMetadataUrl().get())
         if (metadata.status != 200 || !(metadata.body as String).contains("<version>${version}</version>")) {
-            fail("""The run finished, but maven does not list ${version}:
-  ${getMavenMetadataUrl().get()}""")
+            problems << "maven does not list ${version} (${getMavenMetadataUrl().get()})"
         }
+        problems.each { println("> missing: ${it}") }
+        return problems.isEmpty()
     }
 
     private String dispatchFailure(Map response) {

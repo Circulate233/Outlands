@@ -204,6 +204,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit CHANGELOG.md
+        # Documentation only: the release notes are already on the GitHub release, so a push that branch protection
+        # refuses must not turn a successful release red.
+        continue-on-error: true
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           branch: main
@@ -213,9 +216,12 @@ jobs:
       - name: Verify
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          code=$(curl -sS --max-time 30 --retry 2 --retry-delay 2 -o /dev/null -w '%{http_code}' -H "Accept: application/vnd.github+json" \
+          # Authenticated: this repository is private, and the unauthenticated API answers 404 for everything.
+          code=$(curl -sS --max-time 30 --retry 2 --retry-delay 2 -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/$VERSION")
           if [ "$code" != "200" ]; then
             echo "::error::GitHub has no release for $VERSION (HTTP $code)"
