@@ -4,7 +4,7 @@
 // the installer jar) consume. Ported from the ForgeGradle build, with the loader/universal jar now coming from
 // this project instead of the FG patcher.
 
-import com.cleanroommc.gradle.helpers.tasks.Util
+import top.outlands.gradle.helpers.tasks.Util
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 
@@ -51,10 +51,7 @@ tasks.register('launcherJson') {
         def jarFile = loaderJar.get().asFile
         def timestamp = Util.iso8601Now()
         def json = [
-            _comment_             : [
-                'Please do not automate the download and installation of Outlands.',
-                'Our efforts are supported by ads from the download page.'
-            ],
+            _comment_             : ['Outlands launcher version json'],
             id                    : "1.12.2-Outlands-${project.version}",
             time                  : timestamp,
             releaseTime           : timestamp,

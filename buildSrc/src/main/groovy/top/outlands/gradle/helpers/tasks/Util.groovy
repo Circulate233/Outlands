@@ -1,4 +1,4 @@
-package com.cleanroommc.gradle.helpers.tasks
+package top.outlands.gradle.helpers.tasks
 
 import groovy.json.JsonSlurper
 import org.gradle.api.GradleException
@@ -160,7 +160,7 @@ class Util {
 		} catch (NoSuchElementException ignored) {
 			throw new GradleException("Can't find " + filename + " from defined repositories.\n"
 					+ "Please check and make sure all repositories are setup properly.\n"
-					+ "At: com.cleanroommc.gradle.helpers.tasks.Util#getNativeURL(String, String)\n"
+					+ "At: top.outlands.gradle.helpers.tasks.Util#getNativeURL(String, String)\n"
 					+ "Current defined repositories: (Sort by order)\n"
 					+ String.join("\n" , urlList) as String)
 		}
