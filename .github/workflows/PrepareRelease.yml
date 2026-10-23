@@ -1,0 +1,103 @@
+name: Prepare Release
+
+# The only release entry point. It does not take a version: it computes today's CalVer version, numbers it against
+# what is already published and already tagged, and pushes the matching tag. It then dispatches 'Release' against that
+# tag, which reads the version back out of it - so nothing has to be typed by hand and the published version, the tag
+# and the GitHub release can not drift apart.
+#
+# The dispatch is explicit on purpose: a tag pushed with the workflow's own GITHUB_TOKEN does not trigger a 'push' event
+# (GitHub suppresses that to avoid recursion). A tag pushed by a human does, so 'Release' keeps its tag trigger and can
+# still be run by hand for a tag created outside this workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag or SHA to release from (default: the branch this workflow runs on)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  tag:
+    name: Compute version and tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          # tags are part of the version computation
+          fetch-tags: true
+          fetch-depth: 0
+
+      - name: Compute today's CalVer version
+        id: calver
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +%Y.%m.%d)
+          ESCAPED=${DATE//./\\.}
+          echo "UTC date: $DATE"
+
+          # Every version of the day that is already taken, from both places that matter: what is published to maven
+          # and what is tagged. A version that exists in only one of them is still taken. Maven answers 404 until the
+          # first artifact is published; anything else is a real failure and must not silently produce a duplicate.
+          set +e
+          HTTP=$(curl -sS --max-time 30 -o /tmp/meta.xml -w '%{http_code}' \
+            https://maven.outlands.top/releases/top/outlands/outlands/maven-metadata.xml)
+          CURL_RC=$?
+          set -e
+          if [ $CURL_RC -ne 0 ] || { [ "$HTTP" != "200" ] && [ "$HTTP" != "404" ]; }; then
+            echo "::error::cannot read the maven metadata (curl=$CURL_RC, http=$HTTP); refusing to guess a version"
+            exit 1
+          fi
+
+          : > /tmp/taken-raw.txt
+          if [ "$HTTP" = "200" ]; then
+            grep -oE "<version>[0-9]{4}\.[0-9]{2}\.[0-9]{2}(-[0-9]+)?</version>" /tmp/meta.xml \
+              | sed -E 's#</?version>##g' >> /tmp/taken-raw.txt || true
+          fi
+          git ls-remote --tags --refs origin | awk -F/ '{print $NF}' >> /tmp/taken-raw.txt || true
+          grep -E "^${ESCAPED}(-[0-9]+)?$" /tmp/taken-raw.txt | sort -u > /tmp/taken.txt || true
+
+          TAKEN=$(cat /tmp/taken.txt)
+          if [ -n "$TAKEN" ]; then
+            echo "Already taken today:"; echo "$TAKEN" | sed 's/^/  /'
+            # the plain version counts as build 1, '-N' as build N
+            MAX=$(echo "$TAKEN" | sed -E "s/^${ESCAPED}(-([0-9]+))?$/\2/" | sed -E 's/^$/1/' | sort -n | tail -1)
+          else
+            MAX=0
+          fi
+          NEXT=$((MAX + 1))
+          if [ "$NEXT" -eq 1 ]; then VERSION="$DATE"; else VERSION="$DATE-$NEXT"; fi
+
+          echo "Releasing $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Push the tag
+        env:
+          VERSION: ${{ steps.calver.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name  "outlands-release-bot"
+          git config user.email "release@outlands.top"
+          git tag -a "$VERSION" -m "Outlands $VERSION"
+          git push origin "refs/tags/$VERSION"
+          echo "Tagged $(git rev-parse --short HEAD) as $VERSION"
+
+      - name: Dispatch the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.calver.outputs.version }}
+        run: gh workflow run Release.yml --ref "$VERSION"
+
+      - name: Summary
+        run: |
+          {
+            echo "### Outlands ${{ steps.calver.outputs.version }}"
+            echo
+            echo "- commit: \`${{ github.sha }}\`"
+            echo "- tag pushed, \`Release\` dispatched against it"
+          } >> "$GITHUB_STEP_SUMMARY"

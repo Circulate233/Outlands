@@ -1,15 +1,21 @@
 name: Auto Releases
 
+# Triggered by a tag, or dispatched by 'Prepare Release' with the tag as the ref. The version is read back out of the
+# tag and handed to Gradle, so a re-run of this workflow for an existing tag always produces the same version and never
+# renumbers.
+
 on:
   push:
     tags:
       - "*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -29,20 +35,44 @@ jobs:
       - name: Fix Gradle permission
         run: chmod +x ./gradlew
 
-      - name: Setup Forge env
-        run: ./gradlew setup -Prun_number=${{ github.run_number }} -Prelease=true
+      - name: Read the version from the tag
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          if [[ ! "$TAG" =~ ^([0-9]{4})\.([0-9]{2})\.([0-9]{2})(-([0-9]+))?$ ]]; then
+            echo "::error::tag '$TAG' is not a CalVer version (YYYY.MM.DD[-N]); release through 'Prepare Release'"
+            exit 1
+          fi
+          DATE="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+          SUFFIX="${BASH_REMATCH[5]}"
+          # same rule the build applies: the first release of the day carries no suffix, then -2, -3, ...
+          if [ -n "$SUFFIX" ] && [ "$SUFFIX" -lt 2 ]; then
+            echo "::error::suffix of tag '$TAG' must be 2 or larger (-2, -3, ...); a first release has no suffix"
+            exit 1
+          fi
+          echo "OUTLANDS_VERSION=$DATE${SUFFIX:+-$SUFFIX}" >> "$GITHUB_ENV"
+          echo "CALVER_ARGS=-PcalverDate=$DATE${SUFFIX:+ -PcalverSuffix=-$SUFFIX}" >> "$GITHUB_ENV"
 
-      - name: Get version
-        run: echo "CLEANROOM_VERSION=$(cat version.txt)" >> $GITHUB_ENV
+      - name: Setup Forge env
+        run: ./gradlew setup $CALVER_ARGS -Prelease
 
       - name: Stop Gradle daemon
         run: ./gradlew --stop
 
       - name: Build Jars
-        run: ./gradlew build -Prun_number=${{ github.run_number }} -Prelease=true
+        run: ./gradlew build $CALVER_ARGS -Prelease
 
       - name: Stop Gradle daemon again
         run: ./gradlew --stop
+
+      - name: Publish to maven for mod development
+        env:
+          OUTLANDS_MAVEN_USERNAME: ${{ secrets.OUTLANDS_MAVEN_USERNAME }}
+          OUTLANDS_MAVEN_PASSWORD: ${{ secrets.OUTLANDS_MAVEN_PASSWORD }}
+        run: |
+          ./gradlew publish $CALVER_ARGS -Prelease \
+            -PoutlandsUsername="$OUTLANDS_MAVEN_USERNAME" \
+            -PoutlandsPassword="$OUTLANDS_MAVEN_PASSWORD"
 
       - name: Update CHANGELOG
         id: changelog
@@ -56,17 +86,21 @@ jobs:
           excludeTypes: style,build,docs
         continue-on-error: true
 
-      - name: Publish to maven for mod development
-        run: ./gradlew publish -PcleanroomUsername=${{ secrets.CLEANROOM_MAVEN_USERNAME }} -PcleanroomPassword="${{ secrets.CLEANROOM_MAVEN_PASSWORD }}" -Prun_number=${{ github.run_number }} -Prelease=true
-
-      - name: Remove userdev jars
+      - name: Collect release artifacts
+        # The release carries what a user installs: the loader jar, the installer and the launcher pack. Sources,
+        # userdev and the srg/reobf intermediates live in maven only.
         run: |
-          rm projects/cleanroom/build/libs/cleanroom-${{ env.CLEANROOM_VERSION }}-userdev.jar
-          rm projects/cleanroom/build/libs/cleanroom-${{ env.CLEANROOM_VERSION }}-userdev-temp.jar
+          set -euo pipefail
+          mkdir -p /tmp/release
+          cp "projects/outlands/build/libs/outlands-${OUTLANDS_VERSION}.jar" \
+             "projects/outlands/build/libs/outlands-${OUTLANDS_VERSION}-installer.jar" \
+             "projects/outlands/build/libs/outlands-${OUTLANDS_VERSION}.zip" \
+             /tmp/release/
+          ls -l /tmp/release
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "projects/cleanroom/build/libs/*"
+          artifacts: "/tmp/release/*"
           makeLatest: true
           allowUpdates: true
           body: ${{ steps.changelog.outputs.changes }}
@@ -78,9 +112,3 @@ jobs:
           branch: main
           commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
           file_pattern: CHANGELOG.md
-
-      - name: Trigger download server update
-        run: |
-          curl -X POST "http://download.cleanroommc.com/api/webhook" \
-            -H "Content-Type: application/json" \
-            -d "{\"secret\":\"${{ secrets.DOWNLOAD_UPDATE_TOKEN }}\",\"count\":10,\"token\":\"${{ secrets.DOWNLOAD_UPDATE_GITHUB_TOKEN }}\"}"
