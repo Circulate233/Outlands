@@ -71,6 +71,10 @@ Minecraft 源码通过 `patches/minecraft/**.java.patch` 修改。它们是标�
 
 ## 发布（维护者）
 
+> 本地构建会优先用 `mavenLocal()`，CI 不会。凡是从 `top.outlands` fork 取的东西（ForgeDev 插件、mavenizer……）
+> 都必须发布到 `maven.outlands.top`，否则会出现“本地能构建、发布构建失败”。想本地复现 CI，可以用 `--init-script`
+> 把 `mavenLocal` 从所有仓库里去掉。
+
 发布由 CI（`Release.yml`）构建并上传，**任何情况下都不从本地上传**。`./gradlew release` 只是“按下按钮”：它不会改动
 仓库，也不会发布本地构建。
 

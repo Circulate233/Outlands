@@ -75,6 +75,11 @@ them.
 
 ## Releasing (maintainers)
 
+> Local builds resolve `mavenLocal()` before anything else, CI does not. Anything this build takes from the
+> `top.outlands` fork (the ForgeDev plugin, the mavenizer, ...) has to be published to `maven.outlands.top`, or the
+> release build will fail where a local one succeeds. `--init-script` with `mavenLocal` removed is a good way to
+> reproduce CI locally.
+
 Releases are built and published by CI (`Release.yml`); nothing is ever uploaded from a laptop. `./gradlew release`
 only *asks* CI to do it, so it never mutates the repository or publishes a local build.
 

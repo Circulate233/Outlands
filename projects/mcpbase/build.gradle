@@ -102,7 +102,8 @@ configurations {
     }
 }
 dependencies {
-    renameTool 'top.outlands:minecraft-mavenizer:0.5.22-cr3'
+    // published to maven.outlands.top; the 'cr' builds are local snapshots, only the latest one is published
+    renameTool 'top.outlands:minecraft-mavenizer:0.5.22-cr5'
 }
 
 tasks.register('renamePatchedSources', JavaExec) {
