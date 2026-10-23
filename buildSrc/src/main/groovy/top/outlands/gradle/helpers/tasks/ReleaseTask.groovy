@@ -149,10 +149,12 @@ The token is passed as -PreleaseToken=... or through OUTLANDS_RELEASE_TOKEN as w
                 inputs: [version: version, commit: head, resume: resumeVersion ? 'true' : 'false'],
         ])
         def response = Http.post(dispatchUrl, Http.github(token), body)
-        if (response.status != 204) fail(dispatchFailure(response))
+        // GitHub documents 204 for a dispatch but answers 200 with the created run. Accept both, and use the run it
+        // reports instead of searching for it afterwards - that also removes the guessing from the fallback path.
+        if (response.status != 204 && response.status != 200) fail(dispatchFailure(response))
         println("> dispatched ${getWorkflowFile().get()} on ${defaultBranch}")
 
-        def run = awaitRunStarted(defaultBranch)
+        def run = dispatchedRun(response) ?: awaitRunStarted(defaultBranch)
         println("> run ${run.html_url}")
 
         if (getNoWait().getOrElse(false)) {
@@ -196,6 +198,19 @@ Reconcile them before releasing.""")
     // endregion
 
     // region GitHub API -----------------------------------------------------
+
+    private Map dispatchedRun(Map response) {
+        if (!response.body) return null
+        try {
+            def payload = new JsonSlurper().parseText(response.body as String)
+            if (payload instanceof Map && payload.workflow_run_id != null) {
+                return [id: payload.workflow_run_id, html_url: payload.html_url]
+            }
+        } catch (Exception ignored) {
+            // an unexpected body only means falling back to searching for the run
+        }
+        return null
+    }
 
     private Map awaitRunStarted(String defaultBranch) {
         // created_at is second-precision, so look slightly further back to survive clock skew
