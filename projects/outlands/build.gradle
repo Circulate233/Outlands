@@ -69,6 +69,14 @@ repositories {
         name = 'Outlands'
         url = 'https://maven.outlands.top/releases/'
     }
+    // Vanilla's own library host. 1.12.2 needs a few artifacts that exist nowhere else - java3d:vecmath is the one
+    // the loader compiles against (javax.vecmath in Forge's model API), lzma is carried over from vanilla's list.
+    // Without this repository they only resolve from a warm Gradle cache or through the cleanroom maven, which is
+    // a redirect to a third-party host - that is exactly how a local build succeeds where CI fails.
+    maven {
+        name = 'Mojang libraries'
+        url = 'https://libraries.minecraft.net/'
+    }
     maven {
         url = 'https://maven.arcseekers.com/releases/'
     }
