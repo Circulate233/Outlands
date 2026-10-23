@@ -68,6 +68,45 @@ tasks.withType(JavaCompile).configureEach {
 
 idea.project.settings.compiler.javac.javacAdditionalOptions = ProjectConstants.COMPILER_JVM_ARGUMENTS.join(' ')
 
+// region release -------------------------------------------------------------
+// Maintainer entry point: './gradlew release'. It never builds or publishes locally; it verifies the repository
+// state, computes the version, and asks CI to do the work (see .github/workflows/Release.yml). The version
+// arithmetic lives in one place - ReleaseVersionTask - which CI also runs to check that the version it was asked to
+// publish is still the next free one.
+def releaseRepository = 'Project-Outlands/Outlands'
+def releaseMavenMetadataUrl = 'https://maven.outlands.top/releases/top/outlands/outlands/maven-metadata.xml'
+def releaseBranch = 'main'
+// 'origin' unless overridden: handy for testing against a mirror or a local clone (-PgitRemote=<name|path>)
+def releaseGitRemote = providers.gradleProperty('gitRemote').getOrElse('origin')
+
+tasks.register('releaseVersion', top.outlands.gradle.helpers.tasks.ReleaseVersionTask) { task ->
+    task.group = 'release'
+    task.description = 'Prints the CalVer version a release started now would use.'
+    task.rootDir = layout.projectDirectory
+    task.mavenMetadataUrl.set(releaseMavenMetadataUrl)
+    task.gitRemote.set(releaseGitRemote)
+    task.calverDate.set(calverDate)
+    task.expect.set(providers.gradleProperty('expect').getOrElse(''))
+}
+
+tasks.register('release', top.outlands.gradle.helpers.tasks.ReleaseTask) { task ->
+    task.group = 'release'
+    task.description = "Releases the current ${releaseBranch} through CI and waits for the result."
+    task.rootDir = layout.projectDirectory
+    task.mavenMetadataUrl.set(releaseMavenMetadataUrl)
+    task.repository.set(releaseRepository)
+    task.gitRemote.set(releaseGitRemote)
+    task.defaultBranch.set(releaseBranch)
+    task.workflowFile.set('Release.yml')
+    task.calverDate.set(calverDate)
+    task.token.set(providers.gradleProperty('releaseToken').getOrElse(''))
+    task.dryRun.set(providers.gradleProperty('dryRun').isPresent())
+    task.noWait.set(providers.gradleProperty('noWait').isPresent())
+    task.resumeVersion.set(providers.gradleProperty('releaseVersion').getOrElse(''))
+    task.timeoutMinutes.set(providers.gradleProperty('releaseTimeout').map { it as int }.orElse(20))
+}
+// endregion
+
 tasks.register('setup') {
     group = 'setup'
     description = 'Prepares the patched Minecraft sources and the loader workspace.'

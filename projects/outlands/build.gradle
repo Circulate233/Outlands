@@ -388,16 +388,17 @@ tasks.register('outlandsInfo') {
 
 // region publishing ---------------------------------------------------------
 // top.outlands:outlands (universal), :userdev and :installer are the three artifacts consumers resolve.
-// Credentials are plain properties so CI and a local run use the same flags:
-//   ./gradlew publish -PoutlandsUsername=... -PoutlandsPassword=... [-Prelease]
+// Only the token is a secret: 'fg' is a shared publishing account, so it can stay visible in the logs (masking it
+// would turn every two-letter occurrence in the log into '***' anyway). Same flags locally and in CI:
+//   ./gradlew publish -PoutlandsToken=... [-PoutlandsUsername=fg] [-Prelease]
 publishing {
     repositories {
         maven {
             name = 'outlands'
             url = 'https://maven.outlands.top/releases'
             credentials {
-                username = project.findProperty('outlandsUsername') ?: ''
-                password = project.findProperty('outlandsPassword') ?: ''
+                username = project.findProperty('outlandsUsername') ?: 'fg'
+                password = project.findProperty('outlandsToken') ?: ''
             }
             authentication {
                 basic(BasicAuthentication)
