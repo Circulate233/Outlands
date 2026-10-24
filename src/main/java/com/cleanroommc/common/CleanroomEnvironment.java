@@ -19,12 +19,8 @@ public final class CleanroomEnvironment {
     /** The property a dev launcher (Unimined) uses to hand extra classpath entries to the loader. */
     public static final String DEV_EXTRAPATH = "outlands.dev.extrapath";
 
-    /** What the property was called before the rename. Still honoured so an older Unimined keeps working. */
-    private static final String LEGACY_DEV_EXTRAPATH = "crl.dev.extrapath";
-
     public static String getDevExtraPath() {
-        String path = System.getProperty(DEV_EXTRAPATH);
-        return path != null ? path : System.getProperty(LEGACY_DEV_EXTRAPATH);
+        return System.getProperty(DEV_EXTRAPATH);
     }
 
     public static void setSide(Side side) {
