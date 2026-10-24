@@ -15,6 +15,11 @@ plugins {
     id 'top.outlands.forgedev' version '7.0.0-beta.59-cr1'
 }
 
+
+import net.minecraftforge.forgedev.tasks.Reobf
+import net.minecraftforge.srgutils.IMappingFile
+import top.outlands.gradle.helpers.tasks.CreateMMCPackTask
+
 import java.util.jar.JarEntry
 import java.util.jar.JarInputStream
 import java.util.jar.JarOutputStream
@@ -24,6 +29,10 @@ import top.outlands.gradle.helpers.ProjectConstants
 import top.outlands.gradle.helpers.tasks.Util
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
+
+import java.util.zip.GZIPInputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 
 def props = project.properties
 
@@ -53,13 +62,13 @@ def mcpToSrg = tasks.register('mcpToSrgMappings') {
     inputs.file(src)
     outputs.files(mcpToSrgSrg, plain)
     doLast {
-        new java.util.zip.GZIPInputStream(new FileInputStream(src.get())).withCloseable { ins ->
+        new GZIPInputStream(new FileInputStream(src.get() as File)).withCloseable { ins ->
             plain.get().asFile.withOutputStream { os -> os << ins }
         }
         // The loader wants SRG -> MCP (it translates the SRG names used by FML's reflection helper
         // into the MCP names our sources/classes are compiled against)
-        def mapping = net.minecraftforge.srgutils.IMappingFile.load(plain.get().asFile)
-        mapping.reverse().write(mcpToSrgSrg.get().asFile.toPath(), net.minecraftforge.srgutils.IMappingFile.Format.TSRG, false)
+        def mapping = IMappingFile.load(plain.get().asFile)
+        mapping.reverse().write(mcpToSrgSrg.get().asFile.toPath(), IMappingFile.Format.TSRG, false)
     }
 }
 
@@ -186,10 +195,10 @@ def mcpVersion = props.mcp_version
 
 // The asset index id comes from the version json inside the mcp metadata zip
 def assetIndex = providers.provider {
-    def zip = new java.util.zip.ZipFile(mcpBase.metadata.get())
+    def zip = new ZipFile(mcpBase.metadata.get())
     try {
         def entry = zip.entries().find { !it.directory && it.name.endsWith('.json') }
-        def json = new groovy.json.JsonSlurper().parse(zip.getInputStream(entry))
+        def json = new JsonSlurper().parse(zip.getInputStream(entry as ZipEntry))
         json.get('assetIndex')?.get('id')
     } finally {
         zip.close()
@@ -260,7 +269,7 @@ def jarForReobf = tasks.register('jarForReobf', Jar) {
     from sourceSets.main.output
 }
 
-def reobf = tasks.register('reobf', net.minecraftforge.forgedev.tasks.Reobf) {
+def reobf = tasks.register('reobf', Reobf) {
     input.from(jarForReobf)
     mappings.set(layout.file(providers.provider { mcpBase.map2Srg.get() }))
     output.set(layout.buildDirectory.file("libs/${base.archivesName.get()}-${project.version}-srg.jar"))
@@ -503,7 +512,7 @@ publishing {
 // region MMC/Prism pack -----------------------------------------------------
 // The launcher-facing distribution: mmc-pack.json + the per-component patch JSONs (forge slot carries the loader,
 // lwjgl3 slot carries our LWJGL build) + the loader jar for local (non-release) builds.
-tasks.register('createMMCPack', top.outlands.gradle.helpers.tasks.CreateMMCPackTask) {
+tasks.register('createMMCPack', CreateMMCPackTask) {
     group = 'build'
     description = 'Creates a MultiMC/Prism instance package for Outlands'
     dependsOn 'launcherJson', 'jar'
