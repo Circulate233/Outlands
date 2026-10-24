@@ -153,6 +153,21 @@ jobs:
           CALVER_ARGS: ${{ steps.version.outputs.calver_args }}
         run: ./gradlew publish $CALVER_ARGS -Prelease -PoutlandsUsername=fg -PoutlandsToken="$TOKEN"
 
+      - name: Warm the download mirror
+        # The pack and the installer hand players mirror URLs for everything that is not central or Mojang's, and
+        # the mirror pulls an artifact from maven.outlands.top on its first request. Fetch the artifacts once here
+        # so the first players after a release do not hit that cold path. Never fails the release.
+        continue-on-error: true
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -uo pipefail
+          for classifier in '' '-sources' '-srg' '-userdev' '-installer'; do
+            url="https://nexus.jsdu.cn/repository/top/outlands/outlands/${VERSION}/outlands-${VERSION}${classifier}.jar"
+            printf '%-95s %s\n' "outlands-${VERSION}${classifier}.jar" \
+              "$(curl -sS -o /dev/null -w '%{http_code} %{time_total}s' --max-time 300 --retry 2 "$url" || echo failed)"
+          done
+
       - name: Tag the release
         env:
           VERSION: ${{ steps.version.outputs.version }}

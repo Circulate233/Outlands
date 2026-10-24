@@ -444,7 +444,8 @@ tasks.register('createMMCPack', top.outlands.gradle.helpers.tasks.CreateMMCPackT
     universalJarFile = tasks.named('jar', Jar).flatMap { it.archiveFile }
     loaderVersion = project.version.toString()
     loaderCoords = "${project.group}:${base.archivesName.get()}".toString()
-    releaseBaseUrl = 'https://maven.outlands.top/releases'
+    // Players take everything that is not central or Mojang's from the mirror that backs repo.cleanroommc.com.
+    releaseBaseUrl = Util.MIRROR_MAVEN_URL
     // 'release' is what CI passes when publishing. A plain build keeps the 'local' pack (it carries the loader jar,
     // a release pack points at the maven URL instead), so the flag - not the version string - decides this.
     def releaseBuild = project.hasProperty('release')
