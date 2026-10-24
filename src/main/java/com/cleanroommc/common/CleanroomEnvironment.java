@@ -11,9 +11,20 @@ public final class CleanroomEnvironment {
     // TODO: check obf class name?
     static {
         boolean deobfEnvironment = System.getProperty("net.minecraftforge.gradle.GradleStart.srg.srg-mcp") != null;
-        deobfEnvironment |= System.getProperty("crl.dev.extrapath") != null;
+        deobfEnvironment |= getDevExtraPath() != null;
 
         deobfuscatedEnvironment = deobfEnvironment;
+    }
+
+    /** The property a dev launcher (Unimined) uses to hand extra classpath entries to the loader. */
+    public static final String DEV_EXTRAPATH = "outlands.dev.extrapath";
+
+    /** What the property was called before the rename. Still honoured so an older Unimined keeps working. */
+    private static final String LEGACY_DEV_EXTRAPATH = "crl.dev.extrapath";
+
+    public static String getDevExtraPath() {
+        String path = System.getProperty(DEV_EXTRAPATH);
+        return path != null ? path : System.getProperty(LEGACY_DEV_EXTRAPATH);
     }
 
     public static void setSide(Side side) {
