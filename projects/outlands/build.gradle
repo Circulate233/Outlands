@@ -347,6 +347,12 @@ def obfMcJar = tasks.register('obfMcJar', Jar) {
 // taken from them (mcpBase.classes, the patched srg named classes, are the *output* of the patches, not the input).
 def mcFiles = forgedev.minecraftFiles(props.minecraft_version)
 
+// Only classes the source patches touch need a binary patch. Every other Minecraft class still differs from vanilla
+// after a recompile (source file attribute, bytecode version, line numbers, injected annotations - and every constant
+// pool shift drags the instructions along), which used to bloat the pack with a patch per class. Forge and Cleanroom
+// both ship patches for the touched set only; the rest is renamed at runtime by the remapper.
+def mcpPatches = project(':mcpbase').forgedev.patches
+
 // 1.12.2's server download is a fat jar (bundled libraries and all). Patches are only wanted for classes that the
 // loader also has - Minecraft's - because a 'this class does not exist in the target' entry for, say, Guava's
 // annotations would be applied to the real library at runtime.
@@ -378,6 +384,8 @@ def vanillaCleanJar = { String side, Provider<File> vanilla ->
             getDirty().setFrom(obfMcJar.flatMap { it.archiveFile })
             // notch -> srg, so the patches rename the vanilla classes as they apply
             getSrg().setFrom(mcpBase.obf2Srg)
+            // 'patches/minecraft', the same set the patched tree was built from
+            getPatches().setFrom(mcpPatches.getPatches())
         }
         apply {
             getClean().setFrom(vanilla)
@@ -414,6 +422,10 @@ def universalJar = tasks.register('universalJar', Jar) {
 // FML 1.12.2 reads a single '/binpatches.pack.lzma' resource: an LZMA compressed jar whose entries are
 // 'binpatch/client/<class>.binpatch' and 'binpatch/server/<class>.binpatch'. binarypatcher produces one pack per
 // side, so they get merged here.
+//
+// The entries are stored, not deflated: the jar is compressed as a whole afterwards (that is the LZMA stream FML
+// reads), and deflating first costs about half of the pack - the two sides share almost all of their content, which
+// only a compressor that sees the raw bytes can exploit. binarypatcher stores them for the same reason.
 def binpatchesPack = tasks.register('binpatchesPack') {
     def clientPack = forgedev.binaryPatches('client').create.flatMap { it.output }
     def serverPack = forgedev.binaryPatches('server').create.flatMap { it.output }
@@ -429,8 +441,14 @@ def binpatchesPack = tasks.register('binpatchesPack') {
                 new LZMACompressorInputStream(new FileInputStream(pack)).withCloseable { ins ->
                     new JarInputStream(ins).withCloseable { jis ->
                         for (def entry = jis.nextJarEntry; entry != null; entry = jis.nextJarEntry) {
-                            jos.putNextEntry(new JarEntry(entry.name))
-                            jos.write(jis.readAllBytes())
+                            byte[] data = jis.readAllBytes()
+                            def stored = new JarEntry(entry.name)
+                            stored.method = java.util.zip.ZipEntry.STORED
+                            stored.size = data.length
+                            stored.compressedSize = data.length
+                            stored.crc = new java.util.zip.CRC32().with { update(data); value }
+                            jos.putNextEntry(stored)
+                            jos.write(data)
                             jos.closeEntry()
                         }
                     }
@@ -544,6 +562,8 @@ forgedev.userDev {
         clean.setFrom(providers.provider { mcpBase.classesRaw.get() })
         dirty.setFrom(obfMcJar.flatMap { it.archiveFile })
         srg.setFrom(mcpBase.obf2Srg)
+        // only the classes patched in 'patches/minecraft', the rest of Minecraft is renamed at runtime
+        getPatches().setFrom(mcpPatches.getPatches())
         // FG/Unimined look entries up as 'binpatch/<side>/<class>.binpatch'
         getPrefix().set(['binpatch/joined'])
     }
