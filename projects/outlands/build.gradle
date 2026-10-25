@@ -12,7 +12,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'top.outlands.forgedev' version '7.0.0-beta.59-cr1'
+    id 'top.outlands.forgedev' version '7.0.0-beta.59-cr4'
 }
 
 
@@ -327,6 +327,12 @@ def reobfObf = tasks.register('reobfObf', Reobf) {
     mappings.set(layout.file(providers.provider {
         new File(mcpBase.metadata.get().parentFile, 'mappings.map2obf.tsrg.gz')
     }))
+    // The loader's own classes are not obfuscated, so they ship with srg names. The renamer resolves members through
+    // the class hierarchy, and without this it would rename a loader member that a game type declares into its notch
+    // name - a name nothing provides: the loader jar has the srg one, and the runtime deobfuscator has no mapping for
+    // a net/minecraftforge/... owner. The patches keep Minecraft's names in notch (coremods see those before
+    // deobfuscation, as they always have) and take loader names in srg, which is the space they are shipped in.
+    loaderSpace.set(layout.file(mcpBase.map2Srg))
     output.set(layout.buildDirectory.file('reobf-input/minecraft-obf.jar'))
     disableAbstractParams.set(false)
 }
