@@ -1,13 +1,25 @@
 --- before/net/minecraft/client/gui/GuiTextField.java
 +++ after/net/minecraft/client/gui/GuiTextField.java
-@@ -1,5 +1,6 @@
+@@ -1,5 +1,8 @@
  package net.minecraft.client.gui;
  
-+import com.cleanroommc.client.IMEHandler;
++import com.cleanroommc.client.ImeComposition;
++import com.cleanroommc.client.TextFieldHandler;
++import com.cleanroommc.client.TextInputArea;
  import com.google.common.base.Predicate;
  import com.google.common.base.Predicates;
  import net.minecraft.client.Minecraft;
-@@ -71,6 +72,7 @@
+@@ -15,6 +18,9 @@
+ @SideOnly(Side.CLIENT)
+ public class GuiTextField extends Gui
+ {
++    /** Greyed out so pending IME input reads as not yet committed. */
++    private static final int COMPOSITION_COLOR = 0xFF7070A0;
++
+     private final int id;
+     protected final FontRenderer fontRenderer;
+     public int x;
+@@ -71,6 +77,7 @@
              }
  
              this.setCursorPositionEnd();
@@ -15,7 +27,53 @@
          }
      }
  
-@@ -590,6 +592,7 @@
+@@ -418,9 +425,11 @@
+ 
+                     if (ChatAllowedCharacters.isAllowedCharacter(typedChar))
+                     {
++                        // Characters come from the IME buffer instead; the key event only opens the write below.
+                         if (this.isEnabled)
+                         {
+-                            this.writeText(Character.toString(typedChar));
++                            this.writeText(TextFieldHandler.textBuffer.toString());
++                            TextFieldHandler.textBuffer.setLength(0);
+                         }
+ 
+                         return true;
+@@ -503,6 +512,19 @@
+                 j1 = this.fontRenderer.drawStringWithShadow(s1, j1, i1, i);
+             }
+ 
++            // Draw the pending IME composition at the caret and shift everything after it right, so the
++            // committed text keeps flowing normally instead of the pinyin overwriting it.
++            final boolean composing = this.isFocused && ImeComposition.isComposing();
++            if (composing)
++            {
++                if (k > j)
++                {
++                    // A selection is being replaced; draw the composition where the selection starts.
++                    j1 = l + this.fontRenderer.getStringWidth(s.substring(0, j));
++                }
++                j1 = this.fontRenderer.drawStringWithShadow(ImeComposition.getText(), j1, i1, COMPOSITION_COLOR);
++            }
++
+             boolean flag2 = this.cursorPosition < this.text.length() || this.text.length() >= this.getMaxStringLength();
+             int k1 = j1;
+ 
+@@ -539,6 +561,12 @@
+                 this.drawSelectionBox(k1, i1 - 1, l1 - 1, i1 + 1 + this.fontRenderer.FONT_HEIGHT);
+             }
+         }
++
++        if (this.isFocused)
++        {
++            // Keeps the OS IME windows anchored to the caret as it moves.
++            TextInputArea.update(this);
++        }
+     }
+ 
+     protected void drawSelectionBox(int startX, int startY, int endX, int endY)
+@@ -590,6 +618,7 @@
          if (this.text.length() > length)
          {
              this.text = this.text.substring(0, length);
@@ -23,7 +81,7 @@
          }
      }
  
-@@ -603,6 +606,11 @@
+@@ -603,6 +632,11 @@
          return this.cursorPosition;
      }
  
@@ -35,11 +93,35 @@
      public boolean getEnableBackgroundDrawing()
      {
          return this.enableBackgroundDrawing;
-@@ -631,6 +639,7 @@
+@@ -625,12 +659,30 @@
+ 
+     public void setFocused(boolean isFocusedIn)
+     {
+-        if (isFocusedIn && !this.isFocused)
++        boolean wasFocused = this.isFocused;
++        if (isFocusedIn && !wasFocused)
+         {
+             this.cursorCounter = 0;
          }
  
          this.isFocused = isFocusedIn;
-+        IMEHandler.setIME(this.isFocused);
++        if (isFocusedIn)
++        {
++            TextFieldHandler.setFocusedTextField(this);
++        }
++        // setFocused is called every mouse click and every keystroke's parent path, so only a real
++        // transition may open or close the text input session.
++        if (isFocusedIn != wasFocused)
++        {
++            if (isFocusedIn)
++            {
++                TextFieldHandler.beginTextInput();
++            }
++            else
++            {
++                TextFieldHandler.endTextInput(this);
++            }
++        }
  
          if (Minecraft.getMinecraft().currentScreen != null)
          {

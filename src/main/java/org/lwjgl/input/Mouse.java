@@ -1,5 +1,11 @@
 package org.lwjgl.input;
 
+import static org.lwjgl.sdl.SDLMouse.SDL_BUTTON_LEFT;
+import static org.lwjgl.sdl.SDLMouse.SDL_BUTTON_MIDDLE;
+import static org.lwjgl.sdl.SDLMouse.SDL_BUTTON_RIGHT;
+import static org.lwjgl.sdl.SDLMouse.SDL_BUTTON_X1;
+import static org.lwjgl.sdl.SDLMouse.SDL_BUTTON_X2;
+
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -7,8 +13,11 @@ import net.minecraftforge.common.ForgeEarlyConfig;
 
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.MainThread;
+import org.lwjgl.sdl.SDL_MouseMotionEvent;
+import org.lwjgl.sdl.SDLMouse;
+import org.lwjgl.sdl.SDLVideo;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
 import org.lwjgl.opengl.Display;
@@ -51,6 +60,9 @@ public class Mouse {
     
     private static Cursor currentCursor = null;
 
+    /** Lazily created default cursor, used when {@link #setNativeCursor} is called with null. */
+    private static long systemCursor = 0L;
+
     public static void addMoveEvent(double mouseX, double mouseY) {
         if (ignoreNextMove > 0) {
             ignoreNextMove--;
@@ -89,6 +101,82 @@ public class Mouse {
         nanoTimeEvents[queue.getNextPos()] = Sys.getNanoTime();
 
         queue.add();
+    }
+
+    /** Accumulates sub-pixel deltas so slow mouse motion is not rounded away. */
+    private static double dxAccum = 0.0, dyAccum = 0.0;
+
+    /**
+     * Records a motion event. SDL reports relative deltas, which stay correct under relative mouse mode
+     * where the absolute position does not move.
+     *
+     * @param event the SDL motion event
+     */
+    public static void addMoveEvent(SDL_MouseMotionEvent event) {
+        if (ignoreNextMove > 0) {
+            ignoreNextMove--;
+            return;
+        }
+        final double scale = Display.getPixelScaleFactor();
+        final double mouseX = event.x() * scale;
+        final double mouseY = event.y() * scale;
+
+        dxAccum += event.xrel() * scale;
+        dyAccum -= event.yrel() * scale;
+        final int wholeDx = (int) Math.round(dxAccum);
+        final int wholeDy = (int) Math.round(dyAccum);
+        dxAccum -= wholeDx;
+        dyAccum -= wholeDy;
+        dx += wholeDx;
+        dy += wholeDy;
+
+        latestX = (int) mouseX;
+        latestY = Display.getHeight() - (int) mouseY;
+        if (ignoreNextDelta > 0) {
+            ignoreNextDelta--;
+            x = latestX;
+            y = latestY;
+            lastEventX = latestX;
+            lastEventY = latestY;
+            dx = 0;
+            dy = 0;
+            dxAccum = 0;
+            dyAccum = 0;
+        }
+
+        lastxEvents[queue.getNextPos()] = lastEventX;
+        lastyEvents[queue.getNextPos()] = lastEventY;
+        lastEventX = latestX;
+        lastEventY = latestY;
+
+        xEvents[queue.getNextPos()] = latestX;
+        yEvents[queue.getNextPos()] = latestY;
+
+        wheelEvents[queue.getNextPos()] = 0;
+
+        buttonEvents[queue.getNextPos()] = -1;
+        buttonEventStates[queue.getNextPos()] = false;
+
+        nanoTimeEvents[queue.getNextPos()] = Sys.getNanoTime();
+
+        queue.add();
+    }
+
+    /**
+     * Maps an SDL mouse button index to the LWJGL2 numbering.
+     *
+     * @param sdlMouseButton the SDL button
+     * @return the LWJGL2 button index
+     */
+    public static int sdlToLwjglMouseButton(byte sdlMouseButton) {
+        return switch (sdlMouseButton) {
+            case SDL_BUTTON_LEFT -> 0;
+            case SDL_BUTTON_RIGHT -> 1;
+            case SDL_BUTTON_MIDDLE -> 2;
+            case SDL_BUTTON_X1 -> 3;
+            case SDL_BUTTON_X2 -> 4;
+            default -> -1;
+        };
     }
 
     public static void addButtonEvent(int button, boolean pressed) {
@@ -170,10 +258,17 @@ public class Mouse {
         if (grabbed == grab) {
             return;
         }
-        GLFW.glfwSetInputMode(
-            Display.getWindow(),
-            GLFW.GLFW_CURSOR,
-            grab ? GLFW.GLFW_CURSOR_DISABLED : GLFW.GLFW_CURSOR_NORMAL);
+        MainThread.runOnMainThread(() -> {
+            Sys.checkSdl(SDLMouse.SDL_SetWindowRelativeMouseMode(Display.getWindow(), grab));
+            if (!grab) {
+                try (MemoryStack stack = MemoryStack.stackPush()) {
+                    final IntBuffer w = stack.ints(0);
+                    final IntBuffer h = stack.ints(0);
+                    Sys.checkSdl(SDLVideo.SDL_GetWindowSize(Display.getWindow(), w, h));
+                    SDLMouse.SDL_WarpMouseInWindow(Display.getWindow(), w.get(0) / 2.0f, h.get(0) / 2.0f);
+                }
+            }
+        });
         grabbed = grab;
         if (!grab) {
             // The old cursor position is sent instead of the new one in the events following mouse ungrab.
@@ -201,6 +296,8 @@ public class Mouse {
             ignoreNextDelta++; // Prevent camera rapidly rotating when closing GUIs.
             dx = 0;
             dy = 0;
+            dxAccum = 0;
+            dyAccum = 0;
         }
     }
 
@@ -209,7 +306,25 @@ public class Mouse {
     }
 
     public static boolean isButtonDown(int button) {
-        return GLFW.glfwGetMouseButton(Display.getWindow(), button) == GLFW.GLFW_PRESS;
+        return (sdlButtonState & sdlButtonMask(button)) != 0;
+    }
+
+    /** Updated once per pump so button state queries do not need a window handle. */
+    public static int sdlButtonState = 0;
+
+    private static int sdlButtonMask(int button) {
+        return button >= 0 && button < 5 ? 1 << button : 0;
+    }
+
+    /** Re-reads the SDL button state; called once per event pump. */
+    public static void updateSdlButtonState() {
+        sdlButtonState = 0;
+        final int state = SDLMouse.nSDL_GetMouseState(0L, 0L);
+        for (int i = 0; i < 5; i++) {
+            if ((state & (1 << i)) != 0) {
+                sdlButtonState |= 1 << i;
+            }
+        }
     }
 
     public static boolean next() {
@@ -275,7 +390,7 @@ public class Mouse {
     }
 
     public static int getButtonCount() {
-        return 8; // max mouse buttons supported by GLFW
+        return 8;
     }
 
     public static void setClipMouseCoordinatesToWindow(boolean clip) {
@@ -287,19 +402,38 @@ public class Mouse {
             return;
         }
         // convert back from framebuffer coordinates to screen-space coordinates
-        float inv_scale = 1.0f / Display.getPixelScaleFactor();
-        new_x = (int) (new_x * inv_scale);
-        new_y = (int) (new_y * inv_scale);
-        GLFW.glfwSetCursorPos(Display.getWindow(), new_x, new_y);
+        final float inv_scale = 1.0f / Display.getPixelScaleFactor();
+        final int screenX = (int) (new_x * inv_scale);
+        final int screenY = (int) (new_y * inv_scale);
+        MainThread.runOnMainThread(
+            () -> SDLMouse.SDL_WarpMouseInWindow(Display.getWindow(), screenX, screenY));
         // this might lose accuracy, since we just went from fb->screen and this will
         // undo that change. Yay floating point numbers!
-        addMoveEvent(new_x, new_y);
+        addMoveEvent(screenX, screenY);
     }
 
     public static Cursor setNativeCursor(Cursor cursor) throws LWJGLException {
-        GLFW.glfwSetCursor(Display.getWindow(), cursor != null ? cursor.getNativeCursor() : MemoryUtil.NULL);
+        final Cursor prevCursor = currentCursor;
         currentCursor = cursor;
-        return cursor;
+        if (!Display.isCreated()) {
+            return prevCursor;
+        }
+
+        if (cursor == null) {
+            // SDL_SetCursor(null) only redraws the current cursor; restoring the system default needs a
+            // real handle, which is created once and reused.
+            MainThread.runOnMainThread(() -> {
+                if (systemCursor == 0L) {
+                    systemCursor = Sys.checkSdl(SDLMouse.SDL_CreateSystemCursor(SDLMouse.SDL_SYSTEM_CURSOR_DEFAULT));
+                }
+                Sys.checkSdl(SDLMouse.SDL_SetCursor(systemCursor));
+            });
+        } else {
+            final long handle = cursor.getNativeCursor();
+            MainThread.runOnMainThread(() -> Sys.checkSdl(SDLMouse.SDL_SetCursor(handle)));
+        }
+
+        return prevCursor;
     }
 
     public static void destroy() {}
