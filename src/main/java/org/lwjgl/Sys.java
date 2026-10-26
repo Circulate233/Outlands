@@ -13,22 +13,34 @@ import static org.lwjgl.sdl.SDLInit.SDL_PROP_APP_METADATA_URL_STRING;
 import static org.lwjgl.sdl.SDLInit.SDL_SetAppMetadata;
 import static org.lwjgl.sdl.SDLInit.SDL_SetAppMetadataProperty;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
+import org.lwjgl.sdl.SDLError;
 import org.lwjgl.sdl.SDLClipboard;
 import org.lwjgl.sdl.SDLHints;
 import org.lwjgl.sdl.SDLMessageBox;
 import org.lwjgl.sdl.SDLMisc;
 import org.lwjgl.sdl.SDLStdinc;
 import org.lwjgl.sdl.SDLTimer;
+import org.lwjgl.sdl.SDLVideo;
 import org.lwjgl.system.Configuration;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 import org.lwjgl.system.Pointer;
 
 import com.cleanroommc.common.CleanroomVersion;
+import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.common.ForgeEarlyConfig;
+import net.minecraftforge.fml.common.FMLLog;
 
 /**
  * LWJGL2 system/runtime services, backed by SDL3.
@@ -36,6 +48,9 @@ import net.minecraftforge.common.ForgeEarlyConfig;
 public class Sys {
 
     private static boolean initialized = false;
+
+    /** The video driver the Linux hint handed to SDL, or {@code null} when SDL picks one by itself. */
+    private static String requestedVideoDriver = null;
 
     /**
      * Brings up the SDL subsystems. Idempotent; must be reached from the main thread.
@@ -53,16 +68,48 @@ public class Sys {
             }
             applyPlatformHints();
             applyAppMetadata();
-            if (!SDL_Init(
-                SDL_INIT_VIDEO | SDL_INIT_EVENTS
-                    | SDL_INIT_JOYSTICK
-                    | SDL_INIT_GAMEPAD
-                    | SDL_INIT_HAPTIC
-                    | SDL_INIT_SENSOR)) {
-                throw new SDLException("Could not initialize SDL");
+            if (!initSubsystems() && !retryWithPlatformDefaultDriver()) {
+                throw new SDLException("Could not initialize SDL: " + SDLError.SDL_GetError());
             }
+            logVideoDriver();
             initialized = true;
         });
+    }
+
+    private static boolean initSubsystems() {
+        return SDL_Init(
+            SDL_INIT_VIDEO | SDL_INIT_EVENTS
+                | SDL_INIT_JOYSTICK
+                | SDL_INIT_GAMEPAD
+                | SDL_INIT_HAPTIC
+                | SDL_INIT_SENSOR);
+    }
+
+    /**
+     * A pinned video driver is a user preference, not a hard requirement: when the driver cannot come up (X11
+     * requested on a session without a reachable X server, for instance) SDL fails the whole init. Fall back to
+     * the platform default instead of refusing to start.
+     */
+    private static boolean retryWithPlatformDefaultDriver() {
+        if (requestedVideoDriver == null) {
+            return false;
+        }
+        final String rejected = requestedVideoDriver;
+        final String error = SDLError.SDL_GetError();
+        requestedVideoDriver = null;
+        SDLHints.SDL_ResetHint(SDLHints.SDL_HINT_VIDEO_DRIVER);
+        FMLLog.log.warn("SDL video driver '{}' could not be initialised ({}), falling back to the platform default",
+            rejected, error);
+        return initSubsystems();
+    }
+
+    private static void logVideoDriver() {
+        final String current = SDLVideo.SDL_GetCurrentVideoDriver();
+        final List<String> available = new ArrayList<>();
+        for (int i = 0; i < SDLVideo.SDL_GetNumVideoDrivers(); i++) {
+            available.add(SDLVideo.SDL_GetVideoDriver(i));
+        }
+        FMLLog.log.info("SDL video driver: {} (available: {})", current, String.join(", ", available));
     }
 
     /** Applies the per-platform driver hints. */
@@ -81,9 +128,60 @@ public class Sys {
         // SDL_EVENT_TEXT_EDITING and stops painting its own composition window. Candidates stay native,
         // which is why 'candidates' is absent here.
         SDLHints.SDL_SetHint(SDLHints.SDL_HINT_IME_IMPLEMENTED_UI, "composition");
-        if (platform == Platform.LINUX && isWaylandSession()) {
-            SDLHints.SDL_SetHint(SDLHints.SDL_HINT_VIDEO_DRIVER, ForgeEarlyConfig.FORCE_WAYLAND ? "wayland" : "x11");
+        if (platform == Platform.LINUX) {
+            requestedVideoDriver = applyLinuxVideoDriverHint();
         }
+    }
+
+    /**
+     * Resolves the Linux video driver: the SDL default order puts Wayland first, but input methods only reach a
+     * Wayland client through the compositor's text-input protocol, while XWayland lets them in through XIM. Prefer
+     * X11 inside a Wayland session, and let {@link #retryWithPlatformDefaultDriver()} cover a session without a
+     * reachable X server.
+     *
+     * @return the driver handed to SDL, or {@code null} when SDL should pick one itself
+     */
+    private static String applyLinuxVideoDriverHint() {
+        final String configured = readConfiguredLinuxVideoDriver();
+        final String requested = configured == null ? "auto" : configured.trim().toLowerCase(Locale.ENGLISH);
+        final String driver = switch (requested) {
+            case "x11", "xorg" -> "x11";
+            case "wayland" -> "wayland";
+            case "auto" -> isWaylandSession() ? "x11" : null;
+            default -> {
+                FMLLog.log.warn("Unknown LINUX_VIDEO_DRIVER '{}', expected auto, x11 or wayland - using auto", configured);
+                yield isWaylandSession() ? "x11" : null;
+            }
+        };
+        if (driver != null) {
+            SDLHints.SDL_SetHint(SDLHints.SDL_HINT_VIDEO_DRIVER, driver);
+        }
+        return driver;
+    }
+
+    /**
+     * Reads the driver preference straight out of {@code forge_early.cfg}: the window is created before
+     * {@code ConfigManager} syncs {@link ForgeEarlyConfig}, so the field still holds the default at this point.
+     * Anything unreadable falls back to the field, which keeps the option visible in the config file and GUI.
+     */
+    private static String readConfiguredLinuxVideoDriver() {
+        final File file = new File(Launch.minecraftHome, "config" + File.separator + "forge_early.cfg");
+        if (!file.isFile()) {
+            return ForgeEarlyConfig.LINUX_VIDEO_DRIVER;
+        }
+        try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                final String trimmed = line.trim();
+                if (!trimmed.startsWith("S:LINUX_VIDEO_DRIVER=") && !trimmed.startsWith("B:LINUX_VIDEO_DRIVER=")) {
+                    continue;
+                }
+                return trimmed.substring(trimmed.indexOf('=') + 1).trim();
+            }
+        } catch (IOException e) {
+            FMLLog.log.warn("Could not read LINUX_VIDEO_DRIVER from {}, using the default", file, e);
+        }
+        return ForgeEarlyConfig.LINUX_VIDEO_DRIVER;
     }
 
     private static boolean isWaylandSession() {

@@ -12,8 +12,8 @@ import top.outlands.foundation.boot.MainThreadExecutor;
 /**
  * Dispatches window and event work onto the process main thread.
  * <p>
- * GLFW's {@code glfwPollEvents} and SDL3's {@code SDL_PumpEvents}/{@code SDL_PeepEvents} may only run there,
- * while the game loop, resource loading and mod background tasks all reach window state from other threads.
+ * SDL's {@code SDL_PumpEvents}/{@code SDL_PeepEvents} may only run there, while the game loop,
+ * resource loading and mod background tasks all reach window state from other threads.
  * <p>
  * A thin adapter over {@link MainThreadExecutor} that adds the caller's context class loader propagation,
  * which Foundation does not do, and LWJGL2-shaped overloads.

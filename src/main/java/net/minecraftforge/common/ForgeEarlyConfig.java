@@ -19,8 +19,22 @@ public class ForgeEarlyConfig {
     public static boolean WINDOW_START_FOCUSED = true;
     public static boolean WINDOW_START_ICONIFIED = false;
 
-    @Config.Comment("Enable this when you want to run the game on Wayland (WARNING: GLFW's wayland support is buggy)")
-    public static boolean FORCE_WAYLAND = false;
+    @Config.Comment({
+        "Linux-only - which SDL video driver to use: 'auto', 'x11' or 'wayland'.",
+        "'auto' prefers XWayland in a Wayland session (IME input methods reach X11 clients through XIM) and",
+        "falls back to native Wayland when the X11 driver cannot be initialised.",
+        "The SDL_VIDEO_DRIVER environment variable still overrides this setting."
+    })
+    public static String LINUX_VIDEO_DRIVER = "auto";
+
+    @Config.Comment({
+        "Keep SDL's text input session open whenever a GUI screen is open, instead of only while a text field",
+        "has focus. SDL detaches the operating system's input method from the window while text input is off, so",
+        "with this disabled the input method cannot be switched to (Ctrl+Space) until a text field takes focus.",
+        "Only text fields consume the committed text; an open screen without a focused field just keeps the",
+        "input method switchable."
+    })
+    public static boolean IME_AVAILABLE_IN_GUI = true;
 
     public static boolean WINDOW_CENTERED = true;
 
@@ -59,8 +73,8 @@ public class ForgeEarlyConfig {
 
     @Config.Comment("MAC OS-only - identifier used to save and restore the window position and size")
     public static String COCOA_FRAME_NAME = "minecraft";
-    @Config.Comment("MAC OS & Wayland - Specifies whether the framebuffer should be resized based on content scale changes.")
-    public static boolean GLFW_SCALE_FRAMEBUFFER = true;
+    @Config.Comment("MAC OS & Wayland - create a high pixel density window so the framebuffer follows the OS content scale instead of the logical window size")
+    public static boolean SCALE_FRAMEBUFFER = true;
 
     @Config.Comment({
         "Disable the Fugue/Scalar coremod presence check at startup.",
