@@ -51,6 +51,7 @@ import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.oredict.OreDictionary;
 
 import java.util.Arrays;
@@ -65,6 +66,10 @@ public class ForgeClientHandler
     @SubscribeEvent
     public static void registerModels(ModelRegistryEvent event)
     {
+        // The input method has no way of being reached on screens the game does not recognise as text screens, so
+        // the player gets a key for it. Registered here because that is the first point where the client is far
+        // enough along for game settings to exist.
+        com.cleanroommc.client.ImeForceKey.register();
         // register model for the universal bucket, if it exists
         if (FluidRegistry.isUniversalBucketEnabled())
         {
@@ -78,6 +83,20 @@ public class ForgeClientHandler
         if (FluidRegistry.isUniversalBucketEnabled())
         {
             event.getItemColors().registerItemColorHandler(new FluidContainerColorer(), ForgeModContainer.getInstance().universalBucket);
+        }
+    }
+
+    /**
+     * Keeps the OS input method window next to whatever is being edited. Driven from the client tick rather than a
+     * screen's drawScreen: most screens override drawScreen without calling super, so a draw-side hook silently
+     * misses exactly the screens (books, signs, mod screens) that have no text field to report an anchor.
+     */
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event)
+    {
+        if (event.phase == TickEvent.Phase.END)
+        {
+            com.cleanroommc.client.TextInputArea.update(Minecraft.getMinecraft().currentScreen);
         }
     }
 
@@ -104,7 +123,8 @@ public class ForgeClientHandler
         }
 
         IMEHandler.setIME(gui != null &&
-                (gui instanceof GuiScreenBook || gui instanceof GuiEditSign || guiInWhiteList(gui)));
+                (ForgeEarlyConfig.IME_AVAILABLE_IN_GUI || gui instanceof GuiScreenBook || gui instanceof GuiEditSign
+                        || guiInWhiteList(gui)));
     }
 
     @SubscribeEvent

@@ -1,14 +1,43 @@
 --- before/net/minecraft/client/gui/GuiScreen.java
 +++ after/net/minecraft/client/gui/GuiScreen.java
-@@ -60,6 +60,7 @@
+@@ -60,6 +60,17 @@
      private int touchValue;
      private URI clickedLinkURI;
      private boolean focused;
 +    protected boolean keyHandled, mouseHandled; // Forge: allow canceling key and mouse Post events from handleMouseInput and handleKeyboardInput
++
++    /**
++     * Caret rectangle of whatever this screen is editing, as {x, y, width, height, caretOffset} in GUI coordinates,
++     * or null to let the input method window use its default lower left position. Text fields do not need this, they
++     * report their own caret. Only override it when the caret can be computed exactly and cheaply.
++     */
++    public int[] getTextInputArea()
++    {
++        return null;
++    }
  
      public void drawScreen(int mouseX, int mouseY, float partialTicks)
      {
-@@ -128,7 +129,10 @@
+@@ -74,6 +85,18 @@
+         }
+     }
+ 
++    /**
++     * Types text that did not come from a key press, notably what an input method committed. Screens that handle
++     * their own text (signs, books, mod screens) already implement keyTyped, so this needs no per-screen knowledge.
++     */
++    public void typeCommittedText(String text) throws IOException
++    {
++        for (int i = 0; i < text.length(); i++)
++        {
++            this.keyTyped(text.charAt(i), 0);
++        }
++    }
++
+     protected void keyTyped(char typedChar, int keyCode) throws IOException
+     {
+         if (keyCode == 1)
+@@ -128,7 +151,10 @@
  
      protected void renderToolTip(ItemStack stack, int x, int y)
      {
@@ -20,7 +49,7 @@
      }
  
      public List<String> getItemToolTip(ItemStack p_191927_1_)
-@@ -142,7 +146,7 @@
+@@ -142,7 +168,7 @@
          {
              if (i == 0)
              {
@@ -29,7 +58,7 @@
              }
              else
              {
-@@ -170,7 +174,13 @@
+@@ -170,7 +196,13 @@
  
      public void drawHoveringText(List<String> textLines, int x, int y)
      {
@@ -44,7 +73,7 @@
          {
              GlStateManager.disableRescaleNormal();
              RenderHelper.disableStandardItemLighting();
-@@ -190,7 +200,6 @@
+@@ -190,7 +222,6 @@
  
              int l1 = x + 12;
              int i2 = y - 12;
@@ -52,7 +81,7 @@
              int k = 8;
  
              if (textLines.size() > 1)
-@@ -211,17 +220,17 @@
+@@ -211,17 +242,17 @@
              this.zLevel = 300.0F;
              this.itemRender.zLevel = 300.0F;
              int l = -267386864;
@@ -77,7 +106,7 @@
  
              for (int k1 = 0; k1 < textLines.size(); k1++)
              {
-@@ -407,10 +416,13 @@
+@@ -407,10 +438,13 @@
  
      public void sendChatMessage(String msg, boolean addToChat)
      {
@@ -91,7 +120,7 @@
  
          this.mc.player.sendChatMessage(msg);
      }
-@@ -425,9 +437,15 @@
+@@ -425,9 +459,15 @@
  
                  if (guibutton.mousePressed(this.mc, mouseX, mouseY))
                  {
@@ -107,7 +136,7 @@
                  }
              }
          }
-@@ -457,8 +475,12 @@
+@@ -457,8 +497,12 @@
          this.fontRenderer = mc.fontRenderer;
          this.width = width;
          this.height = height;
@@ -120,7 +149,7 @@
      }
  
      public void setGuiSize(int w, int h)
-@@ -477,7 +499,10 @@
+@@ -477,7 +521,10 @@
          {
              while (Mouse.next())
              {
@@ -131,7 +160,7 @@
              }
          }
  
-@@ -485,7 +510,10 @@
+@@ -485,7 +532,10 @@
          {
              while (Keyboard.next())
              {
@@ -142,7 +171,7 @@
              }
          }
      }
-@@ -547,6 +575,7 @@
+@@ -547,6 +597,7 @@
      public void drawDefaultBackground()
      {
          this.drawWorldBackground(0);
