@@ -203,6 +203,13 @@ processResources {
     // dev run needs the whole tree here, not just the marker file.
     from(mcpBase.extra.map { project.zipTree(it) }) {
         include 'assets/**'
+        // Keep the marker out of our own output: vanilla picks its asset-root branch from wherever
+        // '/assets/.mcassetsroot' resolves first. With the marker here it resolves to this directory (file:
+        // scheme) and every loader then demands a complete 'assets/minecraft/...' tree next to it - which a
+        // stale or partial copy silently lacks, turning recipe/advancement loading into a NullPointerException.
+        // Left to extra.jar it resolves to the jar and the code walks the jar filesystem, exactly as in a
+        // release build, independent of what this copy produced.
+        exclude 'assets/.mcassetsroot'
     }
     // FML reads '/deobf_data-<mc>.tsrg' from the classpath in a deobfuscated environment
     from(mcpBase.obf2Srg) {
