@@ -239,6 +239,10 @@ public class Keyboard {
         } catch (IllegalStateException ignored) {}
     }
 
+    /**
+     * Queues a key-less character event, the shape LWJGL2 produced for text that has no key press behind it.
+     * GuiScreen calls keyTyped for these, which is how text committed by an input method reaches a text field.
+     */
     public static void addCharEvent(int key, char c) {
         try {
             queue.add(new KeyEvent(KEY_NONE, c, KeyState.PRESS, Sys.getNanoTime()));

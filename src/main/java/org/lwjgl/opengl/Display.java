@@ -67,8 +67,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.DoubleSupplier;
 
 import com.cleanroommc.client.ImeComposition;
+import com.cleanroommc.client.ImeForceKey;
 import com.cleanroommc.client.TextFieldHandler;
 import net.minecraftforge.common.ForgeEarlyConfig;
+import net.minecraftforge.fml.common.FMLLog;
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.MainThread;
@@ -378,7 +380,7 @@ public class Display {
                 SDL_SetBooleanProperty(
                     props,
                     SDLVideo.SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN,
-                    ForgeEarlyConfig.GLFW_SCALE_FRAMEBUFFER));
+                    ForgeEarlyConfig.SCALE_FRAMEBUFFER));
             Sys.checkSdl(
                 SDL_SetBooleanProperty(
                     props,
@@ -419,9 +421,26 @@ public class Display {
         displayVisible = (flags & SDL_WINDOW_MINIMIZED) == 0;
 
         updateWindowDimensions();
+        logWindowGeometry();
         if (savedIcons != null) {
             applySavedIcons();
         }
+    }
+
+    /**
+     * Records the window/framebuffer geometry and the display scale the backend reports: on a high density desktop
+     * the two sizes differ, and a mismatch here explains stretched or blurred rendering.
+     */
+    private static void logWindowGeometry() {
+        FMLLog.log.info(
+            "Window geometry: {}x{} logical, {}x{} pixels, pixel density {}, display scale {} (SDL video driver: {})",
+            displayWidth,
+            displayHeight,
+            displayFramebufferWidth,
+            displayFramebufferHeight,
+            SDLVideo.SDL_GetWindowPixelDensity(sdlWindow),
+            SDLVideo.SDL_GetWindowDisplayScale(sdlWindow),
+            SDLVideo.SDL_GetCurrentVideoDriver());
     }
 
     private static int windowFlags() {
@@ -466,6 +485,13 @@ public class Display {
                 ForgeEarlyConfig.OPENGL_CONTEXT_NO_ERROR ? 1 : 0));
         Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_DEPTH_SIZE, 24));
         Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_STENCIL_SIZE, 8));
+        // No alpha channel on the window surface: Minecraft clears with alpha 0, which a compositor that honours
+        // the buffer alpha (Wayland) blends away, leaving the window see-through and only the opaque GUI pixels
+        // (button outlines, text) on screen. Asking for a 24 bit colour buffer keeps the surface opaque.
+        Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_RED_SIZE, 8));
+        Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_GREEN_SIZE, 8));
+        Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_BLUE_SIZE, 8));
+        Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_ALPHA_SIZE, 0));
 
         if (hasContextAttribs) {
             if (attachmentContextAttribs.isProfileCore()) {
@@ -577,7 +603,16 @@ public class Display {
         }
     }
 
+    /**
+     * Characters a key event in the current pump already carries. SDL reports a plain keystroke twice: as the
+     * character of {@code SDL_EVENT_KEY_DOWN} and as {@code SDL_EVENT_TEXT_INPUT} with the same text. The key event
+     * is what the field consumes (next frame), so the commit has to be stripped of those characters here, while a
+     * real input method commit - which has no key event behind it - passes through untouched.
+     */
+    private static final StringBuilder pumpedKeyCharacters = new StringBuilder(8);
+
     private static void pumpSdlEvents() {
+        pumpedKeyCharacters.setLength(0);
         SDLEvents.SDL_PumpEvents();
         while (SDLEvents.SDL_PollEvent(sdlEvent)) {
             handleSdlEvent();
@@ -697,6 +732,21 @@ public class Display {
         };
     }
 
+    /**
+     * Keys that let the game act on the text field while an input method is still composing. Tab switches fields or
+     * completes player names, and both read the field's text; letting either run mid-composition loses what was typed.
+     * Keys the input method needs for its own candidate selection never reach here as a plain press from the input
+     * method's point of view, and the ones that do (Escape, Space, Enter) are left to it so it can finish first.
+     */
+    private static boolean consumesComposition(int lwjglKey, short mods) {
+        if (lwjglKey != Keyboard.KEY_TAB) {
+            return false;
+        }
+        // Shift+Tab walks fields backwards and is just as lossy; no modifier is acceptable here.
+        return (mods & (org.lwjgl.sdl.SDLKeycode.SDL_KMOD_CTRL | org.lwjgl.sdl.SDLKeycode.SDL_KMOD_ALT
+            | org.lwjgl.sdl.SDLKeycode.SDL_KMOD_GUI)) == 0;
+    }
+
     private static void handleKeyEvent() {
         final boolean isDown = sdlKeyEvent.down();
         final boolean isRepeat = sdlKeyEvent.repeat();
@@ -706,6 +756,27 @@ public class Display {
         final KeyState state = isDown ? (isRepeat ? KeyState.REPEAT : KeyState.PRESS) : KeyState.RELEASE;
 
         final int lwjglKey = KeyCodes.sdlKeycodeToLwjgl(keycode);
+
+        if (isDown && !isRepeat) {
+            // The one combination the input method cannot have taken first: while SDL's text input session is
+            // closed the operating system never sees this key, so a screen that draws its own text widget can be
+            // made reachable with the same combination that switches input methods everywhere else.
+            ImeForceKey.onKeyDown(
+                lwjglKey,
+                (mods & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_CTRL) != 0,
+                (mods & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_ALT) != 0,
+                (mods & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_GUI) != 0);
+        }
+
+        if (isDown && TextFieldHandler.isComposing() && consumesComposition(KeyCodes.sdlKeycodeToLwjgl(keycode), mods)) {
+            // Vanilla reads the field when it acts on keys like Tab (chat completion rewrites the text around the
+            // caret) or Enter, but the text the player is still picking candidates for is not in the field yet, so
+            // acting on it sees half of what was typed. The composition is dropped instead of committed: SDL has no
+            // call to commit on somebody's behalf, and an orphaned composition would be delivered to whichever field
+            // is focused when the input method finally finishes.
+            TextFieldHandler.discardComposition();
+            return;
+        }
 
         if (isDown) {
             if (keycode == org.lwjgl.sdl.SDLKeycode.SDLK_LALT) {
@@ -742,15 +813,23 @@ public class Display {
             }
 
             if ((mods & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_GUI) != 0) {
-                Keyboard.addSdlKeyEvent(lwjglKey, character, state);
+                queueKeyEvent(lwjglKey, character, state, isDown);
             } else if ((mods & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_CTRL) != 0 && !ctrlGraphicalMode) {
-                Keyboard.addSdlKeyEvent(lwjglKey, (char) (keycode & 0x1f), state);
+                queueKeyEvent(lwjglKey, (char) (keycode & 0x1f), state, isDown);
             } else {
-                Keyboard.addSdlKeyEvent(lwjglKey, character, state);
+                queueKeyEvent(lwjglKey, character, state, isDown);
             }
         } else {
             // Other key with no char event associated
-            Keyboard.addSdlKeyEvent(lwjglKey, character, state);
+            queueKeyEvent(lwjglKey, character, state, isDown);
+        }
+    }
+
+    /** Queues one key event and remembers the character a press contributed to this pump's text. */
+    private static void queueKeyEvent(int key, char character, KeyState state, boolean isDown) {
+        Keyboard.addSdlKeyEvent(key, character, state);
+        if (isDown && character >= ' ' && pumpedKeyCharacters.length() < 32) {
+            pumpedKeyCharacters.append(character);
         }
     }
 
@@ -759,9 +838,23 @@ public class Display {
         if (text == null || text.isEmpty()) {
             return;
         }
-        TextFieldHandler.onTextInput(text);
-        // Key events are queued by handleKeyEvent; text input only contributes the characters on top of them.
-        text.chars().forEachOrdered(c -> Keyboard.addCharEvent(Keyboard.KEY_NONE, (char) c));
+        if (FMLLog.log.isDebugEnabled()) {
+            FMLLog.log.debug("TEXT_INPUT [{}]", text);
+        }
+        // Handed straight to the focused field, minus the characters this pump already queued as key events, so a
+        // plain keystroke is typed exactly once and an input method commit - which has no key event - arrives whole.
+        String commit = text;
+        while (commit.length() > 0) {
+            final int at = pumpedKeyCharacters.indexOf(String.valueOf(commit.charAt(0)));
+            if (at < 0) {
+                break;
+            }
+            pumpedKeyCharacters.deleteCharAt(at);
+            commit = commit.substring(1);
+        }
+        if (!commit.isEmpty()) {
+            TextFieldHandler.onTextInput(commit);
+        }
     }
 
     private static void handleTextEditingEvent() {
