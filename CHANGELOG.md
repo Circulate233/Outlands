@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026.10.26] - 2026-10-26
+### New Features
+- [`7b50ba1`](https://github.com/Project-Outlands/Outlands/commit/7b50ba1e6ab699e4ce16cd70fff5bf70029f0cfe) - Switch to SDL from GLFW *(PR [#3](https://github.com/Project-Outlands/Outlands/pull/3) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Bug Fixes
+- [`c62d4da`](https://github.com/Project-Outlands/Outlands/commit/c62d4da3e40e0f691cc54a22c7d428bea280559c) - **release**: do not read a token that cannot see releases as 'release missing' *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Chores
+- [`1d3c4d3`](https://github.com/Project-Outlands/Outlands/commit/1d3c4d3d0d08369a578a88efe1944c377edcf290) - Merge branch 'main' of github.com:Project-Outlands/Outlands *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+
 ## [2026.10.25] - 2026-10-25
 ### New Features
 - [`4c84b73`](https://github.com/Project-Outlands/Outlands/commit/4c84b73631921d0fc7125b3d46c61e4078d2a95a) - read outlands.dev.extrapath, keep crl.dev.extrapath working *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
@@ -279,3 +290,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.6.12-alpha]: https://github.com/CleanroomMC/Cleanroom/compare/0.6.11-alpha...0.6.12-alpha
 [0.6.13-alpha]: https://github.com/CleanroomMC/Cleanroom/compare/0.6.12-alpha...0.6.13-alpha
 [2026.10.25]: https://github.com/Project-Outlands/Outlands/compare/2026.10.23...2026.10.25
+[2026.10.26]: https://github.com/Project-Outlands/Outlands/compare/2026.10.25...2026.10.26
