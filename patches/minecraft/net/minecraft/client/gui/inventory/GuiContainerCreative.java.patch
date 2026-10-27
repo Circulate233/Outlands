@@ -105,6 +105,17 @@
          int i = selectedTabIndex;
          selectedTabIndex = tab.getIndex();
          GuiContainerCreative.ContainerCreative guicontainercreative$containercreative = (GuiContainerCreative.ContainerCreative)this.inventorySlots;
+@@ -467,8 +506,8 @@
+                         {
+                             ItemStack itemstack = new ItemStack(Items.PAPER);
+                             itemstack.getOrCreateSubCompound("CustomCreativeLock");
+-                            String s = GameSettings.getKeyDisplayString(this.mc.gameSettings.keyBindsHotbar[j].getKeyCode());
+-                            String s1 = GameSettings.getKeyDisplayString(this.mc.gameSettings.keyBindSaveToolbar.getKeyCode());
++                            String s = this.mc.gameSettings.keyBindsHotbar[j].getDisplayName();
++                            String s1 = this.mc.gameSettings.keyBindSaveToolbar.getDisplayName();
+                             itemstack.setStackDisplayName(new TextComponentTranslation("inventory.hotbarInfo", s1, s).getUnformattedText());
+                             guicontainercreative$containercreative.itemList.add(itemstack);
+                         }
 @@ -552,12 +591,14 @@
  
          if (this.searchField != null)
@@ -283,6 +294,17 @@
      }
  
      public int getSelectedTabIndex()
+@@ -903,8 +1017,8 @@
+                 hotbarsnapshot.set(j, entityplayersp.inventory.getStackInSlot(j).copy());
+             }
+ 
+-            String s = GameSettings.getKeyDisplayString(client.gameSettings.keyBindsHotbar[index].getKeyCode());
+-            String s1 = GameSettings.getKeyDisplayString(client.gameSettings.keyBindLoadToolbar.getKeyCode());
++            String s = client.gameSettings.keyBindsHotbar[index].getDisplayName();
++            String s1 = client.gameSettings.keyBindLoadToolbar.getDisplayName();
+             client.ingameGUI.setOverlayMessage(new TextComponentTranslation("inventory.hotbarSaved", s1, s), false);
+             creativesettings.write();
+         }
 @@ -1093,6 +1207,39 @@
          {
              return this.slot.canTakeStack(playerIn);

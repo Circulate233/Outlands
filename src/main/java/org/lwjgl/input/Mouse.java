@@ -53,6 +53,7 @@ public class Mouse {
     private static int[] lastxEvents = new int[queue.getMaxEvents()];
     private static int[] lastyEvents = new int[queue.getMaxEvents()];
     private static long[] nanoTimeEvents = new long[queue.getMaxEvents()];
+    private static InputSnapshot[] snapshotEvents = new InputSnapshot[queue.getMaxEvents()];
 
     private static boolean clipPostionToDisplay = true;
     private static int ignoreNextDelta = 0;
@@ -100,7 +101,7 @@ public class Mouse {
 
         nanoTimeEvents[queue.getNextPos()] = Sys.getNanoTime();
 
-        queue.add();
+        addEvent();
     }
 
     /** Accumulates sub-pixel deltas so slow mouse motion is not rounded away. */
@@ -159,7 +160,7 @@ public class Mouse {
 
         nanoTimeEvents[queue.getNextPos()] = Sys.getNanoTime();
 
-        queue.add();
+        addEvent();
     }
 
     /**
@@ -180,6 +181,7 @@ public class Mouse {
     }
 
     public static void addButtonEvent(int button, boolean pressed) {
+        InputState.update(button - 100, pressed);
         lastxEvents[queue.getNextPos()] = lastEventX;
         lastyEvents[queue.getNextPos()] = lastEventY;
         lastEventX = latestX;
@@ -195,7 +197,7 @@ public class Mouse {
 
         nanoTimeEvents[queue.getNextPos()] = Sys.getNanoTime();
 
-        queue.add();
+        addEvent();
     }
 
     static double fractionalWheelPosition = 0.0;
@@ -231,7 +233,7 @@ public class Mouse {
 
             nanoTimeEvents[queue.getNextPos()] = Sys.getNanoTime();
 
-            queue.add();
+            addEvent();
         }
         fractionalWheelPosition = fractionalWheelPosition % 1;
     }
@@ -291,7 +293,7 @@ public class Mouse {
             buttonEvents[queue.getNextPos()] = -1;
             buttonEventStates[queue.getNextPos()] = false;
             nanoTimeEvents[queue.getNextPos()] = Sys.getNanoTime();
-            queue.add();
+            addEvent();
         } else {
             ignoreNextDelta++; // Prevent camera rapidly rotating when closing GUIs.
             dx = 0;
@@ -331,6 +333,11 @@ public class Mouse {
         return queue.next();
     }
 
+    private static void addEvent() {
+        snapshotEvents[queue.getNextPos()] = InputSnapshot.current();
+        queue.add();
+    }
+
     public static int getEventX() {
         return xEvents[queue.getCurrentPos()];
     }
@@ -349,6 +356,16 @@ public class Mouse {
 
     public static long getEventNanoseconds() {
         return nanoTimeEvents[queue.getCurrentPos()];
+    }
+
+    /**
+     * Returns the input state captured when the current event was queued.
+     *
+     * @return an immutable event-time snapshot; later input does not change it. Only valid after
+     *         {@link #next()} returned true, since no event is current before the first one.
+     */
+    public static InputSnapshot getEventSnapshot() {
+        return snapshotEvents[queue.getCurrentPos()];
     }
 
     public static int getEventButton() {

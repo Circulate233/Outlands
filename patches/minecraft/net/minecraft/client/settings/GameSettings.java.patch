@@ -8,7 +8,23 @@
  import java.lang.reflect.ParameterizedType;
  import java.lang.reflect.Type;
  import java.nio.charset.StandardCharsets;
-@@ -68,6 +69,7 @@
+@@ -34,12 +35,15 @@
+ import net.minecraft.util.datafix.FixTypes;
+ import net.minecraft.util.math.MathHelper;
+ import net.minecraft.world.EnumDifficulty;
++import com.cleanroommc.client.ImeForceKey;
++import net.minecraftforge.client.settings.KeyCombination;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
+ import org.apache.commons.io.IOUtils;
+ import org.apache.commons.lang3.ArrayUtils;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
++import org.lwjgl.input.InputSnapshot;
+ import org.lwjgl.input.Keyboard;
+ import org.lwjgl.input.Mouse;
+ import org.lwjgl.opengl.Display;
+@@ -68,6 +72,7 @@
          }
      };
      public static final Splitter COLON_SPLITTER = Splitter.on(':');
@@ -16,7 +32,7 @@
      private static final String[] GUISCALES = new String[]
          {
              "options.guiScale.auto", "options.guiScale.small", "options.guiScale.normal", "options.guiScale.large"
-@@ -213,6 +215,7 @@
+@@ -213,6 +218,7 @@
  
      public GameSettings(Minecraft mcIn, File mcDataDir)
      {
@@ -24,7 +40,7 @@
          this.mc = mcIn;
          this.optionsFile = new File(mcDataDir, "options.txt");
  
-@@ -231,6 +234,7 @@
+@@ -231,6 +237,7 @@
  
      public GameSettings()
      {
@@ -32,6 +48,37 @@
      }
  
      public static String getKeyDisplayString(int key)
+@@ -257,16 +264,7 @@
+ 
+     public static boolean isKeyDown(KeyBinding key)
+     {
+-        int i = key.getKeyCode();
+-
+-        if (i == 0 || i >= 256)
+-        {
+-            return false;
+-        }
+-        else
+-        {
+-            return i < 0 ? Mouse.isButtonDown(i + 100) : Keyboard.isKeyDown(i);
+-        }
++        return key.getKeyCombination().matches(InputSnapshot.current());
+     }
+ 
+     public void setOptionKeyBinding(KeyBinding key, int keyCode)
+@@ -275,6 +273,12 @@
+         this.saveOptions();
+     }
+ 
++    public void setOptionKeyBinding(KeyBinding key, KeyCombination combination)
++    {
++        key.setKeyCombination(combination);
++        this.saveOptions();
++    }
++
+     public void setOptionFloatValue(GameSettings.Options settingsOption, float value)
+     {
+         if (settingsOption == GameSettings.Options.SENSITIVITY)
 @@ -337,7 +341,7 @@
                  this.mc.getTextureMapBlocks().setMipmapLevels(this.mipmapLevels);
                  this.mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
@@ -90,21 +137,23 @@
              NBTTagCompound nbttagcompound = new NBTTagCompound();
  
              for (String s : list)
-@@ -1110,7 +1120,12 @@
+@@ -1110,7 +1120,14 @@
                      {
                          if (s1.equals("key_" + keybinding.getKeyDescription()))
                          {
 -                            keybinding.setKeyCode(Integer.parseInt(s2));
-+                            if (s2.indexOf(':') != -1)
++                            if ("key.cleanroommc.forceIme".equals(keybinding.getKeyDescription()))
 +                            {
-+                                String[] t = s2.split(":");
-+                                keybinding.setKeyModifierAndCode(net.minecraftforge.client.settings.KeyModifier.valueFromString(t[1]), Integer.parseInt(t[0]));
-+                            } else
-+                            keybinding.setKeyModifierAndCode(net.minecraftforge.client.settings.KeyModifier.NONE, Integer.parseInt(s2));
++                                keybinding.setKeyCombination(ImeForceKey.fromOptions(s2));
++                            }
++                            else
++                            {
++                                keybinding.setKeyCombination(KeyCombination.parse(s2));
++                            }
                          }
                      }
  
-@@ -1140,8 +1155,9 @@
+@@ -1140,8 +1157,9 @@
          }
          catch (Exception exception2)
          {
@@ -115,7 +164,7 @@
      }
  
      private NBTTagCompound dataFix(NBTTagCompound p_189988_1_)
-@@ -1173,6 +1189,7 @@
+@@ -1173,6 +1191,7 @@
  
      public void saveOptions()
      {
@@ -123,17 +172,19 @@
          PrintWriter printwriter = null;
  
          try
-@@ -1247,7 +1264,8 @@
+@@ -1247,7 +1266,10 @@
  
              for (KeyBinding keybinding : this.keyBindings)
              {
 -                printwriter.println("key_" + keybinding.getKeyDescription() + ":" + keybinding.getKeyCode());
-+                String keyString = "key_" + keybinding.getKeyDescription() + ":" + keybinding.getKeyCode();
-+                printwriter.println(keybinding.getKeyModifier() != net.minecraftforge.client.settings.KeyModifier.NONE ? keyString + ":" + keybinding.getKeyModifier() : keyString);
++                String serializedCombination = "key.cleanroommc.forceIme".equals(keybinding.getKeyDescription())
++                    ? ImeForceKey.toOptions(keybinding.getKeyCombination())
++                    : keybinding.getKeyCombination().serialize();
++                printwriter.println("key_" + keybinding.getKeyDescription() + ":" + serializedCombination);
              }
  
              for (SoundCategory soundcategory : SoundCategory.values())
-@@ -1262,11 +1280,11 @@
+@@ -1262,11 +1284,11 @@
          }
          catch (Exception exception)
          {
@@ -147,7 +198,7 @@
          }
  
          this.sendSettingsToServer();
-@@ -1484,4 +1502,35 @@
+@@ -1484,4 +1506,35 @@
              return value;
          }
      }

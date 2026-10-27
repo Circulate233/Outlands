@@ -69,6 +69,7 @@ import java.util.function.DoubleSupplier;
 import com.cleanroommc.client.ImeComposition;
 import com.cleanroommc.client.ImeForceKey;
 import com.cleanroommc.client.TextFieldHandler;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.common.ForgeEarlyConfig;
 import net.minecraftforge.fml.common.FMLLog;
 
@@ -76,6 +77,8 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.MainThread;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.Sys;
+import org.lwjgl.input.InputSnapshot;
+import org.lwjgl.input.InputState;
 import org.lwjgl.input.KeyCodes;
 import org.lwjgl.input.KeyState;
 import org.lwjgl.input.Keyboard;
@@ -652,6 +655,10 @@ public class Display {
                     yield true;
                 }
                 displayFocused = true;
+                // Both state arrays lag one pump; refresh them so the rebuilt snapshot is the state at focus time.
+                Keyboard.sdlKeyPressedArray = SDLKeyboard.SDL_GetKeyboardState();
+                Mouse.updateSdlButtonState();
+                KeyBinding.updateKeyBindState();
                 yield true;
             }
             case SDL_EVENT_WINDOW_FOCUS_LOST -> {
@@ -659,6 +666,8 @@ public class Display {
                     yield true;
                 }
                 displayFocused = false;
+                InputState.clear();
+                KeyBinding.unPressAllKeys();
                 yield true;
             }
             case SDL_EVENT_WINDOW_MINIMIZED -> {
@@ -755,20 +764,18 @@ public class Display {
         final int scancode = sdlKeyEvent.scancode();
         final KeyState state = isDown ? (isRepeat ? KeyState.REPEAT : KeyState.PRESS) : KeyState.RELEASE;
 
-        final int lwjglKey = KeyCodes.sdlKeycodeToLwjgl(keycode);
+        // Physical-key identity for the LWJGL2 event, so queues, snapshots and isKeyDown agree on non-QWERTY layouts.
+        final int lwjglKey = KeyCodes.sdlScancodeToLwjgl(scancode);
+        InputState.update(lwjglKey, isDown);
 
         if (isDown && !isRepeat) {
             // The one combination the input method cannot have taken first: while SDL's text input session is
             // closed the operating system never sees this key, so a screen that draws its own text widget can be
             // made reachable with the same combination that switches input methods everywhere else.
-            ImeForceKey.onKeyDown(
-                lwjglKey,
-                (mods & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_CTRL) != 0,
-                (mods & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_ALT) != 0,
-                (mods & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_GUI) != 0);
+            ImeForceKey.onKeyDown(lwjglKey, InputSnapshot.current());
         }
 
-        if (isDown && TextFieldHandler.isComposing() && consumesComposition(KeyCodes.sdlKeycodeToLwjgl(keycode), mods)) {
+        if (isDown && TextFieldHandler.isComposing() && consumesComposition(lwjglKey, mods)) {
             // Vanilla reads the field when it acts on keys like Tab (chat completion rewrites the text around the
             // caret) or Enter, but the text the player is still picking candidates for is not in the field yet, so
             // acting on it sees half of what was typed. The composition is dropped instead of committed: SDL has no

@@ -1,6 +1,33 @@
 --- before/net/minecraft/client/gui/GuiControls.java
 +++ after/net/minecraft/client/gui/GuiControls.java
-@@ -87,7 +87,7 @@
+@@ -1,12 +1,17 @@
+ package net.minecraft.client.gui;
+ 
+ import java.io.IOException;
++import com.cleanroommc.client.windows.WindowsKeyRecording;
+ import net.minecraft.client.Minecraft;
+ import net.minecraft.client.resources.I18n;
+ import net.minecraft.client.settings.GameSettings;
+ import net.minecraft.client.settings.KeyBinding;
++import net.minecraft.util.Util;
++import net.minecraftforge.client.settings.KeyCombination;
++import net.minecraftforge.client.settings.KeyCombinationRecorder;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.lwjgl.input.Keyboard;
+ 
+ @SideOnly(Side.CLIENT)
+ public class GuiControls extends GuiScreen
+@@ -22,6 +27,8 @@
+     public long time;
+     private GuiKeyBindingList keyBindingList;
+     private GuiButton buttonReset;
++    private KeyCombinationRecorder recorder;
++    private String keyCombinationTooltip;
+ 
+     public GuiControls(GuiScreen screen, GameSettings settings)
+     {
+@@ -87,7 +94,7 @@
          {
              for (KeyBinding keybinding : this.mc.gameSettings.keyBindings)
              {
@@ -9,37 +36,164 @@
              }
  
              KeyBinding.resetKeyBindingArrayAndHash();
-@@ -104,6 +104,7 @@
-     {
-         if (this.buttonId != null)
-         {
-+            this.buttonId.setKeyModifierAndCode(net.minecraftforge.client.settings.KeyModifier.getActiveModifier(), -100 + mouseButton);
-             this.options.setOptionKeyBinding(this.buttonId, -100 + mouseButton);
-             this.buttonId = null;
-             KeyBinding.resetKeyBindingArrayAndHash();
-@@ -130,17 +131,21 @@
-         {
-             if (keyCode == 1)
-             {
-+                this.buttonId.setKeyModifierAndCode(net.minecraftforge.client.settings.KeyModifier.NONE, 0);
-                 this.options.setOptionKeyBinding(this.buttonId, 0);
-             }
-             else if (keyCode != 0)
-             {
-+                this.buttonId.setKeyModifierAndCode(net.minecraftforge.client.settings.KeyModifier.getActiveModifier(), keyCode);
-                 this.options.setOptionKeyBinding(this.buttonId, keyCode);
-             }
-             else if (typedChar > 0)
-             {
-+                this.buttonId.setKeyModifierAndCode(net.minecraftforge.client.settings.KeyModifier.getActiveModifier(), typedChar + 256);
-                 this.options.setOptionKeyBinding(this.buttonId, typedChar + 256);
-             }
+@@ -99,14 +106,62 @@
+         }
+     }
  
-+            if (!net.minecraftforge.client.settings.KeyModifier.isKeyCodeModifier(keyCode))
-             this.buttonId = null;
-             this.time = Minecraft.getSystemTime();
-             KeyBinding.resetKeyBindingArrayAndHash();
-@@ -161,7 +166,7 @@
++    void startKeyBinding(KeyBinding keyBinding)
++    {
++        this.buttonId = keyBinding;
++        this.recorder = new KeyCombinationRecorder();
++    }
++
++    KeyCombination getDisplayedCombination(KeyBinding keyBinding)
++    {
++        if (this.buttonId == keyBinding && this.recorder != null)
++        {
++            final KeyCombination pending = this.recorder.getPending();
++            return pending == null ? keyBinding.getKeyCombination() : pending;
++        }
++        return keyBinding.getKeyCombination();
++    }
++
++    String ellipsize(String text, int width)
++    {
++        if (this.fontRenderer.getStringWidth(text) <= width)
++        {
++            return text;
++        }
++        final String suffix = "...";
++        return this.fontRenderer.trimStringToWidth(text, width - this.fontRenderer.getStringWidth(suffix)) + suffix;
++    }
++
++    void setKeyCombinationTooltip(String text)
++    {
++        this.keyCombinationTooltip = text;
++    }
++
++    private void completeRecording(KeyCombination combination)
++    {
++        if (combination != null && this.buttonId != null)
++        {
++            this.options.setOptionKeyBinding(this.buttonId, combination);
++            this.buttonId = null;
++            this.recorder = null;
++            this.time = Minecraft.getSystemTime();
++            KeyBinding.resetKeyBindingArrayAndHash();
++        }
++    }
++
++    private void cancelRecording()
++    {
++        this.buttonId = null;
++        this.recorder = null;
++        this.time = Minecraft.getSystemTime();
++    }
++
+     @Override
+     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
+     {
+-        if (this.buttonId != null)
++        if (this.buttonId != null && this.recorder != null)
+         {
+-            this.options.setOptionKeyBinding(this.buttonId, -100 + mouseButton);
+-            this.buttonId = null;
+-            KeyBinding.resetKeyBindingArrayAndHash();
++            this.recorder.press(-100 + mouseButton);
+         }
+         else if (mouseButton != 0 || !this.keyBindingList.mouseClicked(mouseX, mouseY, mouseButton))
+         {
+@@ -117,43 +172,70 @@
+     @Override
+     protected void mouseReleased(int mouseX, int mouseY, int state)
+     {
+-        if (state != 0 || !this.keyBindingList.mouseReleased(mouseX, mouseY, state))
++        if (this.buttonId != null && this.recorder != null)
++        {
++            completeRecording(this.recorder.release(-100 + state));
++        }
++        else if (state != 0 || !this.keyBindingList.mouseReleased(mouseX, mouseY, state))
+         {
+             super.mouseReleased(mouseX, mouseY, state);
+         }
+     }
+ 
+     @Override
+-    protected void keyTyped(char typedChar, int keyCode) throws IOException
++    public void handleKeyboardInput() throws IOException
+     {
+-        if (this.buttonId != null)
++        if (this.buttonId == null || this.recorder == null)
+         {
+-            if (keyCode == 1)
+-            {
+-                this.options.setOptionKeyBinding(this.buttonId, 0);
+-            }
+-            else if (keyCode != 0)
+-            {
+-                this.options.setOptionKeyBinding(this.buttonId, keyCode);
+-            }
+-            else if (typedChar > 0)
+-            {
+-                this.options.setOptionKeyBinding(this.buttonId, typedChar + 256);
+-            }
++            super.handleKeyboardInput();
++            return;
++        }
+ 
+-            this.buttonId = null;
+-            this.time = Minecraft.getSystemTime();
+-            KeyBinding.resetKeyBindingArrayAndHash();
++        final int keyCode = Keyboard.getEventKey();
++        if (keyCode == 0)
++        {
++            return;
++        }
++        if (Keyboard.getEventKeyState())
++        {
++            if (Keyboard.isRepeatEvent())
++            {
++                return;
++            }
++            if (keyCode == Keyboard.KEY_ESCAPE)
++            {
++                if (this.recorder.isEmpty())
++                {
++                    completeRecording(KeyCombination.unbound());
++                }
++                else
++                {
++                    cancelRecording();
++                }
++                return;
++            }
++            this.recorder.press(keyCode);
+         }
+         else
+         {
+-            super.keyTyped(typedChar, keyCode);
++            completeRecording(this.recorder.release(keyCode));
+         }
++    }
++
++    @Override
++    public void onGuiClosed()
++    {
++        cancelRecording();
+     }
+ 
+     @Override
+     public void drawScreen(int mouseX, int mouseY, float partialTicks)
+     {
++        this.keyCombinationTooltip = null;
++        if (this.recorder != null && Util.getOSType() == Util.EnumOS.WINDOWS)
++        {
++            completeRecording(WindowsKeyRecording.poll(this.recorder));
++        }
+         this.drawDefaultBackground();
+         this.keyBindingList.drawScreen(mouseX, mouseY, partialTicks);
+         this.drawCenteredString(this.fontRenderer, this.screenTitle, this.width / 2, 8, 16777215);
+@@ -161,7 +243,7 @@
  
          for (KeyBinding keybinding : this.options.keyBindings)
          {
@@ -48,3 +202,13 @@
              {
                  flag = true;
                  break;
+@@ -170,5 +252,9 @@
+ 
+         this.buttonReset.enabled = flag;
+         super.drawScreen(mouseX, mouseY, partialTicks);
++        if (this.keyCombinationTooltip != null)
++        {
++            this.drawHoveringText(this.keyCombinationTooltip, mouseX, mouseY);
++        }
+     }
+ }

@@ -19,129 +19,83 @@
 
 package net.minecraftforge.client.settings;
 
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.util.IntHashMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.annotation.Nullable;
-import java.util.*;
-import java.util.stream.Collectors;
 
-public class KeyBindingMap
-{
-    private static final EnumMap<KeyModifier, IntHashMap<Collection<KeyBinding>>> map = new java.util.EnumMap<KeyModifier, IntHashMap<Collection<KeyBinding>>>(KeyModifier.class);
-    static
-    {
-        for (KeyModifier modifier : KeyModifier.values())
-        {
-            map.put(modifier, new IntHashMap<Collection<KeyBinding>>());
-        }
-    }
+import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.util.IntHashMap;
+import org.lwjgl.input.InputSnapshot;
+
+public class KeyBindingMap {
+    private final IntHashMap<Collection<KeyBinding>> map = new IntHashMap<>();
 
     @Nullable
     @Deprecated // Cleanroom: Use lookupActives
-    public KeyBinding lookupActive(int keyCode)
-    {
-        KeyModifier activeModifier = KeyModifier.getActiveModifier();
-        if (!activeModifier.matches(keyCode))
-        {
-            KeyBinding binding = getBinding(keyCode, activeModifier);
-            if (binding != null)
-            {
-                return binding;
-            }
-        }
-        return getBinding(keyCode, KeyModifier.NONE);
+    public KeyBinding lookupActive(int keyCode) {
+        final Set<KeyBinding> bindings = lookupActives(keyCode);
+        return bindings.isEmpty() ? null : bindings.iterator().next();
     }
 
-    public Set<KeyBinding> lookupActives(int keyCode)
-    {
-        KeyModifier activeModifier = KeyModifier.getActiveModifier();
-        if (!activeModifier.matches(keyCode))
-        {
-            Set<KeyBinding> bindings = getBindings(keyCode, activeModifier);
-            if (!bindings.isEmpty())
-            {
-                return bindings;
-            }
-        }
-        return getBindings(keyCode, KeyModifier.NONE);
+    public Set<KeyBinding> lookupActives(int keyCode) {
+        return lookupActives(keyCode, InputSnapshot.current());
     }
 
-    @Nullable
-    private KeyBinding getBinding(int keyCode, KeyModifier keyModifier)
-    {
-        Collection<KeyBinding> bindings = map.get(keyModifier).lookup(keyCode);
-        if (bindings != null)
-        {
-            for (KeyBinding binding : bindings)
-            {
-                if (binding.isActiveAndMatches(keyCode))
-                {
-                    return binding;
-                }
-            }
-        }
-        return null;
-    }
-
-    private Set<KeyBinding> getBindings(int keyCode, KeyModifier keyModifier)
-    {
-        Collection<KeyBinding> bindings = map.get(keyModifier).lookup(keyCode);
-        if (bindings == null)
-        {
+    /** Returns the most specific matching layer for one trigger event. */
+    public Set<KeyBinding> lookupActives(int keyCode, InputSnapshot snapshot) {
+        final Collection<KeyBinding> candidates = map.lookup(keyCode);
+        if (candidates == null) {
             return Collections.emptySet();
         }
-        return bindings.stream().filter($ -> $.isActiveAndMatches(keyCode)).collect(Collectors.toSet());
-    }
-
-    public List<KeyBinding> lookupAll(int keyCode)
-    {
-        List<KeyBinding> matchingBindings = new ArrayList<KeyBinding>();
-        for (IntHashMap<Collection<KeyBinding>> bindingsMap : map.values())
-        {
-            Collection<KeyBinding> bindings = bindingsMap.lookup(keyCode);
-            if (bindings != null)
-            {
-                matchingBindings.addAll(bindings);
+        int largestCombination = 0;
+        final Set<KeyBinding> matches = new LinkedHashSet<>();
+        for (KeyBinding binding : candidates) {
+            if (!binding.isActiveAndMatches(keyCode, snapshot)) {
+                continue;
+            }
+            final int combinationSize = binding.getKeyCombination().size();
+            if (combinationSize > largestCombination) {
+                matches.clear();
+                largestCombination = combinationSize;
+            }
+            if (combinationSize == largestCombination) {
+                matches.add(binding);
             }
         }
-        return matchingBindings;
+        return matches;
     }
 
-    public void addKey(int keyCode, KeyBinding keyBinding)
-    {
-        KeyModifier keyModifier = keyBinding.getKeyModifier();
-        IntHashMap<Collection<KeyBinding>> bindingsMap = map.get(keyModifier);
-        Collection<KeyBinding> bindingsForKey = bindingsMap.lookup(keyCode);
-        if (bindingsForKey == null)
-        {
-            bindingsForKey = new ArrayList<KeyBinding>();
-            bindingsMap.addKey(keyCode, bindingsForKey);
+    public List<KeyBinding> lookupAll(int keyCode) {
+        final Collection<KeyBinding> bindings = map.lookup(keyCode);
+        return bindings == null ? Collections.emptyList() : new ArrayList<>(bindings);
+    }
+
+    public void addKey(int keyCode, KeyBinding keyBinding) {
+        Collection<KeyBinding> bindingsForKey = map.lookup(keyCode);
+        if (bindingsForKey == null) {
+            bindingsForKey = new ArrayList<>();
+            map.addKey(keyCode, bindingsForKey);
         }
         bindingsForKey.add(keyBinding);
     }
 
-    public void removeKey(KeyBinding keyBinding)
-    {
-        KeyModifier keyModifier = keyBinding.getKeyModifier();
-        int keyCode = keyBinding.getKeyCode();
-        IntHashMap<Collection<KeyBinding>> bindingsMap = map.get(keyModifier);
-        Collection<KeyBinding> bindingsForKey = bindingsMap.lookup(keyCode);
-        if (bindingsForKey != null)
-        {
+    public void removeKey(KeyBinding keyBinding) {
+        final int keyCode = keyBinding.getKeyCode();
+        final Collection<KeyBinding> bindingsForKey = map.lookup(keyCode);
+        if (bindingsForKey != null) {
             bindingsForKey.remove(keyBinding);
-            if (bindingsForKey.isEmpty())
-            {
-                bindingsMap.removeObject(keyCode);
+            if (bindingsForKey.isEmpty()) {
+                map.removeObject(keyCode);
             }
         }
     }
 
-    public void clearMap()
-    {
-        for (IntHashMap<Collection<KeyBinding>> bindings : map.values())
-        {
-            bindings.clearMap();
-        }
+    public void clearMap() {
+        map.clearMap();
     }
 }

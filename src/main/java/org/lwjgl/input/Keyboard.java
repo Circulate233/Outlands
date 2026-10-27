@@ -9,9 +9,11 @@ import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.minecraftforge.fml.common.FMLLog;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.sdl.SDLKeyboard;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.MainThread;
 import org.lwjgl.Sys;
 import org.lwjgl.opengl.Display;
 
@@ -166,6 +168,7 @@ public class Keyboard {
     
     private static final Queue<KeyEvent> queue = new ArrayBlockingQueue<>(128);
 
+    private static long lastDroppedEventMs = 0L;
 
     private static boolean doRepeatEvents = true;
 
@@ -202,7 +205,7 @@ public class Keyboard {
                 unlocalizedKeyNameMiniLut[i] = "Key " + i;
             }
         }
-        queue.add(new KeyEvent(0, '\0', KeyState.RELEASE, Sys.getNanoTime()));
+        enqueue(new KeyEvent(0, '\0', KeyState.RELEASE, Sys.getNanoTime()));
     }
 
     /** Populates the key name->index lookup table with the current keyboard layout based names. */
@@ -213,9 +216,8 @@ public class Keyboard {
     }
 
     public static void addKeyEvent(int key, boolean pressed) {
-        try {
-            queue.add(new KeyEvent(key, '\0', pressed ? KeyState.PRESS : KeyState.RELEASE, Sys.getNanoTime()));
-        } catch (IllegalStateException ignored) {}
+        InputState.update(key, pressed);
+        enqueue(new KeyEvent(key, '\0', pressed ? KeyState.PRESS : KeyState.RELEASE, Sys.getNanoTime()));
     }
 
     /**
@@ -229,14 +231,19 @@ public class Keyboard {
         if (state == KeyState.REPEAT && !doRepeatEvents) {
             return;
         }
-        try {
-            queue.add(new KeyEvent(key, c, state, Sys.getNanoTime()));
-        } catch (IllegalStateException ignored) {}
+        InputState.update(key, state.isPressed);
+        enqueue(new KeyEvent(key, c, state, Sys.getNanoTime()));
     }
+
+    /**
+     * Queues a caller-built event. The queue keeps a copy carrying the snapshot of this enqueue, so the
+     * caller's instance and any earlier copy already queued keep their own event-time state.
+     *
+     * @param event the event to queue
+     */
     public static void addKeyEvent(KeyEvent event) {
-        try {
-            queue.add(event);
-        } catch (IllegalStateException ignored) {}
+        InputState.update(event.key, event.state.isPressed);
+        enqueue(new KeyEvent(event.key, event.aChar, event.state, event.nano, InputSnapshot.current()));
     }
 
     /**
@@ -244,9 +251,33 @@ public class Keyboard {
      * GuiScreen calls keyTyped for these, which is how text committed by an input method reaches a text field.
      */
     public static void addCharEvent(int key, char c) {
-        try {
-            queue.add(new KeyEvent(KEY_NONE, c, KeyState.PRESS, Sys.getNanoTime()));
-        } catch (IllegalStateException ignored) {}
+        enqueue(new KeyEvent(KEY_NONE, c, KeyState.PRESS, Sys.getNanoTime()));
+    }
+
+    private static void enqueue(KeyEvent event) {
+        synchronized (queue) {
+            while (!queue.offer(event)) {
+                warnDroppedEvent();
+                if (!dropSecondOldest()) {
+                    throw new IllegalStateException("Full keyboard event queue has no pending event to drop");
+                }
+            }
+        }
+    }
+
+    private static boolean dropSecondOldest() {
+        final Object[] events = queue.toArray();
+        return events.length >= 2 && queue.remove(events[1]);
+    }
+
+    /** Logs the drop at most once per second; a full queue is reported per burst, not per event. */
+    private static void warnDroppedEvent() {
+        final long now = System.currentTimeMillis();
+        if (now - lastDroppedEventMs < 1000L) {
+            return;
+        }
+        lastDroppedEventMs = now;
+        FMLLog.log.warn("Dropping an LWJGL key event because the queue is full");
     }
 
     public static void create() throws LWJGLException {}
@@ -285,11 +316,13 @@ public class Keyboard {
     }
 
     public static boolean next() {
-        boolean next = queue.size() > 1;
-        if (next) {
-            queue.remove();
+        synchronized (queue) {
+            boolean next = queue.size() > 1;
+            if (next) {
+                queue.remove();
+            }
+            return next;
         }
-        return next;
     }
 
     public static int getEventKey() {
@@ -308,12 +341,35 @@ public class Keyboard {
         return queue.peek().nano;
     }
 
+    /**
+     * Returns the input state captured when the current event was queued.
+     *
+     * @return an immutable event-time snapshot; later input does not change it. The queue always holds a
+     *         placeholder event, so this is never null, but it only describes a real event after
+     *         {@link #next()} returned true.
+     */
+    public static InputSnapshot getEventSnapshot() {
+        return queue.peek().snapshot;
+    }
+
+    /**
+     * Resolves the layout name of an LWJGL2 keycode. SDL key queries are main-thread only, so the lookup is
+     * dispatched there and the result falls back to the built-in key names.
+     */
     public static String getKeyName(int key) {
         if (key == KEY_NONE) {
             return "NONE";
         }
-        // SDL resolves names from the active layout and reports layout changes via SDL_EVENT_KEYMAP_CHANGED.
-        final String sdlName = StringUtils.toRootUpperCase(SDLKeyboard.SDL_GetKeyName(KeyCodes.lwjglToSdlKeycode(key)));
+        // Resolve through the physical key so the name follows the layout without depending on the event keycode.
+        // Layout changes arrive as SDL_EVENT_KEYMAP_CHANGED.
+        final int scancode = KeyCodes.lwjglToSdlScancode(key);
+        final String sdlName = MainThread.runOnMainThread(() -> {
+            if (scancode <= 0) {
+                return null;
+            }
+            final int sdlKey = SDLKeyboard.SDL_GetKeyFromScancode(scancode, (short) 0, true);
+            return sdlKey != 0 ? StringUtils.toRootUpperCase(SDLKeyboard.SDL_GetKeyName(sdlKey)) : null;
+        });
         final String name;
         if (sdlName == null || sdlName.isEmpty()) {
             if (key >= 0 && key < unlocalizedKeyNameMiniLut.length) {

@@ -1,205 +1,330 @@
 --- before/net/minecraft/client/settings/KeyBinding.java
 +++ after/net/minecraft/client/settings/KeyBinding.java
-@@ -15,7 +15,7 @@
+@@ -3,37 +3,57 @@
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+ import java.util.Map;
++import java.util.Objects;
+ import java.util.Set;
+ import java.util.function.Supplier;
+ import net.minecraft.client.resources.I18n;
+-import net.minecraft.util.IntHashMap;
++import net.minecraftforge.client.settings.IKeyConflictContext;
++import net.minecraftforge.client.settings.KeyBindingMap;
++import net.minecraftforge.client.settings.KeyCombination;
++import net.minecraftforge.client.settings.KeyConflictContext;
++import net.minecraftforge.client.settings.KeyModifier;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
+-import org.lwjgl.input.Keyboard;
++import org.lwjgl.input.InputSnapshot;
++import org.lwjgl.input.InputState;
+ 
+ @SideOnly(Side.CLIENT)
  public class KeyBinding implements Comparable<KeyBinding>
  {
      private static final Map<String, KeyBinding> KEYBIND_ARRAY = Maps.newHashMap();
 -    private static final IntHashMap<KeyBinding> HASH = new IntHashMap<>();
-+    private static final net.minecraftforge.client.settings.KeyBindingMap HASH = new net.minecraftforge.client.settings.KeyBindingMap();
++    private static final KeyBindingMap HASH = new KeyBindingMap();
      private static final Set<String> KEYBIND_SET = Sets.newHashSet();
      private static final Map<String, Integer> CATEGORY_ORDER = Maps.newHashMap();
      private final String keyDescription;
-@@ -29,12 +29,7 @@
+-    private final int keyCodeDefault;
++    private final KeyCombination keyCombinationDefault;
+     private final String keyCategory;
+-    private int keyCode;
++    private KeyCombination keyCombination;
+     private boolean pressed;
+     private int pressTime;
++    private IKeyConflictContext keyConflictContext = KeyConflictContext.UNIVERSAL;
+ 
+     public static void onTick(int keyCode)
+     {
+-        if (keyCode != 0)
+-        {
+-            KeyBinding keybinding = HASH.lookup(keyCode);
+-
+-            if (keybinding != null)
++        onTick(keyCode, InputSnapshot.current());
++    }
++
++    public static void onTick(int keyCode, InputSnapshot snapshot)
++    {
++        if (keyCode != 0)
++        {
++            HASH.lookupActives(keyCode, snapshot).forEach($ -> ++$.pressTime);
++        }
++    }
++
++    /** Applies one physical event. Repeat events maintain held state without producing another press. */
++    public static void onInputEvent(int keyCode, boolean pressed, boolean repeat, InputSnapshot snapshot)
++    {
++        if (keyCode != 0)
++        {
++            setKeyBindState(keyCode, pressed);
++            if (pressed && !repeat)
+             {
+-                keybinding.pressTime++;
++                onTick(keyCode, snapshot);
+             }
+         }
+     }
+@@ -42,9 +62,7 @@
      {
          if (keyCode != 0)
          {
 -            KeyBinding keybinding = HASH.lookup(keyCode);
 -
 -            if (keybinding != null)
++            for (KeyBinding keybinding : HASH.lookupAll(keyCode))
+             {
+                 keybinding.pressed = pressed;
+             }
+@@ -53,15 +71,11 @@
+ 
+     public static void updateKeyBindState()
+     {
++        InputState.synchronize();
++        final InputSnapshot snapshot = InputSnapshot.current();
+         for (KeyBinding keybinding : KEYBIND_ARRAY.values())
+         {
+-            try
 -            {
--                keybinding.pressTime++;
+-                setKeyBindState(keybinding.keyCode, keybinding.keyCode < 256 && Keyboard.isKeyDown(keybinding.keyCode));
 -            }
-+            HASH.lookupActives(keyCode).forEach($ -> ++$.pressTime);
+-            catch (IndexOutOfBoundsException indexoutofboundsexception)
+-            {
+-            }
++            setKeyBindState(keybinding.getKeyCode(), snapshot.isKeyDown(keybinding.getKeyCode()));
          }
      }
  
-@@ -42,7 +37,7 @@
-     {
-         if (keyCode != 0)
-         {
--            KeyBinding keybinding = HASH.lookup(keyCode);
-+            for (KeyBinding keybinding : HASH.lookupAll(keyCode))
+@@ -79,7 +93,7 @@
  
-             if (keybinding != null)
-             {
-@@ -101,7 +96,7 @@
+         for (KeyBinding keybinding : KEYBIND_ARRAY.values())
+         {
+-            HASH.addKey(keybinding.keyCode, keybinding);
++            HASH.addKey(keybinding.getKeyCode(), keybinding);
+         }
+     }
+ 
+@@ -90,18 +104,56 @@
+ 
+     public KeyBinding(String description, int keyCode, String category)
+     {
++        this(description, KeyConflictContext.UNIVERSAL, KeyCombination.of(keyCode, KeyModifier.NONE), category);
++    }
++
++    public KeyBinding(String description, IKeyConflictContext keyConflictContext, int keyCode, String category)
++    {
++        this(description, keyConflictContext, KeyCombination.of(keyCode, KeyModifier.NONE), category);
++    }
++
++    public KeyBinding(
++        String description,
++        IKeyConflictContext keyConflictContext,
++        KeyModifier keyModifier,
++        int keyCode,
++        String category
++    )
++    {
++        this(description, keyConflictContext, KeyCombination.of(keyCode, keyModifier), category);
++    }
++
++    public KeyBinding(String description, KeyCombination keyCombination, String category)
++    {
++        this(description, KeyConflictContext.UNIVERSAL, keyCombination, category);
++    }
++
++    public KeyBinding(
++        String description,
++        IKeyConflictContext keyConflictContext,
++        KeyCombination keyCombination,
++        String category
++    )
++    {
+         this.keyDescription = description;
+-        this.keyCode = keyCode;
+-        this.keyCodeDefault = keyCode;
++        this.keyCombination = Objects.requireNonNull(keyCombination, "keyCombination");
++        this.keyCombinationDefault = keyCombination;
+         this.keyCategory = category;
++        this.keyConflictContext = keyConflictContext;
+         KEYBIND_ARRAY.put(description, this);
+-        HASH.addKey(keyCode, this);
++        HASH.addKey(getKeyCode(), this);
+         KEYBIND_SET.add(category);
+     }
  
      public boolean isKeyDown()
      {
 -        return this.pressed;
-+        return this.pressed && getKeyConflictContext().isActive() && getKeyModifier().isActive(getKeyConflictContext());
++        return isKeyDown(InputSnapshot.current());
++    }
++
++    /** Checks held state against a specific event-time snapshot. */
++    public boolean isKeyDown(InputSnapshot snapshot)
++    {
++        return this.pressed && getKeyConflictContext().isActive() && keyCombination.matches(snapshot);
      }
  
      public String getKeyCategory()
-@@ -150,15 +145,156 @@
+@@ -135,30 +187,147 @@
  
-     public int compareTo(KeyBinding p_compareTo_1_)
+     public int getKeyCodeDefault()
      {
+-        return this.keyCodeDefault;
++        return keyCombinationDefault.getKeyCode();
+     }
+ 
+     public int getKeyCode()
+     {
+-        return this.keyCode;
++        return keyCombination.getKeyCode();
++    }
++
++    public KeyCombination getKeyCombination()
++    {
++        return keyCombination;
++    }
++
++    public KeyCombination getKeyCombinationDefault()
++    {
++        return keyCombinationDefault;
+     }
+ 
+     public void setKeyCode(int keyCode)
+     {
+-        this.keyCode = keyCode;
+-    }
+-
+-    public int compareTo(KeyBinding p_compareTo_1_)
+-    {
 -        return this.keyCategory.equals(p_compareTo_1_.keyCategory)
 -               ? I18n.format(this.keyDescription).compareTo(I18n.format(p_compareTo_1_.keyDescription))
 -               : CATEGORY_ORDER.get(this.keyCategory).compareTo(CATEGORY_ORDER.get(p_compareTo_1_.keyCategory));
--    }
-+        if (this.keyCategory.equals(p_compareTo_1_.keyCategory)) return I18n.format(this.keyDescription).compareTo(I18n.format(p_compareTo_1_.keyDescription));
++        setKeyCombination(keyCombination.withTrigger(keyCode));
++    }
++
++    public void setKeyCombination(KeyCombination keyCombination)
++    {
++        HASH.removeKey(this);
++        this.keyCombination = Objects.requireNonNull(keyCombination, "keyCombination");
++        HASH.addKey(getKeyCode(), this);
++    }
++
++    public int compareTo(KeyBinding other)
++    {
++        if (this.keyCategory.equals(other.keyCategory)) return I18n.format(this.keyDescription).compareTo(I18n.format(other.keyDescription));
 +        Integer tCat = CATEGORY_ORDER.get(this.keyCategory);
-+        Integer oCat = CATEGORY_ORDER.get(p_compareTo_1_.keyCategory);
++        Integer oCat = CATEGORY_ORDER.get(other.keyCategory);
 +        if (tCat == null && oCat != null) return 1;
 +        if (tCat != null && oCat == null) return -1;
-+        if (tCat == null && oCat == null) return I18n.format(this.keyCategory).compareTo(I18n.format(p_compareTo_1_.keyCategory));
-+        return  tCat.compareTo(oCat);
++        if (tCat == null && oCat == null) return I18n.format(this.keyCategory).compareTo(I18n.format(other.keyCategory));
++        return tCat.compareTo(oCat);
 +    }
 +
-+    /****************** Forge Start *****************************/
-+    private net.minecraftforge.client.settings.KeyModifier keyModifierDefault = net.minecraftforge.client.settings.KeyModifier.NONE;
-+    private net.minecraftforge.client.settings.KeyModifier keyModifier = net.minecraftforge.client.settings.KeyModifier.NONE;
-+    private net.minecraftforge.client.settings.IKeyConflictContext keyConflictContext = net.minecraftforge.client.settings.KeyConflictContext.UNIVERSAL;
-+
-+    /**
-+     * Convenience constructor for creating KeyBindings with keyConflictContext set.
-+     */
-+    public KeyBinding(String description, net.minecraftforge.client.settings.IKeyConflictContext keyConflictContext, int keyCode, String category)
-+    {
-+        this(description, keyConflictContext, net.minecraftforge.client.settings.KeyModifier.NONE, keyCode, category);
-+    }
-+
-+    /**
-+     * Convenience constructor for creating KeyBindings with keyConflictContext and keyModifier set.
-+     */
-+    public KeyBinding(String description, net.minecraftforge.client.settings.IKeyConflictContext keyConflictContext, net.minecraftforge.client.settings.KeyModifier keyModifier, int keyCode, String category)
-+    {
-+        this.keyDescription = description;
-+        this.keyCode = keyCode;
-+        this.keyCodeDefault = keyCode;
-+        this.keyCategory = category;
-+        this.keyConflictContext = keyConflictContext;
-+        this.keyModifier = keyModifier;
-+        this.keyModifierDefault = keyModifier;
-+        if (this.keyModifier.matches(keyCode))
-+        {
-+            this.keyModifier = net.minecraftforge.client.settings.KeyModifier.NONE;
-+        }
-+        KEYBIND_ARRAY.put(description, this);
-+        HASH.addKey(keyCode, this);
-+        KEYBIND_SET.add(category);
-+    }
-+
-+    /**
-+     * Checks that the key conflict context and modifier are active, and that the keyCode matches this binding.
-+     */
++    /** Checks the event identity, conflict context and every required held key. */
 +    public boolean isActiveAndMatches(int keyCode)
 +    {
-+        return keyCode != 0 && keyCode == this.getKeyCode() && getKeyConflictContext().isActive() && getKeyModifier().isActive(getKeyConflictContext());
++        return isActiveAndMatches(keyCode, InputSnapshot.current());
 +    }
 +
-+    public void setKeyConflictContext(net.minecraftforge.client.settings.IKeyConflictContext keyConflictContext)
++    public boolean isActiveAndMatches(int keyCode, InputSnapshot snapshot)
++    {
++        return keyCode != 0 && getKeyConflictContext().isActive() && keyCombination.matchesEvent(keyCode, snapshot);
++    }
++
++    public void setKeyConflictContext(IKeyConflictContext keyConflictContext)
 +    {
 +        this.keyConflictContext = keyConflictContext;
 +    }
 +
-+    public net.minecraftforge.client.settings.IKeyConflictContext getKeyConflictContext()
++    public IKeyConflictContext getKeyConflictContext()
 +    {
 +        return keyConflictContext;
 +    }
 +
-+    public net.minecraftforge.client.settings.KeyModifier getKeyModifierDefault()
++    public KeyModifier getKeyModifierDefault()
 +    {
-+        return keyModifierDefault;
++        return legacyModifier(keyCombinationDefault);
 +    }
 +
-+    public net.minecraftforge.client.settings.KeyModifier getKeyModifier()
++    public KeyModifier getKeyModifier()
 +    {
-+        return keyModifier;
++        return legacyModifier(keyCombination);
 +    }
 +
-+    public void setKeyModifierAndCode(net.minecraftforge.client.settings.KeyModifier keyModifier, int keyCode)
++    private static KeyModifier legacyModifier(KeyCombination combination)
 +    {
-+        this.keyCode = keyCode;
-+        if (keyModifier.matches(keyCode))
++        if (combination.getAdditionalKeys().length == 0 && combination.getModifiers().size() == 1)
 +        {
-+            keyModifier = net.minecraftforge.client.settings.KeyModifier.NONE;
++            return combination.getModifiers().iterator().next();
 +        }
-+        HASH.removeKey(this);
-+        this.keyModifier = keyModifier;
-+        HASH.addKey(keyCode, this);
++        return KeyModifier.NONE;
++    }
++
++    public void setKeyModifierAndCode(KeyModifier keyModifier, int keyCode)
++    {
++        setKeyCombination(KeyCombination.of(keyCode, keyModifier));
 +    }
 +
 +    public void setToDefault()
 +    {
-+        setKeyModifierAndCode(getKeyModifierDefault(), getKeyCodeDefault());
++        setKeyCombination(keyCombinationDefault);
 +    }
 +
 +    public boolean isSetToDefaultValue()
 +    {
-+        return getKeyCode() == getKeyCodeDefault() && getKeyModifier() == getKeyModifierDefault();
++        return keyCombination.equals(keyCombinationDefault);
 +    }
 +
-+    /**
-+     * Returns true when the other keyBinding conflicts with this one
-+     */
++    /** Returns true for both simultaneous conflicts and less severe nested-chord overlaps. */
 +    public boolean conflicts(KeyBinding other)
 +    {
-+        if (getKeyConflictContext().conflicts(other.getKeyConflictContext()) || other.getKeyConflictContext().conflicts(getKeyConflictContext()))
++        if (getKeyCode() == 0 || other.getKeyCode() == 0 || !contextsConflict(other))
 +        {
-+            net.minecraftforge.client.settings.KeyModifier keyModifier = getKeyModifier();
-+            net.minecraftforge.client.settings.KeyModifier otherKeyModifier = other.getKeyModifier();
-+            if (keyModifier.matches(other.getKeyCode()) || otherKeyModifier.matches(getKeyCode()))
-+            {
-+                return true;
-+            }
-+            else if (getKeyCode() == other.getKeyCode())
-+            {
-+                return keyModifier == otherKeyModifier ||
-+                        // IN_GAME key contexts have a conflict when at least one modifier is NONE.
-+                        // For example: If you hold shift to crouch, you can still press E to open your inventory. This means that a Shift+E hotkey is in conflict with E.
-+                        // GUI and other key contexts do not have this limitation.
-+                        (getKeyConflictContext().conflicts(net.minecraftforge.client.settings.KeyConflictContext.IN_GAME) &&
-+                                (keyModifier == net.minecraftforge.client.settings.KeyModifier.NONE || otherKeyModifier == net.minecraftforge.client.settings.KeyModifier.NONE));
-+            }
++            return false;
 +        }
-+        return false;
++        return hasPartialConflict(other) || getKeyCode() == other.getKeyCode();
 +    }
 +
-+    /**
-+     * Returns true when one of the bindings' key codes conflicts with the other's modifier.
-+     */
++    /** Returns true when one chord is nested in another or only its trigger differs. */
++    public boolean hasPartialConflict(KeyBinding other)
++    {
++        if (getKeyCode() == 0 || other.getKeyCode() == 0 || !contextsConflict(other))
++        {
++            return false;
++        }
++        if (keyCombination.hasSameKeys(other.keyCombination))
++        {
++            return getKeyCode() != other.getKeyCode();
++        }
++        return keyCombination.isSubsetOf(other.keyCombination) ^ other.keyCombination.isSubsetOf(keyCombination);
++    }
++
++    private boolean contextsConflict(KeyBinding other)
++    {
++        return getKeyConflictContext().conflicts(other.getKeyConflictContext())
++            || other.getKeyConflictContext().conflicts(getKeyConflictContext());
++    }
++
++    /** Retained for mods that used the old modifier-specific conflict check. */
 +    public boolean hasKeyCodeModifierConflict(KeyBinding other)
 +    {
-+        if (getKeyConflictContext().conflicts(other.getKeyConflictContext()) || other.getKeyConflictContext().conflicts(getKeyConflictContext()))
-+        {
-+            if (getKeyModifier().matches(other.getKeyCode()) || other.getKeyModifier().matches(getKeyCode()))
-+            {
-+                return true;
-+            }
-+        }
-+        return false;
++        return hasPartialConflict(other);
 +    }
 +
 +    public String getDisplayName()
 +    {
-+        return getKeyModifier().getLocalizedComboName(getKeyCode());
-+    }
-+    /****************** Forge End *****************************/
++        return keyCombination.getDisplayName();
+     }
  
      public static Supplier<String> getDisplayString(String key)
      {
          KeyBinding keybinding = KEYBIND_ARRAY.get(key);
 -        return keybinding == null ? () -> key : () -> GameSettings.getKeyDisplayString(keybinding.getKeyCode());
-+        return keybinding == null ? () ->
-+        {
-+            return key;
-+        } : () ->
-+        {
-+            return keybinding.getDisplayName();
-+        };
++        return keybinding == null ? () -> key : keybinding::getDisplayName;
      }
  
      static
