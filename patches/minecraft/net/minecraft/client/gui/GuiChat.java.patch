@@ -4,8 +4,8 @@
      private TabCompleter tabCompleter;
      protected GuiTextField inputField;
      private String defaultInputFieldText = "";
-+    private com.cleanroommc.client.chat.suggestion.SuggestionList suggestionList;
-+    private com.cleanroommc.client.chat.suggestion.SuggestionUpdater suggestionUpdater;
++    private net.minecraftforge.client.chat.suggestion.SuggestionList suggestionList;
++    private net.minecraftforge.client.chat.suggestion.SuggestionUpdater suggestionUpdater;
  
      public GuiChat()
      {
@@ -13,8 +13,8 @@
          this.inputField.setText(this.defaultInputFieldText);
          this.inputField.setCanLoseFocus(false);
          this.tabCompleter = new GuiChat.ChatTabCompleter(this.inputField);
-+        this.suggestionList = new com.cleanroommc.client.chat.suggestion.SuggestionList(this.inputField, false);
-+        this.suggestionUpdater = new com.cleanroommc.client.chat.suggestion.SuggestionUpdater(this.suggestionList, this.tabCompleter, this.inputField, false);
++        this.suggestionList = new net.minecraftforge.client.chat.suggestion.SuggestionList(this.inputField, false);
++        this.suggestionUpdater = new net.minecraftforge.client.chat.suggestion.SuggestionUpdater(this.suggestionList, this.tabCompleter, this.inputField, false);
 +        this.inputField.setGuiResponder(this.suggestionUpdater);
 +        if (this.defaultInputFieldText != null)
 +        {

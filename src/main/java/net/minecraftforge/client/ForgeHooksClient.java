@@ -37,12 +37,12 @@ import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3f;
 import javax.vecmath.Vector4f;
 
-import com.cleanroommc.client.LoadingTracker;
-import com.cleanroommc.client.windows.DwmApi;
-import com.cleanroommc.client.windows.NtDll;
-import com.cleanroommc.client.TaskbarProgress;
-import com.cleanroommc.client.windows.TaskbarApi;
-import com.cleanroommc.client.windows.WindowsProperties;
+import net.minecraftforge.client.LoadingTracker;
+import net.minecraftforge.client.windows.DwmApi;
+import net.minecraftforge.client.windows.NtDll;
+import net.minecraftforge.client.TaskbarProgress;
+import net.minecraftforge.client.windows.TaskbarApi;
+import net.minecraftforge.client.windows.WindowsProperties;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;

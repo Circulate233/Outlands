@@ -19,14 +19,14 @@
 
 package net.minecraftforge.client;
 
-import com.cleanroommc.client.IMEHandler;
-import com.cleanroommc.client.TextFieldHandler;
-import com.cleanroommc.client.modlist.LegacyModListScreen;
-import com.cleanroommc.client.modlist.ModListConfig;
-import com.cleanroommc.client.modlist.ModListConstants;
-import com.cleanroommc.client.modlist.screen.ModListScreen;
-import com.cleanroommc.client.windows.TaskbarApi;
-import com.cleanroommc.client.windows.WindowsProperties;
+import net.minecraftforge.client.ime.IMEHandler;
+import net.minecraftforge.client.ime.TextFieldHandler;
+import net.minecraftforge.client.modlist.LegacyModListScreen;
+import net.minecraftforge.client.modlist.ModListConfig;
+import net.minecraftforge.client.modlist.ModListConstants;
+import net.minecraftforge.client.modlist.screen.ModListScreen;
+import net.minecraftforge.client.windows.TaskbarApi;
+import net.minecraftforge.client.windows.WindowsProperties;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.gui.GuiMainMenu;
@@ -69,7 +69,7 @@ public class ForgeClientHandler
         // The input method has no way of being reached on screens the game does not recognise as text screens, so
         // the player gets a key for it. Registered here because that is the first point where the client is far
         // enough along for game settings to exist.
-        com.cleanroommc.client.ImeForceKey.register();
+        net.minecraftforge.client.ime.ImeForceKey.register();
         // register model for the universal bucket, if it exists
         if (FluidRegistry.isUniversalBucketEnabled())
         {
@@ -96,7 +96,7 @@ public class ForgeClientHandler
     {
         if (event.phase == TickEvent.Phase.END)
         {
-            com.cleanroommc.client.TextInputArea.update(Minecraft.getMinecraft().currentScreen);
+            net.minecraftforge.client.ime.TextInputArea.update(Minecraft.getMinecraft().currentScreen);
         }
     }
 

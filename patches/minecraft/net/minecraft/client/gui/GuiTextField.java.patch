@@ -3,9 +3,9 @@
 @@ -1,5 +1,8 @@
  package net.minecraft.client.gui;
  
-+import com.cleanroommc.client.ImeComposition;
-+import com.cleanroommc.client.TextFieldHandler;
-+import com.cleanroommc.client.TextInputArea;
++import net.minecraftforge.client.ime.ImeComposition;
++import net.minecraftforge.client.ime.TextFieldHandler;
++import net.minecraftforge.client.ime.TextInputArea;
  import com.google.common.base.Predicate;
  import com.google.common.base.Predicates;
  import net.minecraft.client.Minecraft;

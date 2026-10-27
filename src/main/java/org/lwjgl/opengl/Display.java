@@ -66,9 +66,9 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.DoubleSupplier;
 
-import com.cleanroommc.client.ImeComposition;
-import com.cleanroommc.client.ImeForceKey;
-import com.cleanroommc.client.TextFieldHandler;
+import net.minecraftforge.client.ime.ImeComposition;
+import net.minecraftforge.client.ime.ImeForceKey;
+import net.minecraftforge.client.ime.TextFieldHandler;
 import net.minecraftforge.common.ForgeEarlyConfig;
 import net.minecraftforge.fml.common.FMLLog;
 

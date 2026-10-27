@@ -4,8 +4,8 @@
  public class GuiCommandBlock extends GuiScreen implements ITabCompleter
  {
      private GuiTextField commandTextField;
-+    private com.cleanroommc.client.chat.suggestion.SuggestionList suggestionList;
-+    private com.cleanroommc.client.chat.suggestion.SuggestionUpdater suggestionUpdater;
++    private net.minecraftforge.client.chat.suggestion.SuggestionList suggestionList;
++    private net.minecraftforge.client.chat.suggestion.SuggestionUpdater suggestionUpdater;
      private GuiTextField previousOutputTextField;
      private final TileEntityCommandBlock commandBlock;
      private GuiButton doneBtn;
@@ -14,8 +14,8 @@
              }
          };
 +        // Cleanroom: dropdown completion
-+        this.suggestionList = new com.cleanroommc.client.chat.suggestion.SuggestionList(this.commandTextField, true);
-+        this.suggestionUpdater = new com.cleanroommc.client.chat.suggestion.SuggestionUpdater(this.suggestionList, this.tabCompleter, this.commandTextField, true);
++        this.suggestionList = new net.minecraftforge.client.chat.suggestion.SuggestionList(this.commandTextField, true);
++        this.suggestionUpdater = new net.minecraftforge.client.chat.suggestion.SuggestionUpdater(this.suggestionList, this.tabCompleter, this.commandTextField, true);
 +        this.commandTextField.setGuiResponder(this.suggestionUpdater);
      }
  
