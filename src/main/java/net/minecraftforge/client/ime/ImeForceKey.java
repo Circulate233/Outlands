@@ -16,16 +16,25 @@ import org.lwjgl.input.Keyboard;
  * SDL event layer: {@code KeyInputEvent} is only fired while {@code currentScreen == null ||
  * currentScreen.allowUserInput}, and {@code GuiScreen.allowUserInput} is false for every screen that is not a chat box
  * - exactly the screens this key exists for.
+ * <p>
+ * The binding carries Ctrl as its chord so that the controls screen names the combination instead of showing a bare
+ * key. That is what the chord is doing here: the match itself stays in the event layer, which reports the Ctrl that
+ * was held at the event and accepts either side of it, neither of which a binding can express.
  */
 public final class ImeForceKey {
 
     /**
      * Bound to Space and required to be held with Ctrl, which makes Ctrl+Space - the combination input methods use to
-     * switch to themselves. Key bindings carry no modifiers, so Ctrl is checked at the event instead of being stored
-     * in the binding, and rebinding changes only the second half of the combination.
+     * switch to themselves. Rebinding changes only the second half of the combination.
      */
     public static final KeyBinding FORCE_IME = new KeyBinding(
         "key.cleanroommc.forceIme", Keyboard.KEY_SPACE, "key.categories.cleanroommc");
+
+    static {
+        // Both as the default and as the current chord, so that resetting the binding restores the combination too.
+        FORCE_IME.setDefaultChordKeys(Keyboard.KEY_LCONTROL);
+        FORCE_IME.setChordKeys(Keyboard.KEY_LCONTROL);
+    }
 
     private ImeForceKey() {}
 
