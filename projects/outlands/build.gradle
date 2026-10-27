@@ -232,7 +232,7 @@ test {
 
 
 // region Run configs -------------------------------------------------------
-// The loader boots through 'com.cleanroommc.boot.Main*', which forwards to FML with the env contract below.
+// The loader boots through 'net.minecraftforge.boot.Main*', which forwards to FML with the env contract below.
 // Slime Launcher (ForgeDev) supplies the Minecraft classpath, assets and natives, so only the loader specific
 // environment variables have to be provided here.
 def mcVersion = props.minecraft_version
@@ -284,7 +284,7 @@ forgedev.runs {
 
     outlandsClient {
         options {
-            mainClass = 'com.cleanroommc.boot.MainClient'
+            mainClass = 'net.minecraftforge.boot.MainClient'
             workingDir = file('run')
             jvmArgs = ProjectConstants.JVM_ARGUMENTS + ['-Dmixin.debug.export=true', '-Dmixin.checks.interfaces=true']
             environment.putAll(loaderEnv('fmldevclient', 'net.minecraftforge.fml.common.launcher.FMLTweaker'))
@@ -293,7 +293,7 @@ forgedev.runs {
 
     outlandsServer {
         options {
-            mainClass = 'com.cleanroommc.boot.MainServer'
+            mainClass = 'net.minecraftforge.boot.MainServer'
             workingDir = file('run')
             jvmArgs = ProjectConstants.JVM_ARGUMENTS
             environment.putAll(loaderEnv('fmldevserver', 'net.minecraftforge.fml.common.launcher.FMLServerTweaker'))

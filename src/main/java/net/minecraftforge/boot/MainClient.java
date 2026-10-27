@@ -1,4 +1,4 @@
-package com.cleanroommc.boot;
+package net.minecraftforge.boot;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

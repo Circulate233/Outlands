@@ -1,4 +1,4 @@
-package com.cleanroommc.boot;
+package net.minecraftforge.boot;
 
 public class MainServer extends Main {
 
