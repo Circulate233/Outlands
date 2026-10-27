@@ -17,3 +17,6 @@ version.txt
 projects/*/logs/
 projects/*/run/
 projects/*/crash-reports/
+
+# local notes and research write-ups stay out of the tree
+/docs/
