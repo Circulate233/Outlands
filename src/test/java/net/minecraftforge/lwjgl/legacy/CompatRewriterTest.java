@@ -1,4 +1,4 @@
-package com.cleanroommc.lwjgl.legacy;
+package net.minecraftforge.lwjgl.legacy;
 
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /** Generates classes with ASM, rewrites them and asserts the resulting call sites. */
 class CompatRewriterTest {
 
-    private static final String SAMPLE = "com/cleanroommc/lwjgl/legacy/test/Sample";
+    private static final String SAMPLE = "net/minecraftforge/lwjgl/legacy/test/Sample";
 
     private static byte[] sample(String methodDesc, Body body) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
@@ -206,11 +206,11 @@ class CompatRewriterTest {
             }
         }
         assertNotNull(allocation);
-        assertEquals("com/cleanroommc/lwjgl/legacy/ShimPointerBuffer", allocation.desc);
+        assertEquals("net/minecraftforge/lwjgl/legacy/ShimPointerBuffer", allocation.desc);
 
         MethodInsnNode init = findCall(mn, "<init>");
         assertNotNull(init);
-        assertEquals("com/cleanroommc/lwjgl/legacy/ShimPointerBuffer", init.owner);
+        assertEquals("net/minecraftforge/lwjgl/legacy/ShimPointerBuffer", init.owner);
         assertEquals("(Ljava/nio/ByteBuffer;)V", init.desc, "only the owner may change");
         assertStackConsistent(mn);
     }
@@ -231,7 +231,7 @@ class CompatRewriterTest {
         MethodInsnNode call = findCall(mn, "flip");
         assertNotNull(call);
         assertEquals(Opcodes.INVOKESTATIC, call.getOpcode(), "the receiver becomes the first parameter");
-        assertEquals("com/cleanroommc/lwjgl/legacy/L2Adapters", call.owner);
+        assertEquals("net/minecraftforge/lwjgl/legacy/L2Adapters", call.owner);
         assertEquals("(Lorg/lwjgl/PointerBuffer;)Lorg/lwjgl/PointerBuffer;", call.desc);
         assertStackConsistent(mn);
     }
@@ -250,7 +250,7 @@ class CompatRewriterTest {
         MethodInsnNode call = findCall(mn, "isCreated");
         assertNotNull(call);
         assertEquals(Opcodes.INVOKESTATIC, call.getOpcode());
-        assertEquals("com/cleanroommc/lwjgl/legacy/L2Adapters", call.owner);
+        assertEquals("net/minecraftforge/lwjgl/legacy/L2Adapters", call.owner);
         assertEquals("()Z", call.desc);
         assertStackConsistent(mn);
     }

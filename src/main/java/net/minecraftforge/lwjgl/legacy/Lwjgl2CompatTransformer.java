@@ -1,4 +1,4 @@
-package com.cleanroommc.lwjgl.legacy;
+package net.minecraftforge.lwjgl.legacy;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -48,7 +48,7 @@ public class Lwjgl2CompatTransformer implements IClassTransformer {
 
     private static final String[] EXCLUDED_PREFIXES = {
             "org/lwjgl/",
-            "com/cleanroommc/lwjgl/",
+            "net/minecraftforge/lwjgl/",
             "net/minecraftforge/fml/relauncher/",
             "java/",
             "javax/",

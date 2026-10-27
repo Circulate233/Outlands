@@ -1,6 +1,6 @@
-package com.cleanroommc.hackery;
+package net.minecraftforge.hackery;
 
-import com.cleanroommc.hackery.enums.EnumHackery;
+import net.minecraftforge.hackery.enums.EnumHackery;
 import net.lenni0451.reflect.Constructors;
 import net.minecraft.item.ItemStack;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package com.cleanroommc.lwjgl.legacy;
+package net.minecraftforge.lwjgl.legacy;
 
 import java.util.Collections;
 import java.util.HashSet;

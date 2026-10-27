@@ -1,4 +1,4 @@
-package com.cleanroommc.lwjgl.legacy;
+package net.minecraftforge.lwjgl.legacy;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -458,32 +458,32 @@ public final class RewriteTable {
         CONVERT.put(key("org/lwjgl/opengl/GL20", "glVertexAttribPointer", "(IIZZILjava/nio/IntBuffer;)V"), "org/lwjgl/opengl/GL20\0glVertexAttribPointer\0(IIIZILjava/nio/IntBuffer;)V\0typeFromUnsigned:2:org/lwjgl/opengl/GL11/GL_INT");
         CONVERT.put(key("org/lwjgl/opengl/GL20", "glVertexAttribPointer", "(IIZZILjava/nio/ShortBuffer;)V"), "org/lwjgl/opengl/GL20\0glVertexAttribPointer\0(IIIZILjava/nio/ShortBuffer;)V\0typeFromUnsigned:2:org/lwjgl/opengl/GL11/GL_SHORT");
 
-        CTOR.put(key("org/lwjgl/PointerBuffer", "<init>", "(Ljava/nio/ByteBuffer;)V"), "com/cleanroommc/lwjgl/legacy/ShimPointerBuffer");
+        CTOR.put(key("org/lwjgl/PointerBuffer", "<init>", "(Ljava/nio/ByteBuffer;)V"), "net/minecraftforge/lwjgl/legacy/ShimPointerBuffer");
 
-        ADAPTER.put(key("org/lwjgl/PointerBuffer", "flip", "()Lorg/lwjgl/PointerBuffer;"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0flip\0(Lorg/lwjgl/PointerBuffer;)Lorg/lwjgl/PointerBuffer;");
-        ADAPTER.put(key("org/lwjgl/PointerBuffer", "getBuffer", "()Ljava/nio/ByteBuffer;"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0getBuffer\0(Lorg/lwjgl/PointerBuffer;)Ljava/nio/ByteBuffer;");
-        ADAPTER.put(key("org/lwjgl/PointerBuffer", "position", "(I)Lorg/lwjgl/PointerBuffer;"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0position\0(Lorg/lwjgl/PointerBuffer;I)Lorg/lwjgl/PointerBuffer;");
-        ADAPTER.put(key("org/lwjgl/openal/AL", "create", "()V"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0alCreate\0()V");
-        ADAPTER.put(key("org/lwjgl/openal/AL", "getDevice", "()Lorg/lwjgl/openal/ALCdevice;"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0getDevice\0()Lorg/lwjgl/openal/ALCdevice;");
-        ADAPTER.put(key("org/lwjgl/openal/AL", "isCreated", "()Z"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0isCreated\0()Z");
-        ADAPTER.put(key("org/lwjgl/openal/ALC10", "alcGetInteger", "(Lorg/lwjgl/openal/ALCdevice;ILjava/nio/IntBuffer;)V"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0alcGetInteger\0(Lorg/lwjgl/openal/ALCdevice;ILjava/nio/IntBuffer;)V");
-        ADAPTER.put(key("org/lwjgl/openal/ALC10", "alcGetString", "(Lorg/lwjgl/openal/ALCdevice;I)Ljava/lang/String;"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0alcGetString\0(Lorg/lwjgl/openal/ALCdevice;I)Ljava/lang/String;");
-        ADAPTER.put(key("org/lwjgl/openal/ALC10", "alcIsExtensionPresent", "(Lorg/lwjgl/openal/ALCdevice;Ljava/lang/String;)Z"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0alcIsExtensionPresent\0(Lorg/lwjgl/openal/ALCdevice;Ljava/lang/String;)Z");
-        ADAPTER.put(key("org/lwjgl/opengl/AMDDebugOutput", "glDebugMessageCallbackAMD", "(Lorg/lwjgl/opengl/AMDDebugOutputCallback;)V"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glDebugMessageCallbackAMD\0(Lorg/lwjgl/opengl/AMDDebugOutputCallback;)V");
-        ADAPTER.put(key("org/lwjgl/opengl/ARBDebugOutput", "glDebugMessageCallbackARB", "(Lorg/lwjgl/opengl/ARBDebugOutputCallback;)V"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glDebugMessageCallbackARB\0(Lorg/lwjgl/opengl/ARBDebugOutputCallback;)V");
-        ADAPTER.put(key("org/lwjgl/opengl/ARBShaderObjects", "glShaderSourceARB", "(ILjava/nio/ByteBuffer;)V"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glShaderSource\0(ILjava/nio/ByteBuffer;)V");
-        ADAPTER.put(key("org/lwjgl/opengl/GL20", "glGetActiveUniform", "(III)Ljava/lang/String;"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glGetActiveUniform\0(III)Ljava/lang/String;");
-        ADAPTER.put(key("org/lwjgl/opengl/GL20", "glGetActiveUniform", "(IIILjava/nio/IntBuffer;)Ljava/lang/String;"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glGetActiveUniform\0(IIILjava/nio/IntBuffer;)Ljava/lang/String;");
-        ADAPTER.put(key("org/lwjgl/opengl/GL20", "glGetActiveUniformSize", "(II)I"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glGetActiveUniformSize\0(II)I");
-        ADAPTER.put(key("org/lwjgl/opengl/GL20", "glGetActiveUniformType", "(II)I"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glGetActiveUniformType\0(II)I");
-        ADAPTER.put(key("org/lwjgl/opengl/GL20", "glShaderSource", "(ILjava/nio/ByteBuffer;)V"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glShaderSource\0(ILjava/nio/ByteBuffer;)V");
-        ADAPTER.put(key("org/lwjgl/opengl/GL32", "glClientWaitSync", "(Lorg/lwjgl/opengl/GLSync;IJ)I"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glClientWaitSync\0(Lorg/lwjgl/opengl/GLSync;IJ)I");
-        ADAPTER.put(key("org/lwjgl/opengl/GL32", "glDeleteSync", "(Lorg/lwjgl/opengl/GLSync;)V"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glDeleteSync\0(Lorg/lwjgl/opengl/GLSync;)V");
-        ADAPTER.put(key("org/lwjgl/opengl/GL32", "glFenceSync", "(II)Lorg/lwjgl/opengl/GLSync;"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glFenceSync\0(II)Lorg/lwjgl/opengl/GLSync;");
-        ADAPTER.put(key("org/lwjgl/opengl/GL32", "glGetSynci", "(Lorg/lwjgl/opengl/GLSync;I)I"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glGetSynci\0(Lorg/lwjgl/opengl/GLSync;I)I");
-        ADAPTER.put(key("org/lwjgl/opengl/GL32", "glWaitSync", "(Lorg/lwjgl/opengl/GLSync;IJ)V"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glWaitSync\0(Lorg/lwjgl/opengl/GLSync;IJ)V");
-        ADAPTER.put(key("org/lwjgl/opengl/GL43", "glDebugMessageCallback", "(Lorg/lwjgl/opengl/KHRDebugCallback;)V"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glDebugMessageCallback\0(Lorg/lwjgl/opengl/KHRDebugCallback;)V");
-        ADAPTER.put(key("org/lwjgl/opengl/KHRDebug", "glDebugMessageCallback", "(Lorg/lwjgl/opengl/KHRDebugCallback;)V"), "com/cleanroommc/lwjgl/legacy/L2Adapters\0glDebugMessageCallback\0(Lorg/lwjgl/opengl/KHRDebugCallback;)V");
+        ADAPTER.put(key("org/lwjgl/PointerBuffer", "flip", "()Lorg/lwjgl/PointerBuffer;"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0flip\0(Lorg/lwjgl/PointerBuffer;)Lorg/lwjgl/PointerBuffer;");
+        ADAPTER.put(key("org/lwjgl/PointerBuffer", "getBuffer", "()Ljava/nio/ByteBuffer;"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0getBuffer\0(Lorg/lwjgl/PointerBuffer;)Ljava/nio/ByteBuffer;");
+        ADAPTER.put(key("org/lwjgl/PointerBuffer", "position", "(I)Lorg/lwjgl/PointerBuffer;"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0position\0(Lorg/lwjgl/PointerBuffer;I)Lorg/lwjgl/PointerBuffer;");
+        ADAPTER.put(key("org/lwjgl/openal/AL", "create", "()V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0alCreate\0()V");
+        ADAPTER.put(key("org/lwjgl/openal/AL", "getDevice", "()Lorg/lwjgl/openal/ALCdevice;"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0getDevice\0()Lorg/lwjgl/openal/ALCdevice;");
+        ADAPTER.put(key("org/lwjgl/openal/AL", "isCreated", "()Z"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0isCreated\0()Z");
+        ADAPTER.put(key("org/lwjgl/openal/ALC10", "alcGetInteger", "(Lorg/lwjgl/openal/ALCdevice;ILjava/nio/IntBuffer;)V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0alcGetInteger\0(Lorg/lwjgl/openal/ALCdevice;ILjava/nio/IntBuffer;)V");
+        ADAPTER.put(key("org/lwjgl/openal/ALC10", "alcGetString", "(Lorg/lwjgl/openal/ALCdevice;I)Ljava/lang/String;"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0alcGetString\0(Lorg/lwjgl/openal/ALCdevice;I)Ljava/lang/String;");
+        ADAPTER.put(key("org/lwjgl/openal/ALC10", "alcIsExtensionPresent", "(Lorg/lwjgl/openal/ALCdevice;Ljava/lang/String;)Z"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0alcIsExtensionPresent\0(Lorg/lwjgl/openal/ALCdevice;Ljava/lang/String;)Z");
+        ADAPTER.put(key("org/lwjgl/opengl/AMDDebugOutput", "glDebugMessageCallbackAMD", "(Lorg/lwjgl/opengl/AMDDebugOutputCallback;)V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glDebugMessageCallbackAMD\0(Lorg/lwjgl/opengl/AMDDebugOutputCallback;)V");
+        ADAPTER.put(key("org/lwjgl/opengl/ARBDebugOutput", "glDebugMessageCallbackARB", "(Lorg/lwjgl/opengl/ARBDebugOutputCallback;)V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glDebugMessageCallbackARB\0(Lorg/lwjgl/opengl/ARBDebugOutputCallback;)V");
+        ADAPTER.put(key("org/lwjgl/opengl/ARBShaderObjects", "glShaderSourceARB", "(ILjava/nio/ByteBuffer;)V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glShaderSource\0(ILjava/nio/ByteBuffer;)V");
+        ADAPTER.put(key("org/lwjgl/opengl/GL20", "glGetActiveUniform", "(III)Ljava/lang/String;"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glGetActiveUniform\0(III)Ljava/lang/String;");
+        ADAPTER.put(key("org/lwjgl/opengl/GL20", "glGetActiveUniform", "(IIILjava/nio/IntBuffer;)Ljava/lang/String;"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glGetActiveUniform\0(IIILjava/nio/IntBuffer;)Ljava/lang/String;");
+        ADAPTER.put(key("org/lwjgl/opengl/GL20", "glGetActiveUniformSize", "(II)I"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glGetActiveUniformSize\0(II)I");
+        ADAPTER.put(key("org/lwjgl/opengl/GL20", "glGetActiveUniformType", "(II)I"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glGetActiveUniformType\0(II)I");
+        ADAPTER.put(key("org/lwjgl/opengl/GL20", "glShaderSource", "(ILjava/nio/ByteBuffer;)V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glShaderSource\0(ILjava/nio/ByteBuffer;)V");
+        ADAPTER.put(key("org/lwjgl/opengl/GL32", "glClientWaitSync", "(Lorg/lwjgl/opengl/GLSync;IJ)I"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glClientWaitSync\0(Lorg/lwjgl/opengl/GLSync;IJ)I");
+        ADAPTER.put(key("org/lwjgl/opengl/GL32", "glDeleteSync", "(Lorg/lwjgl/opengl/GLSync;)V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glDeleteSync\0(Lorg/lwjgl/opengl/GLSync;)V");
+        ADAPTER.put(key("org/lwjgl/opengl/GL32", "glFenceSync", "(II)Lorg/lwjgl/opengl/GLSync;"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glFenceSync\0(II)Lorg/lwjgl/opengl/GLSync;");
+        ADAPTER.put(key("org/lwjgl/opengl/GL32", "glGetSynci", "(Lorg/lwjgl/opengl/GLSync;I)I"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glGetSynci\0(Lorg/lwjgl/opengl/GLSync;I)I");
+        ADAPTER.put(key("org/lwjgl/opengl/GL32", "glWaitSync", "(Lorg/lwjgl/opengl/GLSync;IJ)V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glWaitSync\0(Lorg/lwjgl/opengl/GLSync;IJ)V");
+        ADAPTER.put(key("org/lwjgl/opengl/GL43", "glDebugMessageCallback", "(Lorg/lwjgl/opengl/KHRDebugCallback;)V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glDebugMessageCallback\0(Lorg/lwjgl/opengl/KHRDebugCallback;)V");
+        ADAPTER.put(key("org/lwjgl/opengl/KHRDebug", "glDebugMessageCallback", "(Lorg/lwjgl/opengl/KHRDebugCallback;)V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0glDebugMessageCallback\0(Lorg/lwjgl/opengl/KHRDebugCallback;)V");
 
     }
 }

@@ -1,4 +1,4 @@
-package com.cleanroommc.lwjgl.legacy;
+package net.minecraftforge.lwjgl.legacy;
 
 import java.io.File;
 import java.util.List;

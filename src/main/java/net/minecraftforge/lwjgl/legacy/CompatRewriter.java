@@ -1,4 +1,4 @@
-package com.cleanroommc.lwjgl.legacy;
+package net.minecraftforge.lwjgl.legacy;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;

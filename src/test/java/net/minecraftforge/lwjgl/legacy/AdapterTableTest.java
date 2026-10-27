@@ -1,4 +1,4 @@
-package com.cleanroommc.lwjgl.legacy;
+package net.minecraftforge.lwjgl.legacy;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

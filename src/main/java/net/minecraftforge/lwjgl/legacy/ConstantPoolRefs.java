@@ -1,4 +1,4 @@
-package com.cleanroommc.lwjgl.legacy;
+package net.minecraftforge.lwjgl.legacy;
 
 /**
  * Constant-pool scanner deciding whether a class references LWJGL2 members, without parsing any code.
