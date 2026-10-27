@@ -37,8 +37,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import com.cleanroommc.cleanmix.CleanMixHooks;
-import com.cleanroommc.client.LoadingTracker;
+import net.minecraftforge.cleanmix.CleanMixHooks;
+import net.minecraftforge.client.LoadingTracker;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.fml.common.discovery.ModDiscoverer;
 import net.minecraftforge.fml.common.discovery.IdentifiedMods;

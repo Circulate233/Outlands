@@ -1,6 +1,6 @@
 package zone.rong.mixinbooter.util;
 
-import com.cleanroommc.common.CleanroomEnvironment;
+import net.minecraftforge.fml.common.CleanroomEnvironment;
 
 public class Environment {
 

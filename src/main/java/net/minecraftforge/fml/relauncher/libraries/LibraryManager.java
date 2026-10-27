@@ -436,7 +436,7 @@ public class LibraryManager
         List<File> list = new ArrayList<>();
         Set<File> seen = new HashSet<>();
 
-        String extrapath = com.cleanroommc.common.CleanroomEnvironment.getDevExtraPath();
+        String extrapath = net.minecraftforge.fml.common.CleanroomEnvironment.getDevExtraPath();
         if (extrapath != null) 
         {
             for (String mod : extrapath.split(File.pathSeparator))

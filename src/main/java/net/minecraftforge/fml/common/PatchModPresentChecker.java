@@ -1,4 +1,4 @@
-package com.cleanroommc.common;
+package net.minecraftforge.fml.common;
 
 import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.common.ForgeEarlyConfig;

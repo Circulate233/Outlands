@@ -1,4 +1,4 @@
-package com.cleanroommc.common;
+package net.minecraftforge.fml.common;
 
 import com.google.common.eventbus.EventBus;
 import net.minecraftforge.common.ForgeEarlyConfig;

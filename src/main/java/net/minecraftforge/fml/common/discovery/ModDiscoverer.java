@@ -19,11 +19,9 @@
 
 package net.minecraftforge.fml.common.discovery;
 
-import com.cleanroommc.cleanmix.CleanMixModContainer;
-import com.cleanroommc.common.CleanroomContainer;
-import com.cleanroommc.common.CleanroomEnvironment;
-import com.cleanroommc.common.ConfigAnytimeContainer;
-import com.cleanroommc.util.CleanroomLog;
+import net.minecraftforge.cleanmix.CleanMixModContainer;
+import net.minecraftforge.fml.common.CleanroomEnvironment;
+import net.minecraftforge.util.CleanroomLog;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedHashMultimap;

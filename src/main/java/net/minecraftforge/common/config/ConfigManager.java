@@ -33,7 +33,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-import com.cleanroommc.common.CleanroomEnvironment;
+import net.minecraftforge.fml.common.CleanroomEnvironment;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.common.config.Config.Comment;
 import net.minecraftforge.common.config.Config.LangKey;

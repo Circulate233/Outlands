@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import com.cleanroommc.hackery.ReflectionHackery;
+import net.minecraftforge.hackery.ReflectionHackery;
 import net.minecraft.util.ResourceLocation;
 
 import net.minecraftforge.fml.common.FMLLog;

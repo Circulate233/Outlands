@@ -22,7 +22,7 @@ package net.minecraftforge.fml.common.launcher;
 import java.io.File;
 import java.util.List;
 
-import com.cleanroommc.cleanmix.service.CleanMixService;
+import net.minecraftforge.cleanmix.service.CleanMixService;
 import net.minecraft.launchwrapper.ITweaker;
 import net.minecraft.launchwrapper.LaunchClassLoader;
 import net.minecraftforge.fml.common.FMLLog;

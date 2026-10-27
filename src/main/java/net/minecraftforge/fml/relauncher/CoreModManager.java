@@ -19,11 +19,11 @@
 
 package net.minecraftforge.fml.relauncher;
 
-import com.cleanroommc.cleanmix.CleanMixHooks;
+import net.minecraftforge.cleanmix.CleanMixHooks;
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
 import com.google.common.primitives.Ints;
-import com.cleanroommc.common.CleanroomEnvironment;
+import net.minecraftforge.fml.common.CleanroomEnvironment;
 import net.minecraftforge.fml.common.discovery.ModDiscoverer;
 import net.minecraft.launchwrapper.ITweaker;
 import net.minecraft.launchwrapper.Launch;
@@ -218,7 +218,7 @@ public class CoreModManager {
 
         FMLLog.log.debug("All fundamental core mods are successfully located");
         // Add extra classpath in advanced so fml.coreMods.load works
-        String devExtraPath = com.cleanroommc.common.CleanroomEnvironment.getDevExtraPath();
+        String devExtraPath = net.minecraftforge.fml.common.CleanroomEnvironment.getDevExtraPath();
         if (devExtraPath != null)
         {
             for (String path : devExtraPath.split(File.pathSeparator))

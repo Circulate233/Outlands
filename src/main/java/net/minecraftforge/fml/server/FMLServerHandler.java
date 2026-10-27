@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import com.cleanroommc.common.PatchModPresentChecker;
+import net.minecraftforge.fml.common.PatchModPresentChecker;
 import net.minecraftforge.fml.common.discovery.ModDiscoverer;
 import net.minecraft.network.INetHandler;
 import net.minecraft.network.NetHandlerPlayServer;

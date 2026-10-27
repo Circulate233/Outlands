@@ -35,9 +35,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-import com.cleanroommc.client.modlist.ModListConfig;
-import com.cleanroommc.client.modlist.screen.ModListScreen;
-import com.cleanroommc.common.PatchModPresentChecker;
+import net.minecraftforge.client.modlist.ModListConfig;
+import net.minecraftforge.client.modlist.screen.ModListScreen;
+import net.minecraftforge.fml.common.PatchModPresentChecker;
 import net.minecraftforge.fml.common.discovery.ModDiscoverer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;

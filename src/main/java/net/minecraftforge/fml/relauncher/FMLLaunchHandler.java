@@ -23,9 +23,9 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import com.cleanroommc.common.CleanroomEnvironment;
+import net.minecraftforge.fml.common.CleanroomEnvironment;
 import com.cleanroommc.common.CleanroomVersion;
-import com.cleanroommc.util.CleanroomLog;
+import net.minecraftforge.util.CleanroomLog;
 import com.llamalad7.mixinextras.MixinExtrasBootstrap;
 import net.minecraft.launchwrapper.LaunchClassLoader;
 import net.minecraftforge.fml.common.FMLLog;

@@ -272,7 +272,7 @@ public class SplashProgress
                 while(!done)
                 {
                     framecount++;
-                    com.cleanroommc.client.LoadingTracker.tick();
+                    net.minecraftforge.client.LoadingTracker.tick();
 
                     if (warningWarning != null && warningPrompt != null)
                     {

@@ -22,7 +22,7 @@ package net.minecraftforge.fml.common.launcher;
 import java.io.File;
 import java.util.List;
 
-import com.cleanroommc.common.CleanroomEnvironment;
+import net.minecraftforge.fml.common.CleanroomEnvironment;
 import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;

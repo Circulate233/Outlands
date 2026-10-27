@@ -19,7 +19,7 @@
 
 package net.minecraftforge.fml.common.launcher;
 
-import com.cleanroommc.common.CleanroomEnvironment;
+import net.minecraftforge.fml.common.CleanroomEnvironment;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import net.minecraft.launchwrapper.ITweaker;

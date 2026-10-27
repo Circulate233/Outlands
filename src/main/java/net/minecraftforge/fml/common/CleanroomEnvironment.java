@@ -1,4 +1,4 @@
-package com.cleanroommc.common;
+package net.minecraftforge.fml.common;
 
 import net.minecraftforge.fml.relauncher.Side;
 

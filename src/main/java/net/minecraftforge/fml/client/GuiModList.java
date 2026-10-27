@@ -19,7 +19,7 @@
 
 package net.minecraftforge.fml.client;
 
-import com.cleanroommc.client.modlist.LegacyModListScreen;
+import net.minecraftforge.client.modlist.LegacyModListScreen;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
