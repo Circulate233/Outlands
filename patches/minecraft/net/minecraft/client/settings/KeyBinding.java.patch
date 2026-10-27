@@ -23,16 +23,27 @@
          }
      }
  
-@@ -42,7 +37,7 @@
+@@ -42,11 +37,15 @@
      {
          if (keyCode != 0)
          {
 -            KeyBinding keybinding = HASH.lookup(keyCode);
-+            for (KeyBinding keybinding : HASH.lookupAll(keyCode))
- 
-             if (keybinding != null)
+-
+-            if (keybinding != null)
++            // Pressing only takes effects that match: a binding waiting for a chord must not be pressed by its main
++            // key alone. Releasing has to reach every binding on the key regardless, or a binding whose chord was
++            // dismantled first would stay pressed forever.
++            for (KeyBinding keybinding : pressed ? HASH.lookupActives(keyCode) : HASH.lookupAll(keyCode))
              {
-@@ -101,7 +96,7 @@
+-                keybinding.pressed = pressed;
++                if (keybinding != null)
++                {
++                    keybinding.setPressed(pressed);
++                }
+             }
+         }
+     }
+@@ -101,7 +100,7 @@
  
      public boolean isKeyDown()
      {
@@ -41,7 +52,7 @@
      }
  
      public String getKeyCategory()
-@@ -150,15 +145,156 @@
+@@ -150,15 +149,295 @@
  
      public int compareTo(KeyBinding p_compareTo_1_)
      {
@@ -135,11 +146,135 @@
 +    public void setToDefault()
 +    {
 +        setKeyModifierAndCode(getKeyModifierDefault(), getKeyCodeDefault());
++        setChordKeys(getChordKeysDefault());
 +    }
 +
 +    public boolean isSetToDefaultValue()
 +    {
-+        return getKeyCode() == getKeyCodeDefault() && getKeyModifier() == getKeyModifierDefault();
++        return getKeyCode() == getKeyCodeDefault() && getKeyModifier() == getKeyModifierDefault()
++            && java.util.Arrays.equals(getChordKeys(), getChordKeysDefault());
++    }
++
++    private static final int[] NO_CHORDS = new int[0];
++
++    private int[] chordKeys = NO_CHORDS;
++    private int[] chordKeysDefault = NO_CHORDS;
++    private java.util.List<Runnable> pressCallbacks;
++    private java.util.List<Runnable> releaseCallbacks;
++
++    /**
++     * The extra keys that have to be held for this binding to fire, sorted and without duplicates. The main key is
++     * not part of this list.
++     */
++    public int[] getChordKeys()
++    {
++        return chordKeys;
++    }
++
++    public int[] getChordKeysDefault()
++    {
++        return chordKeysDefault;
++    }
++
++    public boolean hasChord()
++    {
++        return chordKeys.length > 0;
++    }
++
++    /**
++     * Sets the extra keys that have to be held. Also used for the default, through {@link #setDefaultChordKeys(int...)}.
++     * <p>
++     * Normalised on the way in: the main key is dropped (it cannot be its own chord key) and the rest is sorted, so
++     * that two bindings carrying the same chord compare equal however the caller ordered them.
++     */
++    public KeyBinding setChordKeys(int... keys)
++    {
++        this.chordKeys = normaliseChord(keys, this.keyCode);
++        return this;
++    }
++
++    public KeyBinding setDefaultChordKeys(int... keys)
++    {
++        this.chordKeysDefault = normaliseChord(keys, this.keyCodeDefault);
++        return this;
++    }
++
++    private static int[] normaliseChord(int[] keys, int mainKey)
++    {
++        if (keys == null || keys.length == 0)
++        {
++            return NO_CHORDS;
++        }
++        int[] sorted = java.util.Arrays.stream(keys).filter(key -> key != 0 && key != mainKey).sorted().distinct().toArray();
++        return sorted.length == 0 ? NO_CHORDS : sorted;
++    }
++
++    /** True when every key of the chord is currently held. Mouse buttons are negative, as everywhere else. */
++    public boolean isChordHeld()
++    {
++        for (int key : chordKeys)
++        {
++            if (!isHeld(key))
++            {
++                return false;
++            }
++        }
++        return true;
++    }
++
++    public static boolean isHeld(int keyCode)
++    {
++        return keyCode < 0 ? org.lwjgl.input.Mouse.isButtonDown(keyCode + 100) : org.lwjgl.input.Keyboard.isKeyDown(keyCode);
++    }
++
++    /**
++     * Called when the binding goes from released to pressed or back, so that a mod can act on the transition rather
++     * than polling {@link #isKeyDown()} every tick. The callbacks run on the client thread, from the key event that
++     * caused the transition.
++     */
++    void setPressed(boolean pressed)
++    {
++        if (this.pressed == pressed)
++        {
++            return;
++        }
++        this.pressed = pressed;
++        java.util.List<Runnable> callbacks = pressed ? this.pressCallbacks : this.releaseCallbacks;
++        if (callbacks != null)
++        {
++            for (Runnable callback : callbacks)
++            {
++                callback.run();
++            }
++        }
++    }
++
++    public void addPressCallback(Runnable callback)
++    {
++        if (this.pressCallbacks == null)
++        {
++            this.pressCallbacks = new java.util.ArrayList<>(1);
++        }
++        this.pressCallbacks.add(callback);
++    }
++
++    public boolean removePressCallback(Runnable callback)
++    {
++        return this.pressCallbacks != null && this.pressCallbacks.remove(callback);
++    }
++
++    public void addReleaseCallback(Runnable callback)
++    {
++        if (this.releaseCallbacks == null)
++        {
++            this.releaseCallbacks = new java.util.ArrayList<>(1);
++        }
++        this.releaseCallbacks.add(callback);
++    }
++
++    public boolean removeReleaseCallback(Runnable callback)
++    {
++        return this.releaseCallbacks != null && this.releaseCallbacks.remove(callback);
 +    }
 +
 +    /**
@@ -151,11 +286,14 @@
 +        {
 +            net.minecraftforge.client.settings.KeyModifier keyModifier = getKeyModifier();
 +            net.minecraftforge.client.settings.KeyModifier otherKeyModifier = other.getKeyModifier();
-+            if (keyModifier.matches(other.getKeyCode()) || otherKeyModifier.matches(getKeyCode()))
++            // A chord key and a main key are the same physical key, so binding G while G is somebody's chord key
++            // collides just as surely as two bindings on G.
++            if (keyModifier.matches(other.getKeyCode()) || otherKeyModifier.matches(getKeyCode())
++                || containsKey(getChordKeys(), other.getKeyCode()) || containsKey(other.getChordKeys(), getKeyCode()))
 +            {
 +                return true;
 +            }
-+            else if (getKeyCode() == other.getKeyCode())
++            else if (getKeyCode() == other.getKeyCode() && java.util.Arrays.equals(getChordKeys(), other.getChordKeys()))
 +            {
 +                return keyModifier == otherKeyModifier ||
 +                        // IN_GAME key contexts have a conflict when at least one modifier is NONE.
@@ -163,6 +301,18 @@
 +                        // GUI and other key contexts do not have this limitation.
 +                        (getKeyConflictContext().conflicts(net.minecraftforge.client.settings.KeyConflictContext.IN_GAME) &&
 +                                (keyModifier == net.minecraftforge.client.settings.KeyModifier.NONE || otherKeyModifier == net.minecraftforge.client.settings.KeyModifier.NONE));
++            }
++        }
++        return false;
++    }
++
++    private static boolean containsKey(int[] keys, int key)
++    {
++        for (int candidate : keys)
++        {
++            if (candidate == key)
++            {
++                return true;
 +            }
 +        }
 +        return false;

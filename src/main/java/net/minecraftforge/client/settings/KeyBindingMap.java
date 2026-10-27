@@ -41,57 +41,48 @@ public class KeyBindingMap
     @Deprecated // Cleanroom: Use lookupActives
     public KeyBinding lookupActive(int keyCode)
     {
-        KeyModifier activeModifier = KeyModifier.getActiveModifier();
-        if (!activeModifier.matches(keyCode))
-        {
-            KeyBinding binding = getBinding(keyCode, activeModifier);
-            if (binding != null)
-            {
-                return binding;
-            }
-        }
-        return getBinding(keyCode, KeyModifier.NONE);
+        Set<KeyBinding> bindings = lookupActives(keyCode);
+        return bindings.isEmpty() ? null : bindings.iterator().next();
     }
 
+    /**
+     * The bindings a key press should act on.
+     * <p>
+     * A binding fires when its main key is the one pressed, its conflict context is active, its modifier state
+     * matches, and every key of its chord is held. When several of them pass, only the most specific ones do: a
+     * binding on {@code Ctrl+Shift+G} beats one on {@code G}, which is the whole point of allowing a chord, and
+     * bindings of equal specificity all fire together so that two mods using the same key both see it.
+     * <p>
+     * Specificity is the chord size, decided here for all candidates at once. Deciding it per candidate, in map
+     * order, would let whichever binding the map happens to yield first win - the defect this deliberately avoids.
+     */
     public Set<KeyBinding> lookupActives(int keyCode)
     {
-        KeyModifier activeModifier = KeyModifier.getActiveModifier();
-        if (!activeModifier.matches(keyCode))
-        {
-            Set<KeyBinding> bindings = getBindings(keyCode, activeModifier);
-            if (!bindings.isEmpty())
-            {
-                return bindings;
-            }
-        }
-        return getBindings(keyCode, KeyModifier.NONE);
-    }
-
-    @Nullable
-    private KeyBinding getBinding(int keyCode, KeyModifier keyModifier)
-    {
-        Collection<KeyBinding> bindings = map.get(keyModifier).lookup(keyCode);
-        if (bindings != null)
-        {
-            for (KeyBinding binding : bindings)
-            {
-                if (binding.isActiveAndMatches(keyCode))
-                {
-                    return binding;
-                }
-            }
-        }
-        return null;
-    }
-
-    private Set<KeyBinding> getBindings(int keyCode, KeyModifier keyModifier)
-    {
-        Collection<KeyBinding> bindings = map.get(keyModifier).lookup(keyCode);
-        if (bindings == null)
+        List<KeyBinding> candidates = lookupAll(keyCode);
+        if (candidates.isEmpty())
         {
             return Collections.emptySet();
         }
-        return bindings.stream().filter($ -> $.isActiveAndMatches(keyCode)).collect(Collectors.toSet());
+        List<KeyBinding> active = new ArrayList<>(candidates.size());
+        int best = -1;
+        for (KeyBinding binding : candidates)
+        {
+            if (!binding.isActiveAndMatches(keyCode) || !binding.isChordHeld())
+            {
+                continue;
+            }
+            int specificity = binding.getChordKeys().length;
+            if (specificity > best)
+            {
+                best = specificity;
+                active.clear();
+            }
+            if (specificity == best)
+            {
+                active.add(binding);
+            }
+        }
+        return active.isEmpty() ? Collections.emptySet() : new LinkedHashSet<>(active);
     }
 
     public List<KeyBinding> lookupAll(int keyCode)

@@ -90,7 +90,7 @@
              NBTTagCompound nbttagcompound = new NBTTagCompound();
  
              for (String s : list)
-@@ -1110,7 +1120,12 @@
+@@ -1110,7 +1120,16 @@
                      {
                          if (s1.equals("key_" + keybinding.getKeyDescription()))
                          {
@@ -99,12 +99,16 @@
 +                            {
 +                                String[] t = s2.split(":");
 +                                keybinding.setKeyModifierAndCode(net.minecraftforge.client.settings.KeyModifier.valueFromString(t[1]), Integer.parseInt(t[0]));
++                                if (t.length > 2 && !t[2].isEmpty())
++                                {
++                                    keybinding.setChordKeys(java.util.Arrays.stream(t[2].split("\\+")).mapToInt(Integer::parseInt).toArray());
++                                }
 +                            } else
 +                            keybinding.setKeyModifierAndCode(net.minecraftforge.client.settings.KeyModifier.NONE, Integer.parseInt(s2));
                          }
                      }
  
-@@ -1140,8 +1155,9 @@
+@@ -1140,8 +1159,9 @@
          }
          catch (Exception exception2)
          {
@@ -115,7 +119,7 @@
      }
  
      private NBTTagCompound dataFix(NBTTagCompound p_189988_1_)
-@@ -1173,6 +1189,7 @@
+@@ -1173,6 +1193,7 @@
  
      public void saveOptions()
      {
@@ -123,17 +127,25 @@
          PrintWriter printwriter = null;
  
          try
-@@ -1247,7 +1264,8 @@
+@@ -1247,7 +1268,16 @@
  
              for (KeyBinding keybinding : this.keyBindings)
              {
 -                printwriter.println("key_" + keybinding.getKeyDescription() + ":" + keybinding.getKeyCode());
 +                String keyString = "key_" + keybinding.getKeyDescription() + ":" + keybinding.getKeyCode();
-+                printwriter.println(keybinding.getKeyModifier() != net.minecraftforge.client.settings.KeyModifier.NONE ? keyString + ":" + keybinding.getKeyModifier() : keyString);
++                if (keybinding.getKeyModifier() != net.minecraftforge.client.settings.KeyModifier.NONE)
++                {
++                    keyString = keyString + ":" + keybinding.getKeyModifier();
++                }
++                if (keybinding.hasChord())
++                {
++                    keyString = keyString + ":" + java.util.Arrays.stream(keybinding.getChordKeys()).mapToObj(Integer::toString).collect(java.util.stream.Collectors.joining("+"));
++                }
++                printwriter.println(keyString);
              }
  
              for (SoundCategory soundcategory : SoundCategory.values())
-@@ -1262,11 +1280,11 @@
+@@ -1262,11 +1292,11 @@
          }
          catch (Exception exception)
          {
@@ -147,7 +159,7 @@
          }
  
          this.sendSettingsToServer();
-@@ -1484,4 +1502,35 @@
+@@ -1484,4 +1514,35 @@
              return value;
          }
      }
