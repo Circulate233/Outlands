@@ -82,7 +82,15 @@ public class KeyBindingMap
                 active.add(binding);
             }
         }
-        return active.isEmpty() ? Collections.emptySet() : new LinkedHashSet<>(active);
+        if (active.isEmpty())
+        {
+            return Collections.emptySet();
+        }
+        if (!net.minecraftforge.common.ForgeEarlyConfig.INPUT_KEYBIND_ALL_MATCHING)
+        {
+            return Collections.singleton(active.get(0));
+        }
+        return new LinkedHashSet<>(active);
     }
 
     public List<KeyBinding> lookupAll(int keyCode)

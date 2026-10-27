@@ -68,6 +68,12 @@ public class ForgeEarlyConfig {
     @Config.Comment("Allows AltGr use in Ctrl+key special key combinations (disables text character input handling when AltGr is pressed)")
     public static boolean INPUT_ALTGR_ESCAPE_CODES = false;
 
+    @Config.Comment({
+        "When several bindings share a key and match equally well, fire all of them instead of only the first.",
+        "Off restores the older behaviour, which some mods rely on when they bind a key that another mod already uses."
+    })
+    public static boolean INPUT_KEYBIND_ALL_MATCHING = true;
+
     @Config.Comment("Linux-only - change the X11 class name, which is used by your window manager to identify the running application")
     public static String X11_CLASS_NAME = "minecraft";
 
