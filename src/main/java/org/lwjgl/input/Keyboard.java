@@ -226,11 +226,25 @@ public class Keyboard {
      * @param state    press, release or repeat
      */
     public static void addSdlKeyEvent(int key, char c, KeyState state) {
+        addSdlKeyEvent(key, c, state, 0, (short) 0);
+    }
+
+    /**
+     * Records a key event already translated to an LWJGL2 keycode, keeping the physical key and the modifier state
+     * that SDL reported with it.
+     *
+     * @param key      LWJGL2 keycode
+     * @param c        the character produced, or {@code '\0'}
+     * @param state    press, release or repeat
+     * @param scancode LWJGL2 scan code of the physical key
+     * @param mods     {@code SDL_KMOD_*} bits held when the key changed
+     */
+    public static void addSdlKeyEvent(int key, char c, KeyState state, int scancode, short mods) {
         if (state == KeyState.REPEAT && !doRepeatEvents) {
             return;
         }
         try {
-            queue.add(new KeyEvent(key, c, state, Sys.getNanoTime()));
+            queue.add(new KeyEvent(key, c, state, Sys.getNanoTime(), scancode, mods));
         } catch (IllegalStateException ignored) {}
     }
     public static void addKeyEvent(KeyEvent event) {
@@ -306,6 +320,20 @@ public class Keyboard {
 
     public static long getEventNanoseconds() {
         return queue.peek().nano;
+    }
+
+    /** LWJGL2 scan code of the key the queue is currently on; {@code 0} when the event did not carry one. */
+    public static int getEventScancode() {
+        return queue.peek().scancode;
+    }
+
+    /**
+     * {@code SDL_KMOD_*} bits that were held when the key the queue is currently on changed. Reading it here rather
+     * than calling {@link #isKeyDown(int)} keeps a chord correct even if the modifier is released before the game
+     * gets to the event.
+     */
+    public static short getEventModifiers() {
+        return queue.peek().mods;
     }
 
     public static String getKeyName(int key) {

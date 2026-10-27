@@ -756,6 +756,7 @@ public class Display {
         final KeyState state = isDown ? (isRepeat ? KeyState.REPEAT : KeyState.PRESS) : KeyState.RELEASE;
 
         final int lwjglKey = KeyCodes.sdlKeycodeToLwjgl(keycode);
+        final int lwjglScan = KeyCodes.sdlScancodeToLwjgl(scancode);
 
         if (isDown && !isRepeat) {
             // The one combination the input method cannot have taken first: while SDL's text input session is
@@ -806,28 +807,28 @@ public class Display {
                     ctrlGraphicalMode = ForgeEarlyConfig.INPUT_CTRL_ALT_TEXT;
                 }
                 if (ctrlGraphicalMode) {
-                    Keyboard.addSdlKeyEvent(lwjglKey, (char) (keycode & 0x1f), state);
+                    Keyboard.addSdlKeyEvent(lwjglKey, (char) (keycode & 0x1f), state, lwjglScan, mods);
                 }
             } else {
                 ctrlGraphicalMode = false;
             }
 
             if ((mods & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_GUI) != 0) {
-                queueKeyEvent(lwjglKey, character, state, isDown);
+                queueKeyEvent(lwjglKey, character, state, isDown, lwjglScan, mods);
             } else if ((mods & org.lwjgl.sdl.SDLKeycode.SDL_KMOD_CTRL) != 0 && !ctrlGraphicalMode) {
-                queueKeyEvent(lwjglKey, (char) (keycode & 0x1f), state, isDown);
+                queueKeyEvent(lwjglKey, (char) (keycode & 0x1f), state, isDown, lwjglScan, mods);
             } else {
-                queueKeyEvent(lwjglKey, character, state, isDown);
+                queueKeyEvent(lwjglKey, character, state, isDown, lwjglScan, mods);
             }
         } else {
             // Other key with no char event associated
-            queueKeyEvent(lwjglKey, character, state, isDown);
+            queueKeyEvent(lwjglKey, character, state, isDown, lwjglScan, mods);
         }
     }
 
     /** Queues one key event and remembers the character a press contributed to this pump's text. */
-    private static void queueKeyEvent(int key, char character, KeyState state, boolean isDown) {
-        Keyboard.addSdlKeyEvent(key, character, state);
+    private static void queueKeyEvent(int key, char character, KeyState state, boolean isDown, int scancode, short mods) {
+        Keyboard.addSdlKeyEvent(key, character, state, scancode, mods);
         if (isDown && character >= ' ' && pumpedKeyCharacters.length() < 32) {
             pumpedKeyCharacters.append(character);
         }

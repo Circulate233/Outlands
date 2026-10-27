@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.util.ChatAllowedCharacters;
+import net.minecraftforge.client.input.TextInput;
 import net.minecraftforge.fml.common.FMLLog;
 import org.lwjgl.MainThread;
 import org.lwjgl.Sys;
@@ -153,6 +154,11 @@ public final class TextFieldHandler {
         if (filtered.isEmpty()) {
             return;
         }
+
+        // Announced before it is written anywhere: a screen that draws its own text widget and the focused field are
+        // two of several possible destinations, and whoever else wants to see the text should not depend on which
+        // one it happened to reach.
+        TextInput.dispatch(filtered);
 
         final GuiTextField field = focusedTextInput;
         if (field != null && field.getVisible() && field.isFocused()) {
