@@ -1,10 +1,10 @@
-package com.cleanroommc.cleanmix.service;
+package net.minecraftforge.cleanmix.service;
 
 import org.spongepowered.asm.service.IMixinServiceBootstrap;
 
 public class CleanMixBootstrap implements IMixinServiceBootstrap {
 
-    private static final String OWN_SERVICE = "com.cleanroommc.cleanmix.service.CleanMixService";
+    private static final String OWN_SERVICE = "net.minecraftforge.cleanmix.service.CleanMixService";
 
     @Override
     public String getName() {

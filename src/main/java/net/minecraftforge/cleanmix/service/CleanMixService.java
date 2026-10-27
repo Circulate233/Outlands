@@ -1,7 +1,7 @@
-package com.cleanroommc.cleanmix.service;
+package net.minecraftforge.cleanmix.service;
 
-import com.cleanroommc.cleanmix.CleanMixModContainer;
-import com.cleanroommc.common.CleanroomEnvironment;
+import net.minecraftforge.cleanmix.CleanMixModContainer;
+import net.minecraftforge.fml.common.CleanroomEnvironment;
 import net.minecraftforge.fml.common.discovery.ModDiscoverer;
 import com.google.common.base.Strings;
 import net.minecraft.launchwrapper.Launch;

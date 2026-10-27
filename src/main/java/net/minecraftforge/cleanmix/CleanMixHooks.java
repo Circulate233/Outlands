@@ -1,4 +1,4 @@
-package com.cleanroommc.cleanmix;
+package net.minecraftforge.cleanmix;
 
 import net.minecraftforge.fml.common.discovery.ModDiscoverer;
 import net.minecraftforge.fml.common.discovery.ASMDataTable;

@@ -1,4 +1,4 @@
-package com.cleanroommc.cleanmix.service;
+package net.minecraftforge.cleanmix.service;
 
 import com.google.common.collect.Sets;
 import net.minecraft.launchwrapper.IClassTransformer;
