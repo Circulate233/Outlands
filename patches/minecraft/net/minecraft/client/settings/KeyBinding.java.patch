@@ -52,7 +52,7 @@
      }
  
      public String getKeyCategory()
-@@ -150,15 +149,295 @@
+@@ -150,15 +149,309 @@
  
      public int compareTo(KeyBinding p_compareTo_1_)
      {
@@ -138,6 +138,8 @@
 +        {
 +            keyModifier = net.minecraftforge.client.settings.KeyModifier.NONE;
 +        }
++        // Rebinding can turn a chord key into the main key; it cannot stay both.
++        this.chordKeys = normaliseChord(this.chordKeys, keyCode);
 +        HASH.removeKey(this);
 +        this.keyModifier = keyModifier;
 +        HASH.addKey(keyCode, this);
@@ -335,7 +337,19 @@
 +
 +    public String getDisplayName()
 +    {
-+        return getKeyModifier().getLocalizedComboName(getKeyCode());
++        String main = getKeyModifier().getLocalizedComboName(getKeyCode());
++        if (chordKeys.length == 0)
++        {
++            return main;
++        }
++        // The chord reads left to right, the main key last, because that is the order the player presses them in and
++        // the key the binding is listed under. The modifier, when there is one, stays attached to the main key.
++        StringBuilder name = new StringBuilder();
++        for (int key : chordKeys)
++        {
++            name.append(GameSettings.getKeyDisplayString(key)).append(" + ");
++        }
++        return name.append(main).toString();
 +    }
 +    /****************** Forge End *****************************/
  
