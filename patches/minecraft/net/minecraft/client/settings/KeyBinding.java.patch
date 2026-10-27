@@ -52,7 +52,7 @@
      }
  
      public String getKeyCategory()
-@@ -150,15 +149,309 @@
+@@ -150,15 +149,332 @@
  
      public int compareTo(KeyBinding p_compareTo_1_)
      {
@@ -347,9 +347,32 @@
 +        StringBuilder name = new StringBuilder();
 +        for (int key : chordKeys)
 +        {
-+            name.append(GameSettings.getKeyDisplayString(key)).append(" + ");
++            name.append(getChordKeyName(key)).append(" + ");
 +        }
 +        return name.append(main).toString();
++    }
++
++    /**
++     * Names one key of a chord. A modifier gets the same word the modifier itself is displayed with, so that
++     * {@code Ctrl + G} and a chord of Ctrl on G do not read as two different things; every other key is named as
++     * the layout names it.
++     */
++    private static String getChordKeyName(int key)
++    {
++        net.minecraftforge.client.settings.KeyModifier[] modifiers = {
++            net.minecraftforge.client.settings.KeyModifier.CONTROL,
++            net.minecraftforge.client.settings.KeyModifier.SHIFT,
++            net.minecraftforge.client.settings.KeyModifier.ALT
++        };
++        for (net.minecraftforge.client.settings.KeyModifier modifier : modifiers)
++        {
++            if (modifier.matches(key))
++            {
++                String suffix = modifier == net.minecraftforge.client.settings.KeyModifier.CONTROL && net.minecraft.client.Minecraft.IS_RUNNING_ON_MAC ? ".mac" : "";
++                return I18n.format("forge.controlsgui." + modifier.name().toLowerCase(java.util.Locale.ROOT) + suffix + ".name");
++            }
++        }
++        return GameSettings.getKeyDisplayString(key);
 +    }
 +    /****************** Forge End *****************************/
  

@@ -167,7 +167,9 @@ public class Keyboard {
     private static final Queue<KeyEvent> queue = new ArrayBlockingQueue<>(128);
 
 
-    private static boolean doRepeatEvents = true;
+    /** Off until a text field asks for it: LWJGL2 delivers no repeats by default, and vanilla acts on every
+     * key event it is given. A screen that wants auto-repeat calls {@link #enableRepeatEvents(boolean)}. */
+    private static boolean doRepeatEvents = false;
 
     public static final int KEYBOARD_SIZE = Short.MAX_VALUE;
 

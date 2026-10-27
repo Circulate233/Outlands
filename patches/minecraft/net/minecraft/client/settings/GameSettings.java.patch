@@ -127,13 +127,15 @@
          PrintWriter printwriter = null;
  
          try
-@@ -1247,7 +1268,16 @@
+@@ -1247,7 +1268,18 @@
  
              for (KeyBinding keybinding : this.keyBindings)
              {
 -                printwriter.println("key_" + keybinding.getKeyDescription() + ":" + keybinding.getKeyCode());
 +                String keyString = "key_" + keybinding.getKeyDescription() + ":" + keybinding.getKeyCode();
-+                if (keybinding.getKeyModifier() != net.minecraftforge.client.settings.KeyModifier.NONE)
++                // The modifier slot is written even when there is none, because the slot after it is the chord: with
++                // the empty slot skipped, a chord would be read back as a modifier and the binding would lose its key.
++                if (keybinding.getKeyModifier() != net.minecraftforge.client.settings.KeyModifier.NONE || keybinding.hasChord())
 +                {
 +                    keyString = keyString + ":" + keybinding.getKeyModifier();
 +                }
@@ -145,7 +147,7 @@
              }
  
              for (SoundCategory soundcategory : SoundCategory.values())
-@@ -1262,11 +1292,11 @@
+@@ -1262,11 +1294,11 @@
          }
          catch (Exception exception)
          {
@@ -159,7 +161,7 @@
          }
  
          this.sendSettingsToServer();
-@@ -1484,4 +1514,35 @@
+@@ -1484,4 +1516,35 @@
              return value;
          }
      }
