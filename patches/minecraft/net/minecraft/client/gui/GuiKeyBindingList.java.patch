@@ -1,6 +1,14 @@
 --- before/net/minecraft/client/gui/GuiKeyBindingList.java
 +++ after/net/minecraft/client/gui/GuiKeyBindingList.java
-@@ -65,7 +65,7 @@
+@@ -6,6 +6,7 @@
+ import net.minecraft.client.settings.GameSettings;
+ import net.minecraft.client.settings.KeyBinding;
+ import net.minecraft.util.text.TextFormatting;
++import net.minecraftforge.client.settings.KeyCombination;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
+ import org.apache.commons.lang3.ArrayUtils;
+@@ -65,7 +66,7 @@
      @Override
      protected int getScrollBarX()
      {
@@ -9,7 +17,7 @@
      }
  
      @Override
-@@ -138,7 +138,7 @@
+@@ -138,7 +139,7 @@
          {
              this.keybinding = name;
              this.keyDesc = I18n.format(name.getKeyDescription());
@@ -18,7 +26,16 @@
              this.btnReset = new GuiButton(0, 0, 0, 50, 20, I18n.format("controls.reset"));
          }
  
-@@ -164,23 +164,24 @@
+@@ -155,7 +156,7 @@
+             float partialTicks
+         )
+         {
+-            boolean flag = GuiKeyBindingList.this.controlsScreen.buttonId == this.keybinding;
++            boolean recording = GuiKeyBindingList.this.controlsScreen.buttonId == this.keybinding;
+             GuiKeyBindingList.this.mc
+             .fontRenderer
+             .drawString(
+@@ -164,28 +165,36 @@
                  y + slotHeight / 2 - GuiKeyBindingList.this.mc.fontRenderer.FONT_HEIGHT / 2,
                  16777215
              );
@@ -31,9 +48,17 @@
              this.btnChangeKeyBinding.x = x + 105;
              this.btnChangeKeyBinding.y = y;
 -            this.btnChangeKeyBinding.displayString = GameSettings.getKeyDisplayString(this.keybinding.getKeyCode());
-+            this.btnChangeKeyBinding.displayString = this.keybinding.getDisplayName();
-             boolean flag1 = false;
-+            boolean keyCodeModifierConflict = true; // less severe form of conflict, like SHIFT conflicting with SHIFT+G
+-            boolean flag1 = false;
++            final KeyCombination displayedCombination = GuiKeyBindingList.this.controlsScreen.getDisplayedCombination(this.keybinding);
++            final String fullDisplayName = displayedCombination.getDisplayName();
++            final String shortenedDisplayName = GuiKeyBindingList.this.controlsScreen.ellipsize(fullDisplayName, this.btnChangeKeyBinding.width - 4);
++            this.btnChangeKeyBinding.displayString = shortenedDisplayName;
++            if (this.btnChangeKeyBinding.isMouseOver() && !fullDisplayName.equals(shortenedDisplayName))
++            {
++                GuiKeyBindingList.this.controlsScreen.setKeyCombinationTooltip(fullDisplayName);
++            }
++            boolean conflict = false;
++            boolean partialConflict = true;
  
              if (this.keybinding.getKeyCode() != 0)
              {
@@ -42,26 +67,44 @@
 -                    if (keybinding != this.keybinding && keybinding.getKeyCode() == this.keybinding.getKeyCode())
 +                    if (keybinding != this.keybinding && keybinding.conflicts(this.keybinding))
                      {
-                         flag1 = true;
+-                        flag1 = true;
 -                        break;
-+                        keyCodeModifierConflict &= keybinding.hasKeyCodeModifierConflict(this.keybinding);
++                        conflict = true;
++                        partialConflict &= keybinding.hasPartialConflict(this.keybinding);
                      }
                  }
              }
-@@ -196,7 +197,7 @@
+ 
+-            if (flag)
++            if (recording)
+             {
+                 this.btnChangeKeyBinding.displayString = TextFormatting.WHITE
+                                                      + "> "
+@@ -194,9 +203,9 @@
+                                                      + TextFormatting.WHITE
+                                                      + " <";
              }
-             else if (flag1)
+-            else if (flag1)
++            else if (conflict)
              {
 -                this.btnChangeKeyBinding.displayString = TextFormatting.RED + this.btnChangeKeyBinding.displayString;
-+                this.btnChangeKeyBinding.displayString = (keyCodeModifierConflict ? TextFormatting.GOLD : TextFormatting.RED) + this.btnChangeKeyBinding.displayString;
++                this.btnChangeKeyBinding.displayString = (partialConflict ? TextFormatting.GOLD : TextFormatting.RED) + this.btnChangeKeyBinding.displayString;
              }
  
              this.btnChangeKeyBinding.drawButton(GuiKeyBindingList.this.mc, mouseX, mouseY, partialTicks);
-@@ -212,6 +213,7 @@
+@@ -207,12 +216,13 @@
+         {
+             if (this.btnChangeKeyBinding.mousePressed(GuiKeyBindingList.this.mc, mouseX, mouseY))
+             {
+-                GuiKeyBindingList.this.controlsScreen.buttonId = this.keybinding;
++                GuiKeyBindingList.this.controlsScreen.startKeyBinding(this.keybinding);
+                 return true;
              }
              else if (this.btnReset.mousePressed(GuiKeyBindingList.this.mc, mouseX, mouseY))
              {
+-                GuiKeyBindingList.this.mc.gameSettings.setOptionKeyBinding(this.keybinding, this.keybinding.getKeyCodeDefault());
 +                this.keybinding.setToDefault();
-                 GuiKeyBindingList.this.mc.gameSettings.setOptionKeyBinding(this.keybinding, this.keybinding.getKeyCodeDefault());
++                GuiKeyBindingList.this.mc.gameSettings.setOptionKeyBinding(this.keybinding, this.keybinding.getKeyCombinationDefault());
                  KeyBinding.resetKeyBindingArrayAndHash();
                  return true;
+             }

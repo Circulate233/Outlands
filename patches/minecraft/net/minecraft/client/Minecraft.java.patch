@@ -394,7 +394,26 @@
          this.systemTime = getSystemTime();
      }
  
-@@ -2012,6 +2000,7 @@
+@@ -1974,8 +1962,7 @@
+                 }
+                 else
+                 {
+-                    KeyBinding.setKeyBindState(i, true);
+-                    KeyBinding.onTick(i);
++                    KeyBinding.onInputEvent(i, true, Keyboard.isRepeatEvent(), Keyboard.getEventSnapshot());
+                 }
+ 
+                 if (this.gameSettings.showDebugProfilerChart)
+@@ -1996,7 +1983,7 @@
+             }
+             else
+             {
+-                KeyBinding.setKeyBindState(i, false);
++                KeyBinding.onInputEvent(i, false, false, Keyboard.getEventSnapshot());
+ 
+                 if (i == 61)
+                 {
+@@ -2012,6 +1999,7 @@
                      }
                  }
              }
@@ -402,16 +421,38 @@
          }
  
          this.processKeyBinds();
-@@ -2260,6 +2249,8 @@
+@@ -2260,19 +2248,24 @@
      {
          while (Mouse.next())
          {
 +            if (net.minecraftforge.client.ForgeHooksClient.postMouseEvent()) continue;
 +
              int i = Mouse.getEventButton();
-             KeyBinding.setKeyBindState(i - 100, Mouse.getEventButtonState());
+-            KeyBinding.setKeyBindState(i - 100, Mouse.getEventButtonState());
+-
+-            if (Mouse.getEventButtonState())
++            if (i >= 0)
+             {
+-                if (this.player.isSpectator() && i == 2)
++                if (Mouse.getEventButtonState() && this.player.isSpectator() && i == 2)
+                 {
+-                    this.ingameGUI.getSpectatorGui().onMiddleClick();
++                    KeyBinding.setKeyBindState(i - 100, true);
+                 }
+                 else
+                 {
+-                    KeyBinding.onTick(i - 100);
++                    KeyBinding.onInputEvent(i - 100, Mouse.getEventButtonState(), false, Mouse.getEventSnapshot());
+                 }
++            }
++
++            if (Mouse.getEventButtonState() && this.player.isSpectator() && i == 2)
++            {
++                this.ingameGUI.getSpectatorGui().onMiddleClick();
+             }
  
-@@ -2315,6 +2306,7 @@
+             long j = getSystemTime() - this.systemTime;
+@@ -2315,6 +2308,7 @@
                      this.currentScreen.handleMouseInput();
                  }
              }
@@ -419,7 +460,7 @@
          }
      }
  
-@@ -2332,6 +2324,7 @@
+@@ -2332,6 +2326,7 @@
  
      public void launchIntegratedServer(String folderName, String worldName, @Nullable WorldSettings worldSettingsIn)
      {
@@ -427,7 +468,7 @@
          this.loadWorld(null);
          System.gc();
          ISaveHandler isavehandler = this.saveLoader.getSaveLoader(folderName, false);
-@@ -2378,6 +2371,12 @@
+@@ -2378,6 +2373,12 @@
  
          while (!this.integratedServer.serverIsInRunLoop())
          {
@@ -440,7 +481,7 @@
              String s = this.integratedServer.getUserMessage();
  
              if (s != null)
-@@ -2402,8 +2401,14 @@
+@@ -2402,8 +2403,14 @@
          SocketAddress socketaddress = this.integratedServer.getNetworkSystem().addLocalEndpoint();
          NetworkManager networkmanager = NetworkManager.provideLocalClient(socketaddress);
          networkmanager.setNetHandler(new NetHandlerLoginClient(networkmanager, this, null));
@@ -457,7 +498,7 @@
          this.networkManager = networkmanager;
      }
  
-@@ -2414,6 +2419,8 @@
+@@ -2414,6 +2421,8 @@
  
      public void loadWorld(@Nullable WorldClient worldClientIn, String loadingMessage)
      {
@@ -466,7 +507,7 @@
          if (worldClientIn == null)
          {
              NetHandlerPlayClient nethandlerplayclient = this.getConnection();
-@@ -2426,6 +2433,18 @@
+@@ -2426,6 +2435,18 @@
              if (this.integratedServer != null && this.integratedServer.isAnvilFileSet())
              {
                  this.integratedServer.initiateShutdown();
@@ -485,7 +526,7 @@
              }
  
              this.integratedServer = null;
-@@ -2449,6 +2468,7 @@
+@@ -2449,6 +2470,7 @@
              this.ingameGUI.resetPlayersOverlayFooterHeader();
              this.setServerData(null);
              this.integratedServerIsRunning = false;
@@ -493,7 +534,7 @@
          }
  
          this.soundHandler.stopSounds();
-@@ -2465,6 +2485,7 @@
+@@ -2465,6 +2487,7 @@
          }
  
          TileEntityRendererDispatcher.instance.setWorld(worldClientIn);
@@ -501,7 +542,7 @@
  
          if (worldClientIn != null)
          {
-@@ -2526,6 +2547,7 @@
+@@ -2526,6 +2549,7 @@
                                   this.player == null ? new RecipeBook() : this.player.getRecipeBook()
                               );
          this.player.getDataManager().setEntryValues(entityplayersp.getDataManager().getAll());
@@ -509,7 +550,7 @@
          this.player.dimension = dimension;
          this.renderViewEntity = this.player;
          this.player.preparePlayerToSpawn();
-@@ -2573,159 +2595,8 @@
+@@ -2573,159 +2597,8 @@
      {
          if (this.objectMouseOver != null && this.objectMouseOver.typeOfHit != RayTraceResult.Type.MISS)
          {
@@ -671,7 +712,7 @@
          }
      }
  
-@@ -2773,7 +2644,14 @@
+@@ -2773,7 +2646,14 @@
          {
              public String call()
              {
@@ -687,7 +728,7 @@
              }
          });
          theCrash.getCategory().addDetail("GL Caps", new ICrashReportDetail<String>()
-@@ -2878,6 +2756,7 @@
+@@ -2878,6 +2758,7 @@
          return instance;
      }
  
@@ -695,7 +736,7 @@
      public ListenableFuture<Object> scheduleResourcesRefresh()
      {
          return this.addScheduledTask(new Runnable()
-@@ -3056,18 +2935,8 @@
+@@ -3056,18 +2937,8 @@
  
      public static int getGLMaximumTextureSize()
      {
@@ -716,7 +757,7 @@
      }
  
      @Override
-@@ -3200,6 +3069,9 @@
+@@ -3200,6 +3071,9 @@
          }
          else if (this.player != null)
          {
@@ -726,7 +767,7 @@
              if (this.player.world.provider instanceof WorldProviderHell)
              {
                  return MusicTicker.MusicType.NETHER;
-@@ -3231,11 +3103,11 @@
+@@ -3231,11 +3105,11 @@
              {
                  if (Keyboard.getEventKeyState())
                  {
@@ -740,7 +781,7 @@
                      {
                          this.ingameGUI
                          .getChatGUI()
-@@ -3253,6 +3125,7 @@
+@@ -3253,6 +3127,7 @@
                          }
                      }
                  }
@@ -748,7 +789,7 @@
              }
          }
      }
-@@ -3291,7 +3164,7 @@
+@@ -3291,7 +3166,7 @@
              }
              catch (Exception exception)
              {
@@ -757,7 +798,7 @@
              }
          }
          else
-@@ -3384,6 +3257,12 @@
+@@ -3384,6 +3259,12 @@
          return this.blockColors;
      }
  
@@ -770,7 +811,7 @@
      public boolean isReducedDebug()
      {
          return this.player != null && this.player.hasReducedDebug() || this.gameSettings.reducedDebugInfo;
-@@ -3397,5 +3276,10 @@
+@@ -3397,5 +3278,10 @@
      public Tutorial getTutorial()
      {
          return this.tutorial;

@@ -25,6 +25,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.GameSettings;
+import org.lwjgl.input.InputSnapshot;
 import org.lwjgl.input.Keyboard;
 
 public enum KeyModifier {
@@ -156,7 +157,7 @@ public enum KeyModifier {
     {
         for (KeyModifier keyModifier : MODIFIER_VALUES)
         {
-            if (keyModifier.isActive(null))
+            if (keyModifier.isActive((IKeyConflictContext) null))
             {
                 return keyModifier;
             }
@@ -197,6 +198,47 @@ public enum KeyModifier {
     public abstract boolean isActive();
 
     public abstract boolean isActive(@Nullable IKeyConflictContext conflictContext);
+
+    /** Checks the modifier against the physical state carried by an input event. */
+    public boolean isActive(InputSnapshot snapshot)
+    {
+        switch (this)
+        {
+            case CONTROL:
+                if (Minecraft.IS_RUNNING_ON_MAC)
+                {
+                    return snapshot.isKeyDown(Keyboard.KEY_LMETA) || snapshot.isKeyDown(Keyboard.KEY_RMETA);
+                }
+                return snapshot.isKeyDown(Keyboard.KEY_LCONTROL) || snapshot.isKeyDown(Keyboard.KEY_RCONTROL);
+            case SHIFT:
+                return snapshot.isKeyDown(Keyboard.KEY_LSHIFT) || snapshot.isKeyDown(Keyboard.KEY_RSHIFT);
+            case ALT:
+                return snapshot.isKeyDown(Keyboard.KEY_LMENU) || snapshot.isKeyDown(Keyboard.KEY_RMENU);
+            case NONE:
+                return true;
+            default:
+                throw new AssertionError(this);
+        }
+    }
+
+    /** Formats a modifier prefix around an already localized key or chord name. */
+    public String getLocalizedComboName(String keyName)
+    {
+        switch (this)
+        {
+            case CONTROL:
+                String localizationFormatKey = Minecraft.IS_RUNNING_ON_MAC ? "forge.controlsgui.control.mac" : "forge.controlsgui.control";
+                return I18n.format(localizationFormatKey, keyName);
+            case SHIFT:
+                return I18n.format("forge.controlsgui.shift", keyName);
+            case ALT:
+                return I18n.format("forge.controlsgui.alt", keyName);
+            case NONE:
+                return keyName;
+            default:
+                throw new AssertionError(this);
+        }
+    }
 
     public abstract String getLocalizedComboName(int keyCode);
 }

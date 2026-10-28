@@ -203,10 +203,6 @@ forge.controlsgui.shift=SHIFT + %s
 forge.controlsgui.control=CTRL + %s
 forge.controlsgui.control.mac=CMD + %s
 forge.controlsgui.alt=ALT + %s
-forge.controlsgui.shift.name=SHIFT
-forge.controlsgui.control.name=CTRL
-forge.controlsgui.control.mac.name=CMD
-forge.controlsgui.alt.name=ALT
 
 fml.menu.mods=模组
 fml.menu.mods.normal=普通

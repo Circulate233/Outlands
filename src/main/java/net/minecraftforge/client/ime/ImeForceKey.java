@@ -1,7 +1,14 @@
 package net.minecraftforge.client.ime;
 
+import java.util.List;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiControls;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraftforge.client.settings.KeyCombination;
+import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
+import org.lwjgl.input.InputSnapshot;
 import org.lwjgl.input.Keyboard;
 
 /**
@@ -16,44 +23,87 @@ import org.lwjgl.input.Keyboard;
  * SDL event layer: {@code KeyInputEvent} is only fired while {@code currentScreen == null ||
  * currentScreen.allowUserInput}, and {@code GuiScreen.allowUserInput} is false for every screen that is not a chat box
  * - exactly the screens this key exists for.
- * <p>
- * The binding carries Ctrl as its chord so that the controls screen names the combination instead of showing a bare
- * key. That is what the chord is doing here: the match itself stays in the event layer, which reports the Ctrl that
- * was held at the event and accepts either side of it, neither of which a binding can express.
  */
 public final class ImeForceKey {
 
     /**
-     * Bound to Space and required to be held with Ctrl, which makes Ctrl+Space - the combination input methods use to
-     * switch to themselves. Rebinding changes only the second half of the combination.
+     * Ctrl+Space, the combination input methods use to switch to themselves. The Ctrl is a logical modifier, so
+     * either side of it works and the controls screen names it the way the modifier itself is named.
      */
     public static final KeyBinding FORCE_IME = new KeyBinding(
-        "key.cleanroommc.forceIme", Keyboard.KEY_SPACE, "key.categories.cleanroommc");
+        "key.cleanroommc.forceIme",
+        KeyCombination.fromChord(Keyboard.KEY_SPACE, List.of(Keyboard.KEY_LCONTROL, Keyboard.KEY_SPACE)),
+        "key.categories.cleanroommc"
+    );
 
-    static {
-        // Both as the default and as the current chord, so that resetting the binding restores the combination too.
-        FORCE_IME.setDefaultChordKeys(Keyboard.KEY_LCONTROL);
-        FORCE_IME.setChordKeys(Keyboard.KEY_LCONTROL);
+    private ImeForceKey() {
     }
-
-    private ImeForceKey() {}
 
     public static void register() {
         ClientRegistry.registerKeyBinding(FORCE_IME);
     }
 
-    /**
-     * Called from the SDL key event with the event's own modifier state, so it fires even while a screen that ignores
-     * key input is open, and so a key held from before the event cannot be mistaken for the modifier.
-     */
-    public static void onKeyDown(int lwjglKey, boolean ctrlHeld, boolean altHeld, boolean metaHeld) {
-        if (lwjglKey != FORCE_IME.getKeyCode()) {
+    /** Handles a non-repeat SDL key press with the complete event-time input state. */
+    public static void onKeyDown(int lwjglKey, InputSnapshot snapshot) {
+        if (Minecraft.getMinecraft().currentScreen instanceof GuiControls
+            && isRecording((GuiControls) Minecraft.getMinecraft().currentScreen)) {
             return;
         }
-        // AltGr reports Ctrl too; the alt/meta checks keep that from being read as the combination.
-        if (!ctrlHeld || altHeld || metaHeld) {
+        final KeyCombination combination = FORCE_IME.getKeyCombination();
+        if (!combination.matchesEvent(lwjglKey, snapshot)) {
             return;
+        }
+        if (combination.requires(KeyModifier.CONTROL)) {
+            if (!combination.requires(KeyModifier.ALT) && KeyModifier.ALT.isActive(snapshot)) {
+                return;
+            }
+            if (hasUnrequiredMeta(combination, snapshot)) {
+                return;
+            }
         }
         TextFieldHandler.forceTextInput();
+    }
+
+    static boolean isRecording(GuiControls controls) {
+        return controls.buttonId != null;
+    }
+
+    private static boolean hasUnrequiredMeta(KeyCombination combination, InputSnapshot snapshot) {
+        if (!snapshot.isKeyDown(Keyboard.KEY_LMETA) && !snapshot.isKeyDown(Keyboard.KEY_RMETA)) {
+            return false;
+        }
+        if (Minecraft.IS_RUNNING_ON_MAC && combination.requires(KeyModifier.CONTROL)) {
+            return false;
+        }
+        if (isMeta(combination.getKeyCode())) {
+            return false;
+        }
+        for (int keyCode : combination.getAdditionalKeys()) {
+            if (isMeta(keyCode)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isMeta(int keyCode) {
+        return keyCode == Keyboard.KEY_LMETA || keyCode == Keyboard.KEY_RMETA;
+    }
+
+    /** Migrates the legacy hardcoded-Ctrl binding and preserves explicit chord configurations. */
+    public static KeyCombination fromOptions(String value) {
+        final KeyCombination parsed = KeyCombination.parse(value);
+        if (value.startsWith("chord:") || parsed.getKeyCode() == 0) {
+            return parsed;
+        }
+        if (KeyModifier.CONTROL.matches(parsed.getKeyCode())) {
+            return KeyCombination.of(parsed.getKeyCode(), KeyModifier.NONE);
+        }
+        return KeyCombination.fromChord(parsed.getKeyCode(), List.of(Keyboard.KEY_LCONTROL, parsed.getKeyCode()));
+    }
+
+    /** Marks this binding explicit so a new single-key rebind is not migrated again. */
+    public static String toOptions(KeyCombination combination) {
+        return combination.serializeChord();
     }
 }

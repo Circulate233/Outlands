@@ -3,9 +3,9 @@ package org.lwjgl.input;
 /**
  * One entry of the key queue.
  * <p>
- * The four original fields are what LWJGL2 exposed, and {@code aChar} is still the character a key produced. Two
- * more are carried because SDL gives them to us for free at the moment the key changed and there is no way to
- * recover them afterwards: the physical key and the modifier state.
+ * The four original fields are what LWJGL2 exposed, and {@code aChar} is still the character a key produced. Three
+ * more are carried because the moment a key changes is the only moment they are true: the physical key, the modifier
+ * state, and the whole keyboard and mouse state that a key combination has to be checked against.
  */
 public class KeyEvent {
 
@@ -27,16 +27,28 @@ public class KeyEvent {
      */
     public short mods;
 
+    /** Everything that was held when this event was queued, for checking a whole key combination. */
+    final InputSnapshot snapshot;
+
     public KeyEvent(int key, char c, KeyState state, long nano) {
-        this(key, c, state, nano, 0, (short) 0);
+        this(key, c, state, nano, 0, (short) 0, InputSnapshot.current());
     }
 
     public KeyEvent(int key, char c, KeyState state, long nano, int scancode, short mods) {
+        this(key, c, state, nano, scancode, mods, InputSnapshot.current());
+    }
+
+    KeyEvent(int key, char c, KeyState state, long nano, InputSnapshot snapshot) {
+        this(key, c, state, nano, 0, (short) 0, snapshot);
+    }
+
+    KeyEvent(int key, char c, KeyState state, long nano, int scancode, short mods, InputSnapshot snapshot) {
         this.key = key;
         this.aChar = c;
         this.state = state;
         this.nano = nano;
         this.scancode = scancode;
         this.mods = mods;
+        this.snapshot = snapshot;
     }
 }

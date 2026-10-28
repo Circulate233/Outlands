@@ -19,128 +19,87 @@
 
 package net.minecraftforge.client.settings;
 
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.util.IntHashMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.annotation.Nullable;
-import java.util.*;
-import java.util.stream.Collectors;
 
-public class KeyBindingMap
-{
-    private static final EnumMap<KeyModifier, IntHashMap<Collection<KeyBinding>>> map = new java.util.EnumMap<KeyModifier, IntHashMap<Collection<KeyBinding>>>(KeyModifier.class);
-    static
-    {
-        for (KeyModifier modifier : KeyModifier.values())
-        {
-            map.put(modifier, new IntHashMap<Collection<KeyBinding>>());
-        }
-    }
+import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.util.IntHashMap;
+import org.lwjgl.input.InputSnapshot;
+
+public class KeyBindingMap {
+    private final IntHashMap<Collection<KeyBinding>> map = new IntHashMap<>();
 
     @Nullable
     @Deprecated // Cleanroom: Use lookupActives
-    public KeyBinding lookupActive(int keyCode)
-    {
-        Set<KeyBinding> bindings = lookupActives(keyCode);
+    public KeyBinding lookupActive(int keyCode) {
+        final Set<KeyBinding> bindings = lookupActives(keyCode);
         return bindings.isEmpty() ? null : bindings.iterator().next();
     }
 
-    /**
-     * The bindings a key press should act on.
-     * <p>
-     * A binding fires when its main key is the one pressed, its conflict context is active, its modifier state
-     * matches, and every key of its chord is held. When several of them pass, only the most specific ones do: a
-     * binding on {@code Ctrl+Shift+G} beats one on {@code G}, which is the whole point of allowing a chord, and
-     * bindings of equal specificity all fire together so that two mods using the same key both see it.
-     * <p>
-     * Specificity is the chord size, decided here for all candidates at once. Deciding it per candidate, in map
-     * order, would let whichever binding the map happens to yield first win - the defect this deliberately avoids.
-     */
-    public Set<KeyBinding> lookupActives(int keyCode)
-    {
-        List<KeyBinding> candidates = lookupAll(keyCode);
-        if (candidates.isEmpty())
-        {
+    public Set<KeyBinding> lookupActives(int keyCode) {
+        return lookupActives(keyCode, InputSnapshot.current());
+    }
+
+    /** Returns the most specific matching layer for one trigger event. */
+    public Set<KeyBinding> lookupActives(int keyCode, InputSnapshot snapshot) {
+        final Collection<KeyBinding> candidates = map.lookup(keyCode);
+        if (candidates == null) {
             return Collections.emptySet();
         }
-        List<KeyBinding> active = new ArrayList<>(candidates.size());
-        int best = -1;
-        for (KeyBinding binding : candidates)
-        {
-            if (!binding.isActiveAndMatches(keyCode) || !binding.isChordHeld())
-            {
+        int largestCombination = 0;
+        final Set<KeyBinding> matches = new LinkedHashSet<>();
+        for (KeyBinding binding : candidates) {
+            if (!binding.isActiveAndMatches(keyCode, snapshot)) {
                 continue;
             }
-            int specificity = binding.getChordKeys().length;
-            if (specificity > best)
-            {
-                best = specificity;
-                active.clear();
+            final int combinationSize = binding.getKeyCombination().size();
+            if (combinationSize > largestCombination) {
+                matches.clear();
+                largestCombination = combinationSize;
             }
-            if (specificity == best)
-            {
-                active.add(binding);
+            if (combinationSize == largestCombination) {
+                matches.add(binding);
             }
         }
-        if (active.isEmpty())
+        if (matches.size() > 1 && !net.minecraftforge.common.ForgeEarlyConfig.INPUT_KEYBIND_ALL_MATCHING)
         {
-            return Collections.emptySet();
+            return Collections.singleton(matches.iterator().next());
         }
-        if (!net.minecraftforge.common.ForgeEarlyConfig.INPUT_KEYBIND_ALL_MATCHING)
-        {
-            return Collections.singleton(active.get(0));
-        }
-        return new LinkedHashSet<>(active);
+        return matches;
     }
 
-    public List<KeyBinding> lookupAll(int keyCode)
-    {
-        List<KeyBinding> matchingBindings = new ArrayList<KeyBinding>();
-        for (IntHashMap<Collection<KeyBinding>> bindingsMap : map.values())
-        {
-            Collection<KeyBinding> bindings = bindingsMap.lookup(keyCode);
-            if (bindings != null)
-            {
-                matchingBindings.addAll(bindings);
-            }
-        }
-        return matchingBindings;
+    public List<KeyBinding> lookupAll(int keyCode) {
+        final Collection<KeyBinding> bindings = map.lookup(keyCode);
+        return bindings == null ? Collections.emptyList() : new ArrayList<>(bindings);
     }
 
-    public void addKey(int keyCode, KeyBinding keyBinding)
-    {
-        KeyModifier keyModifier = keyBinding.getKeyModifier();
-        IntHashMap<Collection<KeyBinding>> bindingsMap = map.get(keyModifier);
-        Collection<KeyBinding> bindingsForKey = bindingsMap.lookup(keyCode);
-        if (bindingsForKey == null)
-        {
-            bindingsForKey = new ArrayList<KeyBinding>();
-            bindingsMap.addKey(keyCode, bindingsForKey);
+    public void addKey(int keyCode, KeyBinding keyBinding) {
+        Collection<KeyBinding> bindingsForKey = map.lookup(keyCode);
+        if (bindingsForKey == null) {
+            bindingsForKey = new ArrayList<>();
+            map.addKey(keyCode, bindingsForKey);
         }
         bindingsForKey.add(keyBinding);
     }
 
-    public void removeKey(KeyBinding keyBinding)
-    {
-        KeyModifier keyModifier = keyBinding.getKeyModifier();
-        int keyCode = keyBinding.getKeyCode();
-        IntHashMap<Collection<KeyBinding>> bindingsMap = map.get(keyModifier);
-        Collection<KeyBinding> bindingsForKey = bindingsMap.lookup(keyCode);
-        if (bindingsForKey != null)
-        {
+    public void removeKey(KeyBinding keyBinding) {
+        final int keyCode = keyBinding.getKeyCode();
+        final Collection<KeyBinding> bindingsForKey = map.lookup(keyCode);
+        if (bindingsForKey != null) {
             bindingsForKey.remove(keyBinding);
-            if (bindingsForKey.isEmpty())
-            {
-                bindingsMap.removeObject(keyCode);
+            if (bindingsForKey.isEmpty()) {
+                map.removeObject(keyCode);
             }
         }
     }
 
-    public void clearMap()
-    {
-        for (IntHashMap<Collection<KeyBinding>> bindings : map.values())
-        {
-            bindings.clearMap();
-        }
+    public void clearMap() {
+        map.clearMap();
     }
 }
