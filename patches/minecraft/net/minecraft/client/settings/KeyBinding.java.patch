@@ -1,6 +1,6 @@
 --- before/net/minecraft/client/settings/KeyBinding.java
 +++ after/net/minecraft/client/settings/KeyBinding.java
-@@ -3,37 +3,57 @@
+@@ -3,37 +3,64 @@
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
  import java.util.Map;
@@ -34,6 +34,13 @@
      private final String keyCategory;
 -    private int keyCode;
 +    private KeyCombination keyCombination;
++
++    /**
++     * Set on bindings that are meant to sit on top of another one - an overlay key that supplements what the key
++     * already does rather than replacing it. Such a binding is still triggered normally; it is only kept out of the
++     * conflict marks, which would otherwise report a clash for a pair the mod added on purpose.
++     */
++    private boolean conflictReportingSuppressed;
      private boolean pressed;
      private int pressTime;
 +    private IKeyConflictContext keyConflictContext = KeyConflictContext.UNIVERSAL;
@@ -69,7 +76,7 @@
              }
          }
      }
-@@ -42,9 +62,7 @@
+@@ -42,9 +69,7 @@
      {
          if (keyCode != 0)
          {
@@ -80,7 +87,7 @@
              {
                  keybinding.pressed = pressed;
              }
-@@ -53,15 +71,11 @@
+@@ -53,15 +78,11 @@
  
      public static void updateKeyBindState()
      {
@@ -99,7 +106,7 @@
          }
      }
  
-@@ -79,7 +93,7 @@
+@@ -79,7 +100,7 @@
  
          for (KeyBinding keybinding : KEYBIND_ARRAY.values())
          {
@@ -108,7 +115,7 @@
          }
      }
  
-@@ -90,18 +104,56 @@
+@@ -90,18 +111,56 @@
  
      public KeyBinding(String description, int keyCode, String category)
      {
@@ -169,7 +176,7 @@
      }
  
      public String getKeyCategory()
-@@ -135,30 +187,147 @@
+@@ -135,30 +194,164 @@
  
      public int getKeyCodeDefault()
      {
@@ -282,7 +289,8 @@
 +    /** Returns true for both simultaneous conflicts and less severe nested-chord overlaps. */
 +    public boolean conflicts(KeyBinding other)
 +    {
-+        if (getKeyCode() == 0 || other.getKeyCode() == 0 || !contextsConflict(other))
++        if (isConflictReportingSuppressed() || other.isConflictReportingSuppressed()
++            || getKeyCode() == 0 || other.getKeyCode() == 0 || !contextsConflict(other))
 +        {
 +            return false;
 +        }
@@ -292,7 +300,8 @@
 +    /** Returns true when one chord is nested in another or only its trigger differs. */
 +    public boolean hasPartialConflict(KeyBinding other)
 +    {
-+        if (getKeyCode() == 0 || other.getKeyCode() == 0 || !contextsConflict(other))
++        if (isConflictReportingSuppressed() || other.isConflictReportingSuppressed()
++            || getKeyCode() == 0 || other.getKeyCode() == 0 || !contextsConflict(other))
 +        {
 +            return false;
 +        }
@@ -307,6 +316,21 @@
 +    {
 +        return getKeyConflictContext().conflicts(other.getKeyConflictContext())
 +            || other.getKeyConflictContext().conflicts(getKeyConflictContext());
++    }
++
++    /**
++     * Whether this binding stays out of conflict reporting. Off by default, and it only affects what the controls
++     * screen marks: the binding still fires exactly like any other.
++     */
++    public boolean isConflictReportingSuppressed()
++    {
++        return conflictReportingSuppressed;
++    }
++
++    public KeyBinding setConflictReportingSuppressed(boolean suppressed)
++    {
++        this.conflictReportingSuppressed = suppressed;
++        return this;
 +    }
 +
 +    /** Retained for mods that used the old modifier-specific conflict check. */

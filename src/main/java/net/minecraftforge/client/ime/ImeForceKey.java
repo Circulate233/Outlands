@@ -36,6 +36,12 @@ public final class ImeForceKey {
         "key.categories.cleanroommc"
     );
 
+    static {
+        // This key is an addition to whatever the player already has on the combination, not a replacement for it, so
+        // it must not be reported as clashing with them.
+        FORCE_IME.setConflictReportingSuppressed(true);
+    }
+
     private ImeForceKey() {
     }
 
