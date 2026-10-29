@@ -4,6 +4,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026.10.29] - 2026-10-29
+### New Features
+- [`b782a32`](https://github.com/Project-Outlands/Outlands/commit/b782a32e850ef5e0f30f52b9c987bfc2360c9033) - **input**: support arbitrary key combinations *(commit by [@DHJComical](https://github.com/DHJComical))*
+
+### Chores
+- [`4d7fc53`](https://github.com/Project-Outlands/Outlands/commit/4d7fc536fb850989cb2b2d85691e8825ddf52f9b) - Merge branch 'main' of github.com:Project-Outlands/Outlands *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Other Changes
+- [`410e83d`](https://github.com/Project-Outlands/Outlands/commit/410e83df9d6b9d4f9d5f4d99af104ab6291a9f6b) - Merge branch 'feat/key-combinations'
+
+The branch and the work here solved the same problem in different places:
+it models a binding as one trigger key plus the keys that must be held, and
+snapshots the entire keyboard and mouse at the moment an event is queued, so
+a combination can be checked against the state that produced it rather than
+the state that happens to be current when the game looks. That model is
+strictly more general than the one here - the modifiers stay logical, so Ctrl
+means either side of it, and any key or mouse button can be part of a
+combination - so it replaces it.
+
+What it brings that was missing here: recording a combination in the controls
+screen (press keys, release them all, that is the combination), the controls
+list showing the short form with the full one in the tooltip, conflict
+severity told apart from a plain clash, the Windows case where Space never
+reaches the game because the input method ate it, and the queue keeping the
+newest release when it fills instead of dropping events silently.
+
+Three things from here are kept on top of it:
+
+- a key event names a key by the layout's key code, not by its physical
+  position. The physical key travels with the event for anyone who wants it,
+  but a binding means the key the player sees on their keycaps, and that is
+  what every mod written against LWJGL2 expects.
+- repeat events are off unless a screen asks for them, which is what LWJGL2
+  did. The branch handles repeats where they reach key bindings; this keeps
+  them from being produced in the first place.
+- firing every equally specific binding stayed a switch, because a mod that
+  binds a key another mod already uses can depend on exactly one of them
+  running.
+
+The input method key folds into the branch's version: it is a real
+combination now, so the controls screen names it, and the options file
+migrates the old half-a-combination form to a full one. *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`9f2dd32`](https://github.com/Project-Outlands/Outlands/commit/9f2dd3254eb75373f86df86c8998c826c7922e1c) - hackery, util: finish the move of the remaining loader helpers
+
+The deletions of the old paths that the earlier commits left behind: hackery,
+the two compatibility shims and CleanroomLog now live under
+net.minecraftforge.* only. *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+
 ## [2026.10.26] - 2026-10-26
 ### New Features
 - [`7b50ba1`](https://github.com/Project-Outlands/Outlands/commit/7b50ba1e6ab699e4ce16cd70fff5bf70029f0cfe) - Switch to SDL from GLFW *(PR [#3](https://github.com/Project-Outlands/Outlands/pull/3) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
@@ -291,3 +340,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.6.13-alpha]: https://github.com/CleanroomMC/Cleanroom/compare/0.6.12-alpha...0.6.13-alpha
 [2026.10.25]: https://github.com/Project-Outlands/Outlands/compare/2026.10.23...2026.10.25
 [2026.10.26]: https://github.com/Project-Outlands/Outlands/compare/2026.10.25...2026.10.26
+[2026.10.29]: https://github.com/Project-Outlands/Outlands/compare/2026.10.26...2026.10.29
