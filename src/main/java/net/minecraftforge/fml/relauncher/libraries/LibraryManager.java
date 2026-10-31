@@ -22,8 +22,6 @@ package net.minecraftforge.fml.relauncher.libraries;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.security.CodeSource;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -50,6 +48,8 @@ import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.common.ForgeEarlyConfig;
 import net.minecraftforge.common.ForgeVersion;
 import net.minecraftforge.fml.common.FMLLog;
+import net.minecraftforge.fml.common.MetadataCollection;
+import net.minecraftforge.fml.common.discovery.JarDeclaration;
 import net.minecraftforge.fml.relauncher.FMLLaunchHandler;
 
 public class LibraryManager
@@ -79,8 +79,31 @@ public class LibraryManager
     private static Set<File> processed = new HashSet<File>();
     private static File minecraftHome;
     private static List<File> candidates;
-    /** Libraries extracted out of other jars. Kept apart from the mods directory, so they have to be offered separately. */
-    private static final Set<File> containedDeps = new LinkedHashSet<>();
+    /**
+     * Mods that bundle other jars, recorded while the mods directory is cleaned and extracted the first time the loader
+     * asks which files exist.
+     *
+     * <p>Deferred because extraction is an assembly step, not part of tidying a directory: doing it here means the jar is
+     * opened once, at the moment its bundled jars become relevant, instead of as a side effect of a method named after
+     * cleaning.
+     */
+    private static final Set<File> pendingBundledDeps = new LinkedHashSet<>();
+    /**
+     * Bundled jars a declaration marked as libraries: extracted next to the mods, but never offered as candidates.
+     *
+     * <p>Kept so the early classpath injection can find them. They are on disk rather than virtual because a coremod may
+     * want a {@code File} for its own reasons, and because not extracting them would only pay off together with the rest
+     * of the zip filesystem work.
+     */
+    private static final Set<File> bundledLibraries = new LinkedHashSet<>();
+    /**
+     * Set while the mods directory is being cleaned. Extraction of bundled jars is an assembly step, so it is recorded
+     * and performed the first time the loader asks which files exist rather than while a method named after tidying is
+     * running.
+     */
+    private static boolean deferringBundledDeps;
+    /** The list bundled jars are registered with once extraction runs, kept from setup so the two phases agree. */
+    private static ModList deferredModList;
 
     public static void setup(File minecraftHome)
     {
@@ -107,26 +130,72 @@ public class LibraryManager
         for (File dir : new File[]{mods, mods_ver})
             cleanDirectory(dir, ENABLE_AUTO_MOD_MOVEMENT ? ModList.create(new File(dir, "mod_list.json"), minecraftHome) : memory, mods_ver, mods);
 
-        for (ModList list : ModList.getKnownLists(minecraftHome))
+        deferredModList = memory;
+        deferringBundledDeps = true;
+        try
         {
-            Repository repo = list.getRepository() == null ? libraries_dir : list.getRepository();
-            List<Artifact> artifacts = list.getArtifacts();
-            // extractPacked adds artifacts to the list. As such, we can't use an Iterator to traverse it.
-            for (int i = 0; i < artifacts.size(); i++)
+            for (ModList list : ModList.getKnownLists(minecraftHome))
             {
-                Artifact artifact = artifacts.get(i);
-                Artifact resolved = repo.resolve(artifact);
-                if (resolved != null)
+                Repository repo = list.getRepository() == null ? libraries_dir : list.getRepository();
+                List<Artifact> artifacts = list.getArtifacts();
+                // extractPacked adds artifacts to the list. As such, we can't use an Iterator to traverse it.
+                for (int i = 0; i < artifacts.size(); i++)
                 {
-                    File target = repo.getFile(resolved.getPath());
-                    if (target.exists())
-                        extractPacked(target, list, mods_ver, mods);
+                    Artifact artifact = artifacts.get(i);
+                    Artifact resolved = repo.resolve(artifact);
+                    if (resolved != null)
+                    {
+                        File target = repo.getFile(resolved.getPath());
+                        if (target.exists())
+                            extractPacked(target, list, mods_ver, mods);
+                    }
                 }
             }
         }
-
+        finally
+        {
+            deferringBundledDeps = false;
+        }
         candidates = null;
 
+    }
+
+    /**
+     * Extracts the bundled jars recorded during setup.
+     *
+     * <p>Runs on the first request for candidates, which is the last moment before the loader decides what exists - late
+     * enough that extraction is not a side effect of tidying the mods directory, early enough that a bundled prerequisite
+     * mod is still discovered like any other.
+     *
+     * <p>Idempotent: the recorded set is drained first, so a second call does nothing.
+     */
+    private static void extractPendingBundledDeps()
+    {
+        if (pendingBundledDeps.isEmpty())
+        {
+            return;
+        }
+        List<File> pending = new ArrayList<>(pendingBundledDeps);
+        pendingBundledDeps.clear();
+
+        File mods = new File(minecraftHome, "mods");
+        File mods_ver = new File(mods, ForgeVersion.mcVersion);
+        ModList list = deferredModList == null ? ModList.cache.get("MEMORY") : deferredModList;
+        for (File file : pending)
+        {
+            if (!file.isFile())
+            {
+                continue;
+            }
+            try (JarFile jar = new JarFile(file))
+            {
+                extractPacked(jar, list, mods_ver, mods);
+            }
+            catch (IOException e)
+            {
+                FMLLog.log.error("Unable to read {} while extracting its bundled jars", file.getName(), e);
+            }
+        }
     }
 
     private static File findLibraryFolder(File minecraftHome)
@@ -201,6 +270,70 @@ public class LibraryManager
         }
     }
 
+    /**
+     * @return the bundled entries {@code source} declares as libraries, in declaration order; empty when it declares none
+     *         or has no metadata
+     */
+    /**
+     * @return where a bundled library called {@code fileName} was extracted, or {@code null} when no declaration claimed
+     *         it. Searched by name because the early injection is driven by the declaration, which may name a path inside
+     *         the bundling jar while what lands on disk is only the file name.
+     */
+    @javax.annotation.Nullable
+    public static File bundledLibraryNamed(String fileName)
+    {
+        for (File file : bundledLibraries)
+        {
+            if (file.getName().equals(fileName))
+            {
+                return file;
+            }
+        }
+        return null;
+    }
+
+    public static List<JarDeclaration.ContainedDep> declaredLibrariesOf(File source)
+    {
+        List<JarDeclaration.ContainedDep> libraries = new ArrayList<>();
+        try (JarFile jar = new JarFile(source))
+        {
+            JarDeclaration declaration = declaredContainedDeps(jar);
+            if (declaration == null)
+            {
+                return List.of();
+            }
+            for (JarDeclaration.ContainedDep dep : declaration.containedDeps())
+            {
+                if (dep.kind() == JarDeclaration.ContainedDepKind.LIB)
+                {
+                    libraries.add(dep);
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            FMLLog.log.debug("Could not read the bundled dependency declarations of {}", source.getName(), e);
+        }
+        return List.copyOf(libraries);
+    }
+
+    /**
+     * @return the jar section of {@code jar}'s {@code mcmod.info}, or {@code null} when it has none
+     */
+    @javax.annotation.Nullable
+    private static JarDeclaration declaredContainedDeps(JarFile jar) throws IOException
+    {
+        JarEntry modInfo = jar.getJarEntry("mcmod.info");
+        if (modInfo == null)
+        {
+            return null;
+        }
+        try (InputStream in = jar.getInputStream(modInfo))
+        {
+            return MetadataCollection.from(in, jar.getName()).getJarDeclaration();
+        }
+    }
+
     private static Pair<Artifact, byte[]> extractPacked(File file, ModList modlist, File... modDirs)
     {
         if (processed.contains(file))
@@ -240,44 +373,86 @@ public class LibraryManager
      * <p>The directory is deliberately outside {@code mods/}: what lives there is scanned as mod candidates, and a
      * bundled library is not one. The extracted file is offered to the candidate list directly instead.
      */
-    private static void extractContained(byte[] bytes, String fileName, String fromJar, ModList modlist, File... modDirs)
+    /**
+     * Extracts a bundled jar that carries no coordinates, into
+     * {@code libraries/<id>/<version>/<sha1-12>-<name>.jar}.
+     *
+     * <p>Structured by id and version so the choice between two bundled versions is visible in the file listing, and so
+     * the directory says which one is in use rather than leaving it to whichever was extracted first. The hash keeps the
+     * operation idempotent and stops two builds under one file name from overwriting each other.
+     *
+     * <p>The directory is deliberately outside {@code mods/}: what lives there is scanned as mod candidates in its own
+     * right, and a bundled jar - which is often a prerequisite mod rather than a library - has to be loaded through the
+     * same pipeline that its declaration describes, not because it happened to sit in a folder.
+     */
+    /**
+     * Extracts one bundled jar next to the mods, where it has always been.
+     *
+     * <p>The location is deliberate: a bundled jar is usually a prerequisite mod rather than a library, so it has to be
+     * discovered like one, and {@code mods/<mcversion>/} is the directory the scan already reads. Parking them elsewhere
+     * meant inventing a second pipeline for files that are ordinary mods.
+     *
+     * <p>Reused rather than rewritten: an existing file of the same name is left alone, so a pack that already has the
+     * dependency unpacked keeps what it has.
+     */
+    private static void extractContained(byte[] bytes, String fileName, String declaredPath, JarDeclaration declaration,
+                                         String fromJar, ModList modlist, File... modDirs)
     {
-        File dir = new File(minecraftHome, "libraries" + File.separator + "contained");
-        File target;
-        try
+        for (File dir : modDirs)
         {
-            byte[] digest = MessageDigest.getInstance("SHA-1").digest(bytes);
-            StringBuilder name = new StringBuilder();
-            for (int i = 0; i < 12; i++)
+            File existing = new File(dir, fileName);
+            if (existing.exists())
             {
-                name.append(String.format("%02x", digest[i]));
+                FMLLog.log.debug("Found existing extracted dependency {}, reusing it", existing);
+                return;
             }
-            target = new File(dir, name + "-" + fileName);
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            // SHA-1 is required by the platform; if it is missing there is nothing sane to fall back to but the name.
-            target = new File(dir, fileName);
         }
 
-        if (target.exists())
-        {
-            FMLLog.log.debug("Bundled library {} from {} already extracted to {}, reusing it", fileName, fromJar, target);
-            containedDeps.add(target);
-            return;
-        }
+        File target = new File(modDirs[0], fileName);
         try
         {
             Files.createParentDirs(target);
             java.nio.file.Files.write(target.toPath(), bytes);
-            FMLLog.log.debug("Extracted bundled library {} from {} to {}", fileName, fromJar, target);
-            containedDeps.add(target);
+            FMLLog.log.debug("Extracted bundled jar {} from {} to {}", fileName, fromJar, target);
+            if (declaresAsLibrary(declaration, declaredPath))
+            {
+                // A library is not a mod candidate: it is put on the classpath where it is needed and that is all. Adding
+                // it as a candidate would make the scan open it, look for @Mod classes and classify it as a non-mod
+                // afterwards - the work this marking exists to avoid.
+                bundledLibraries.add(target);
+                return;
+            }
             extractPacked(target, modlist, modDirs);
         }
         catch (IOException e)
         {
-            FMLLog.log.error("An error occurred extracting bundled library " + fileName + " from " + fromJar, e);
+            FMLLog.log.error("An error occurred extracting bundled jar " + fileName + " from " + fromJar, e);
         }
+    }
+
+    /**
+     * @return whether the declaration marks {@code path} as a library. A path may have been rewritten to
+     *         {@code META-INF/libraries/...} while looking it up, so the file name is compared as well.
+     */
+    private static boolean declaresAsLibrary(JarDeclaration declaration, String path)
+    {
+        if (declaration == null)
+        {
+            return false;
+        }
+        String name = new File(path).getName();
+        for (JarDeclaration.ContainedDep dep : declaration.containedDeps())
+        {
+            if (dep.kind() != JarDeclaration.ContainedDepKind.LIB)
+            {
+                continue;
+            }
+            if (dep.path().equals(path) || new File(dep.path()).getName().equals(name))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Pair<Artifact, byte[]> extractPacked(JarFile jar, ModList modlist, File... modDirs) throws IOException
@@ -296,8 +471,17 @@ public class LibraryManager
         if (modSide != null && !"BOTH".equals(modSide) && !FMLLaunchHandler.side().name().equals(modSide))
             return null;
 
-        if (attrs.containsKey(MODCONTAINSDEPS))
+        if (deferringBundledDeps && attrs.containsKey(MODCONTAINSDEPS))
         {
+            // Extraction is an assembly step. Record the jar and let the first candidate request do it, so a directory is
+            // not rewritten while it is being cleaned and the work happens once, at the moment it matters.
+            pendingBundledDeps.add(new File(jar.getName()).getAbsoluteFile());
+        }
+        else if (attrs.containsKey(MODCONTAINSDEPS))
+        {
+            // The jar's own declaration says which entries are libraries. The manifest key only lists paths, so an entry
+            // without a declaration is treated as a mod - which is what it always was.
+            JarDeclaration declaration = declaredContainedDeps(jar);
             for (String dep : attrs.getValue(MODCONTAINSDEPS).split(" "))
             {
                 if (!dep.endsWith(".jar"))
@@ -353,10 +537,9 @@ public class LibraryManager
 
                 if (meta == null || !meta.containsKey(MAVEN_ARTIFACT))
                 {
-                    // No coordinates, so there is nowhere sensible to file it under and nothing to dedupe on but the
-                    // content. It used to be extracted next to the mods - which turned every bundled library into
-                    // something the loader would scan as a mod, and left files in mods/ that no mod claims.
-                    extractContained(bytesOf(jar, depEntry, data), depEndName, jar.getName(), modlist, modDirs);
+                    // No coordinates. It goes next to the other mods, so it is discovered the same way - a bundled jar is
+                    // usually a prerequisite mod, not a library.
+                    extractContained(bytesOf(jar, depEntry, data), depEndName, dep, declaration, jar.getName(), modlist, modDirs);
                 }
                 else
                 {
@@ -548,6 +731,30 @@ public class LibraryManager
      * <p>Depth is deliberately fixed at one level rather than arbitrary: the point is grouping, and a recursive walk
      * would let a stray directory tree turn into an unbounded scan with no way to explain which jar was found where.
      */
+    /**
+     * Directories inside {@code mods/} that never hold mods the user put there.
+     *
+     * <p>Several launch forms keep their own working directories in the same place - the prism family generates
+     * {@code .index}, Forge's own memory repository lives in {@code memory_repo}, and anything may leave a {@code .cache}
+     * behind. Scanning them would pick up jars nobody meant to load and produce a warning for every one of them.
+     *
+     * <p>The Minecraft version directory is in the list because it is scanned on its own; reading it twice would be
+     * harmless but pointless.
+     */
+    private static final Set<String> NOT_MOD_DIRECTORIES = Set.of(
+            "memory_repo", ".cache", ".index", ".git", "meta-inf",
+            ForgeVersion.mcVersion.toLowerCase(Locale.ENGLISH));
+
+    /**
+     * @return whether a subdirectory of the mods folder may be searched. Hidden directories are excluded outright: a name
+     *         starting with a dot is a tool's private state by convention, whatever it is called.
+     */
+    static boolean isScannableDirectory(File directory)
+    {
+        String name = directory.getName();
+        return !name.startsWith(".") && !NOT_MOD_DIRECTORIES.contains(name.toLowerCase(Locale.ENGLISH));
+    }
+
     private static void collectModFiles(File base, Set<File> seen, List<File> target)
     {
         File[] direct = base.listFiles(MOD_FILENAME_FILTER);
@@ -573,6 +780,10 @@ public class LibraryManager
         }
         for (File directory : subdirectories)
         {
+            if (!isScannableDirectory(directory))
+            {
+                continue;
+            }
             File[] nested = directory.listFiles(MOD_FILENAME_FILTER);
             if (nested == null)
             {
@@ -590,6 +801,7 @@ public class LibraryManager
     }
 
     public static List<File> getCandidates() {
+        extractPendingBundledDeps();
         if (candidates != null)
         {
             return candidates;
@@ -605,11 +817,6 @@ public class LibraryManager
                 if (candidateSet.add(target))
                     gathered.add(target);
             }
-        }
-        for (File extracted : containedDeps)
-        {
-            if (candidateSet.add(extracted))
-                gathered.add(extracted);
         }
         // Nothing may rewrite the candidate list any more. It used to be mutable in place for Bansoukou, which
         // meant the set of files the loader considered was decided by whoever got to the list first, while the
