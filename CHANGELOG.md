@@ -4,6 +4,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026.11.01] - 2026-11-01
+### BREAKING CHANGES
+- due to [`54df574`](https://github.com/Project-Outlands/Outlands/commit/54df574b281be65f4ae7ac8fa6c3877fd1e1a6fc) - drop Bansoukou support *(PR [#15](https://github.com/Project-Outlands/Outlands/pull/15) by [@kappa-maintainer](https://github.com/kappa-maintainer))*:
+
+  the `Bansoukou` manifest attribute is no longer honoured. A jar  
+  declaring it still loads, but its class replacements are not applied. Packs that  
+  relied on it should move to mixins. Each affected jar gets one explicit warning,  
+  emitted from `ModDiscoverer.scan` where the manifest is already in hand rather  
+  than from `getCandidates`, which would have to open every jar just to look.  
+  `getCandidates()` is now a pure function - reads directories, sorts, returns an  
+  immutable list - so it no longer touches the classloader at all.
+
+
+### New Features
+- [`21d3c7b`](https://github.com/Project-Outlands/Outlands/commit/21d3c7b9de4c136d428307f7cf8cde7c58542357) - decide the LWJGL2 rewrite from the mcmod schema, not from ModType *(PR [#38](https://github.com/Project-Outlands/Outlands/pull/38) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`63d78b1`](https://github.com/Project-Outlands/Outlands/commit/63d78b18165deccc093cca56779f29d39ab8508a) - **loader**: the mod list, its assets and the loader id move to outlands *(PR [#34](https://github.com/Project-Outlands/Outlands/pull/34) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`99beb8c`](https://github.com/Project-Outlands/Outlands/commit/99beb8ca49277ae038b6c2984a2f310b26efab34) - **config**: formats behind one model + ConfigEnvironment *(PR [#29](https://github.com/Project-Outlands/Outlands/pull/29) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`b6dd8b7`](https://github.com/Project-Outlands/Outlands/commit/b6dd8b7d4a8f81db22e13a8a4b60228d705d55e8) - **loader**: let a jar declare mods without mod classes (B10) *(PR [#25](https://github.com/Project-Outlands/Outlands/pull/25) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`c51f3db`](https://github.com/Project-Outlands/Outlands/commit/c51f3dbe451f05dc9e5153164d656c7cef4f0a65) - **loader**: allow one level of subdirectories in the mods folder (B12) *(PR [#24](https://github.com/Project-Outlands/Outlands/pull/24) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`01a4dc6`](https://github.com/Project-Outlands/Outlands/commit/01a4dc6a2f2869f441b5cc7266cd5a2914240664) - **metadata**: declare bundled libraries with an identity, and keep them out of mods/ *(PR [#23](https://github.com/Project-Outlands/Outlands/pull/23) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`05b83f5`](https://github.com/Project-Outlands/Outlands/commit/05b83f5a745e2056ff5c02b80711d6d44f52092b) - **metadata**: check modLanguageVersion against what a provider supports *(PR [#20](https://github.com/Project-Outlands/Outlands/pull/20) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`a1d3d35`](https://github.com/Project-Outlands/Outlands/commit/a1d3d358258d80f991bdaa28a931c1273129ec4b) - **metadata**: let a jar declare the language providers it ships *(PR [#18](https://github.com/Project-Outlands/Outlands/pull/18) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`8dc9112`](https://github.com/Project-Outlands/Outlands/commit/8dc9112cff327234296ae85452f0c96f82142af7) - **metadata**: let a mod declare its language in mcmod.info (#B8) *(PR [#17](https://github.com/Project-Outlands/Outlands/pull/17) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`cfffa65`](https://github.com/Project-Outlands/Outlands/commit/cfffa65d0c35b533f7da73b4556a450bb0a94309) - **metadata**: let a jar declare where it loads among coremods *(PR [#14](https://github.com/Project-Outlands/Outlands/pull/14) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`4c47a11`](https://github.com/Project-Outlands/Outlands/commit/4c47a11f41e77c5a577da3b86ea594e4d8afd984) - **metadata**: read a jar-level declaration from mcmod.info *(PR [#13](https://github.com/Project-Outlands/Outlands/pull/13) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`860b37c`](https://github.com/Project-Outlands/Outlands/commit/860b37ce310b3a383dfa217756041306bc6bc709) - **event**: let the Forge event bus take listeners without an annotated method *(PR [#11](https://github.com/Project-Outlands/Outlands/pull/11) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`8a700e0`](https://github.com/Project-Outlands/Outlands/commit/8a700e0b2cbbeb336d785102b67e703b5cd68adb) - **loader**: add frozen Registry and move language adapters onto it *(PR [#10](https://github.com/Project-Outlands/Outlands/pull/10) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`6b07719`](https://github.com/Project-Outlands/Outlands/commit/6b077199ba19f744b4bff4d1810c357dd04b01c0) - **commands**: make modern completion opt-in *(PR [#6](https://github.com/Project-Outlands/Outlands/pull/6) by [@DHJComical](https://github.com/DHJComical))*
+
+### Bug Fixes
+- [`b0243ed`](https://github.com/Project-Outlands/Outlands/commit/b0243ed456ab83dc64a6385328aa416a33ad0c4d) - **loader**: bundled jars stay next to the mods, marked per entry *(PR [#26](https://github.com/Project-Outlands/Outlands/pull/26) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`588fde8`](https://github.com/Project-Outlands/Outlands/commit/588fde8739d2deb390c8986f7768b9ea7ed36467) - **window**: continue when SDL window icons are unsupported *(PR [#7](https://github.com/Project-Outlands/Outlands/pull/7) by [@DHJComical](https://github.com/DHJComical))*
+- [`137cc78`](https://github.com/Project-Outlands/Outlands/commit/137cc78b4c0ebcacb40472806380add8f6cbb560) - **opengl**: expose GL46 in LWJGL2 capabilities *(PR [#8](https://github.com/Project-Outlands/Outlands/pull/8) by [@DHJComical](https://github.com/DHJComical))*
+- [`ff30ecd`](https://github.com/Project-Outlands/Outlands/commit/ff30ecdea1d1e2acd42270f9da1e3b85be15393f) - **metadata**: handle empty, non-container and modList-less mcmod.info *(PR [#5](https://github.com/Project-Outlands/Outlands/pull/5) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Performance Improvements
+- [`d3f29b4`](https://github.com/Project-Outlands/Outlands/commit/d3f29b4abdd6cd02a634c154560be849d7bc1d2b) - **event**: derive listener lists and flags from ClassValue, drop the transformer *(PR [#16](https://github.com/Project-Outlands/Outlands/pull/16) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Refactors
+- [`d8c9aa6`](https://github.com/Project-Outlands/Outlands/commit/d8c9aa6e55fa782d6424b16e6c718602d844ed0c) - **loader**: one registration entry point for language adapters *(PR [#19](https://github.com/Project-Outlands/Outlands/pull/19) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`18c1b29`](https://github.com/Project-Outlands/Outlands/commit/18c1b296e238a1cabb593833c9be4afdaf66934b) - **loader**: separate "no mod object" from "failed to construct" *(PR [#9](https://github.com/Project-Outlands/Outlands/pull/9) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Tests
+- [`4651772`](https://github.com/Project-Outlands/Outlands/commit/4651772f4669c73ea8270d6eb67a5e8a9be8e022) - **discovery**: cover annotations shared by mods from one jar *(PR [#4](https://github.com/Project-Outlands/Outlands/pull/4) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Chores
+- [`3074dbb`](https://github.com/Project-Outlands/Outlands/commit/3074dbb2f18e4e7ff2a36112f70a0f729e6d92a9) - drop the Bansoukou warning *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`ae1beeb`](https://github.com/Project-Outlands/Outlands/commit/ae1beebf7f42fdf9c08a5c01d8c4639b65b109ae) - replace the loader artwork with the Outlands mark *(PR [#37](https://github.com/Project-Outlands/Outlands/pull/37) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`871c6b2`](https://github.com/Project-Outlands/Outlands/commit/871c6b22e18b8bbdb07faf1a95222fff72cf886f) - relicense the two visible-source headers as Outlands *(PR [#36](https://github.com/Project-Outlands/Outlands/pull/36) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`99bbea5`](https://github.com/Project-Outlands/Outlands/commit/99bbea577028091e561499f370b5100e4726c589) - **loader**: stop pointing the loader at another project, and rebrand the repo metadata *(PR [#35](https://github.com/Project-Outlands/Outlands/pull/35) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`f339f80`](https://github.com/Project-Outlands/Outlands/commit/f339f803853b70e25c037cb3f0183db8dd48c93f) - drop the Cleanroom name from code that no contract depends on *(PR [#33](https://github.com/Project-Outlands/Outlands/pull/33) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+
 ## [2026.10.29] - 2026-10-29
 ### New Features
 - [`b782a32`](https://github.com/Project-Outlands/Outlands/commit/b782a32e850ef5e0f30f52b9c987bfc2360c9033) - **input**: support arbitrary key combinations *(commit by [@DHJComical](https://github.com/DHJComical))*
@@ -341,3 +394,4 @@ net.minecraftforge.* only. *(commit by [@kappa-maintainer](https://github.com/ka
 [2026.10.25]: https://github.com/Project-Outlands/Outlands/compare/2026.10.23...2026.10.25
 [2026.10.26]: https://github.com/Project-Outlands/Outlands/compare/2026.10.25...2026.10.26
 [2026.10.29]: https://github.com/Project-Outlands/Outlands/compare/2026.10.26...2026.10.29
+[2026.11.01]: https://github.com/Project-Outlands/Outlands/compare/2026.10.29...2026.11.01
