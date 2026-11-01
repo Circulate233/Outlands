@@ -116,6 +116,12 @@ public class ConfigElement implements IConfigElement
     }
 
     @Override
+    public String patchedBy()
+    {
+        return isProperty ? prop.getPatchSource() : null;
+    }
+
+    @Override
     public Class<? extends IConfigEntry> getConfigEntryClass()
     {
         return isProperty ? prop.getConfigEntryClass() : category.getConfigEntryClass();
@@ -179,7 +185,7 @@ public class ConfigElement implements IConfigElement
     @Override
     public void setToDefault()
     {
-        if (isProperty)
+        if (isProperty && !prop.isPatched())
             prop.setToDefault();
     }
 
@@ -306,7 +312,9 @@ public class ConfigElement implements IConfigElement
     @Override
     public void set(Object value)
     {
-        if (isProperty)
+        // The patch layer outranks anything this screen can write, so refuse instead of accepting a change that the
+        // next launch would silently undo.
+        if (isProperty && !prop.isPatched())
         {
             if (type == Property.Type.BOOLEAN)
                 prop.set(Boolean.parseBoolean(value.toString()));
@@ -384,7 +392,7 @@ public class ConfigElement implements IConfigElement
         if (annotation == null)
             throw new RuntimeException(String.format("The class '%s' has no @Config annotation!", configClass.getName()));
         
-        Configuration config = ConfigManager.getConfiguration(annotation.modid(), annotation.name());
+        Configuration config = ConfigManager.getConfiguration(annotation);
         if (config == null)
         {
             String error = String.format("The configuration '%s' of mod '%s' isn't loaded with the ConfigManager!", annotation.name(), annotation.modid());

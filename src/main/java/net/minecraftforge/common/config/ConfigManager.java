@@ -21,6 +21,7 @@ package net.minecraftforge.common.config;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.nio.file.Path;
 import java.lang.reflect.Modifier;
 import java.util.Locale;
 import java.util.Map;
@@ -34,7 +35,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import net.minecraftforge.fml.common.CleanroomEnvironment;
-import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.common.config.Config.Comment;
 import net.minecraftforge.common.config.Config.LangKey;
 import net.minecraftforge.common.config.Config.Name;
@@ -57,6 +57,9 @@ public class ConfigManager
     private static final Map<String, Configuration> CONFIGS = Maps.newHashMap();
     private static final Map<String, Set<Class<?>>> MOD_CONFIG_CLASSES = Maps.newHashMap();
     private static final Map<Class<?>, Configuration> CLASS_TO_CONFIG = Maps.newHashMap();
+    /** Absolute paths already mentioned in a startup log line, so a file is only explained once. */
+    private static final Set<String> WARNED_RESOLUTIONS = Sets.newHashSet();
+    private static ConfigEnvironment environment;
 
     static
     {
@@ -159,14 +162,14 @@ public class ConfigManager
     public static void sync(String modid, Config.Type type)
     {
         FMLLog.log.debug("Attempting to inject @Config classes into {} for type {}", modid, type);
-        ClassLoader mcl = Loader.instance().getModClassLoader();
-        File configDir = Loader.instance().getConfigDir();
+        ClassLoader mcl = environment().modClassLoader();
         Multimap<Config.Type, ASMData> map = asm_data.get(modid);
 
         if (map == null)
             return;
 
         Side currentSide = currentSide();
+        Set<Configuration> touched = Sets.newHashSet();
         for (ASMData targ : map.get(type))
         {
             try
@@ -190,19 +193,13 @@ public class ConfigManager
                 if (category == null)
                     category = "general";
 
-                File file = new File(configDir, name + ".cfg");
-
-                Configuration cfg = CONFIGS.get(file.getAbsolutePath());
-                if (cfg == null)
-                {
-                    cfg = new Configuration(file);
-                    cfg.load();
-                    CONFIGS.put(file.getAbsolutePath(), cfg);
-                }
-
-                sync(cfg, cls, modid, category, !Loader.instance().hasReachedState(LoaderState.AVAILABLE), null);
+                Config.Format declared = config != null ? config.format() : null;
+                Config.Storage storage = config != null ? config.storage() : Config.Storage.INSTANCE;
+                Configuration cfg = configuration(ConfigFileResolver.resolve(rootFor(storage), modid, name, declared));
+                sync(cfg, cls, modid, category, environment().loading(), null);
 
                 cfg.save();
+                touched.add(cfg);
 
             }
             catch (Exception e)
@@ -211,6 +208,98 @@ public class ConfigManager
                 throw new LoaderException(e);
             }
         }
+
+        // Only now can a key be called unknown: every class of this mod has had its chance to declare it.
+        for (Configuration cfg : touched)
+            ConfigPatch.reportUnused(cfg);
+    }
+
+    /**
+     * Tells the config subsystem what it is running inside. The loader does this once it knows its directories; until
+     * then a loader-backed default is used so that early calls behave exactly as before.
+     */
+    public static void setEnvironment(ConfigEnvironment env)
+    {
+        environment = env;
+    }
+
+    static ConfigEnvironment environment()
+    {
+        ConfigEnvironment env = environment;
+        if (env != null)
+            return env;
+
+        if (fallback == null)
+            fallback = new LoaderEnvironment();
+        return fallback;
+    }
+
+    private static ConfigEnvironment fallback;
+
+    /** The pre-injection behaviour, kept in one place instead of at every call site. */
+    private static final class LoaderEnvironment implements ConfigEnvironment
+    {
+        @Override
+        public File configDir()
+        {
+            return Loader.instance().getConfigDir();
+        }
+
+        @Override
+        public File userConfigDir()
+        {
+            return findUserConfigDir();
+        }
+
+        @Override
+        public ClassLoader modClassLoader()
+        {
+            return Loader.instance().getModClassLoader();
+        }
+
+        @Override
+        public boolean loading()
+        {
+            return !Loader.instance().hasReachedState(LoaderState.AVAILABLE);
+        }
+
+        @Override
+        public Side side()
+        {
+            return currentSide();
+        }
+    }
+
+    /**
+     * The platform's per-user directory for configuration, or {@code null} when it offers none.
+     *
+     * <p>{@code -Dcleanroom.userConfigDir=...} wins over everything else. It is what lets a pack, a test or a server
+     * operator point the file somewhere writable without the mod author having to guess, and it is the only way to pin
+     * this down in a build that runs on a container with no home directory.
+     */
+    static File findUserConfigDir()
+    {
+        String override = System.getProperty("cleanroom.userConfigDir");
+        if (override != null && !override.isEmpty())
+            return new File(override);
+
+        String home = System.getProperty("user.home");
+        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+
+        if (os.startsWith("windows"))
+        {
+            String appData = System.getenv("APPDATA");
+            return appData == null || appData.isEmpty() ? null : new File(appData);
+        }
+
+        if (os.startsWith("mac") || os.contains("darwin"))
+            return home == null || home.isEmpty() ? null : new File(new File(home), "Library/Application Support");
+
+        String xdg = System.getenv("XDG_CONFIG_HOME");
+        if (xdg != null && !xdg.isEmpty())
+            return new File(xdg);
+
+        return home == null || home.isEmpty() ? null : new File(home, ".config");
     }
 
     public static Class<?>[] getModConfigClasses(String modid)
@@ -226,12 +315,106 @@ public class ConfigManager
     // =======================================================
     //                    INTERNAL
     // =======================================================
-    static Configuration getConfiguration(String modid, String name) {
-        if (Strings.isNullOrEmpty(name))
-            name = modid;
-        File configDir = Loader.instance().getConfigDir();
-        File configFile = new File(configDir, name + ".cfg");
-        return CONFIGS.get(configFile.getAbsolutePath());
+    static Configuration getConfiguration(Config annotation) {
+        return configuration(resolve(annotation));
+    }
+
+    /** Resolves one declaration against the root its {@link Config.Storage} names. */
+    private static ConfigFileResolver.Target resolve(Config annotation) {
+        ConfigFileResolver.Target target = ConfigFileResolver.resolve(rootFor(annotation.storage()), annotation);
+        if (annotation.storage() == Config.Storage.USER)
+            warnAboutShadowedInstanceFile(target);
+        return target;
+    }
+
+    /**
+     * A config that moved to {@link Config.Storage#USER} leaves the old {@code config/} file behind, and to the player
+     * that looks like the mod reset their settings. Nothing is copied or deleted - the two files may hold values for
+     * different mod versions - but silently ignoring a file the user has been editing is not an option either.
+     */
+    private static void warnAboutShadowedInstanceFile(ConfigFileResolver.Target target) {
+        File userDir = environment().userConfigDir();
+        if (userDir == null)
+            return; // fell back to config/, so there is nothing else to look at
+
+        Path userRoot = userDir.getAbsoluteFile().toPath().normalize();
+        Path file = target.file().getAbsoluteFile().toPath().normalize();
+        if (file.equals(userRoot) || !file.startsWith(userRoot))
+            return;
+
+        File shadowed = new File(environment().configDir(), userRoot.relativize(file).toString());
+        if (shadowed.isFile() && WARNED_RESOLUTIONS.add("shadowed:" + shadowed.getAbsolutePath()))
+            FMLLog.log.warn("{} is declared user-level, so {} is not read. Copy the values you want to keep and delete it.",
+                    target.file(), shadowed);
+    }
+
+    /**
+     * Maps {@link Config.Storage} to the directory the file search happens in.
+     *
+     * <p>A platform with no per-user directory falls back to {@code config/} and says so once. Failing the load would
+     * take the game down over a directory that was only ever a convenience, and silently using {@code config/} would
+     * hide why the file is not where the author promised.
+     */
+    private static File rootFor(Config.Storage storage) {
+        if (storage != Config.Storage.USER)
+            return environment().configDir();
+
+        File userDir = environment().userConfigDir();
+        if (userDir != null)
+            return userDir;
+
+        if (WARNED_RESOLUTIONS.add("no-user-config-dir"))
+            FMLLog.log.warn("A @Config asks for a file in the user config directory, but this platform has none."
+                    + " Using {} instead.", environment().configDir());
+        return environment().configDir();
+    }
+
+    /**
+     * Hands back the {@link Configuration} behind one resolved file, loading it the first time it is asked for.
+     *
+     * <p>This is the only place a {@link Configuration} is created for an {@code @Config} class, so it is also the only
+     * place that has to know which syntaxes can actually be read. Declaring a format nobody can parse yet has to fail
+     * here rather than quietly produce a CFG file under a {@code .toml} name, because that would look like it worked.
+     */
+    private static Configuration configuration(ConfigFileResolver.Target target)
+    {
+        warnAboutResolution(target);
+
+        Configuration cfg = CONFIGS.get(target.file().getAbsolutePath());
+        if (cfg == null)
+        {
+            cfg = new Configuration(target.file(), target.format());
+            cfg.load();
+            cfg.setPatchLayer(ConfigPatch.load(environment().configDir(), target.file()));
+            CONFIGS.put(target.file().getAbsolutePath(), cfg);
+        }
+        return cfg;
+    }
+
+    private static void warnAboutResolution(ConfigFileResolver.Target target)
+    {
+        if (!WARNED_RESOLUTIONS.add(target.file().getAbsolutePath()))
+            return;
+
+        switch (target.origin())
+        {
+            case EXISTING_FILE:
+                FMLLog.log.warn("Using {} for the config file {} because the @Config annotation names no format."
+                        + " Declare the format to make this independent of the files on disk.",
+                        target.format(), target.file().getName());
+                break;
+            case LEGACY_NAME:
+                FMLLog.log.warn("The config file {} is named with its extension, which dates from before formats existed."
+                        + " Drop the extension from @Config(name) to be able to change the format later.",
+                        target.file().getName());
+                break;
+            default:
+                return;
+        }
+
+        for (File ignored : target.ignored())
+            FMLLog.log.warn("Ignoring {} next to {}, which has the same name but another extension",
+                    ignored.getName(), target.file().getName());
     }
     
     private static Side currentSide()
@@ -307,12 +490,16 @@ public class ConfigManager
                             adapt.setDefaultValue(property, wrapper.getValue(key));
                             if (!existed)
                                 adapt.setValue(property, wrapper.getValue(key));
-                            else
-                                wrapper.setValue(key, adapt.getValue(property));
+
+                            // After the value exists, never before: a key that the file does not have yet has no value
+                            // to keep, and the patch must not become that value.
+                            ConfigPatch.applyTo(cfg, wrapper.getCategory(), property);
+                            wrapper.setValue(key, adapt.getValue(property));
                         }
                         else //If the key is not new, sync according to shouldReadFromVar()
                         {
                             Property property = property(cfg, wrapper.getCategory(), suffix, propType, adapt.isArrayAdapter());
+                            ConfigPatch.applyTo(cfg, wrapper.getCategory(), property);
                             Object propVal = adapt.getValue(property);
                             Object mapVal = wrapper.getValue(key);
                             if (shouldReadFromVar(property, propVal, mapVal))
@@ -432,15 +619,7 @@ public class ConfigManager
         String modId = config.modid();
         Set<Class<?>> modConfigClasses = MOD_CONFIG_CLASSES.computeIfAbsent(modId, k -> Sets.newHashSet());
         modConfigClasses.add(configClass);
-        File configDir = new File(Launch.minecraftHome, "config");
-        String name = config.name();
-        File configFile = new File(configDir, (Strings.isNullOrEmpty(name) ? config.modid() : name) + ".cfg");
-        Configuration cfg = CONFIGS.get(configFile.getAbsolutePath());
-        if (cfg == null) {
-            cfg = new Configuration(configFile);
-            cfg.load();
-            CONFIGS.put(configFile.getAbsolutePath(), cfg);
-        }
+        Configuration cfg = configuration(resolve(config));
         sync(cfg, configClass, modId, config.category(), true, null);
         cfg.save();
         
