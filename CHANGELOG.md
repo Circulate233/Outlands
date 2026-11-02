@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026.11.02] - 2026-11-02
+### New Features
+- [`40bcfbb`](https://github.com/Project-Outlands/Outlands/commit/40bcfbb593b2fb639f505245447db8d78e5a4a3c) - move the coremod keys into the jar section and read mcmod.info once *(PR [#41](https://github.com/Project-Outlands/Outlands/pull/41) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`5f7d5e0`](https://github.com/Project-Outlands/Outlands/commit/5f7d5e005c461dc6cb2afc1ad5db5189c75e136b) - move ModSide and FMLAT into the mcmod.info jar section *(PR [#40](https://github.com/Project-Outlands/Outlands/pull/40) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Bug Fixes
+- [`6a4f380`](https://github.com/Project-Outlands/Outlands/commit/6a4f380d6a1ae37bc1e3365260900334bb7416bc) - let jar.containedDeps drive extraction on its own *(PR [#39](https://github.com/Project-Outlands/Outlands/pull/39) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+
 ## [2026.11.01] - 2026-11-01
 ### BREAKING CHANGES
 - due to [`54df574`](https://github.com/Project-Outlands/Outlands/commit/54df574b281be65f4ae7ac8fa6c3877fd1e1a6fc) - drop Bansoukou support *(PR [#15](https://github.com/Project-Outlands/Outlands/pull/15) by [@kappa-maintainer](https://github.com/kappa-maintainer))*:
@@ -395,3 +404,4 @@ net.minecraftforge.* only. *(commit by [@kappa-maintainer](https://github.com/ka
 [2026.10.26]: https://github.com/Project-Outlands/Outlands/compare/2026.10.25...2026.10.26
 [2026.10.29]: https://github.com/Project-Outlands/Outlands/compare/2026.10.26...2026.10.29
 [2026.11.01]: https://github.com/Project-Outlands/Outlands/compare/2026.10.29...2026.11.01
+[2026.11.02]: https://github.com/Project-Outlands/Outlands/compare/2026.11.01...2026.11.02
