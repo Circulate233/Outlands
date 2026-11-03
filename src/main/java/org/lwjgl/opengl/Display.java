@@ -323,8 +323,8 @@ public class Display {
         return result;
     }
     private static int resolveContextMajor() {
-        int major = ForgeEarlyConfig.OPENGL_VERSION_MAJOR;
-        int minor = ForgeEarlyConfig.OPENGL_VERSION_MINOR;
+        int major = ForgeEarlyConfig.openglVersionMajor;
+        int minor = ForgeEarlyConfig.openglVersionMinor;
         if (hasContextAttribs) {
             return Math.max(2, attachmentContextAttribs.getMajorVersion());
         }
@@ -343,7 +343,7 @@ public class Display {
             return major < 3 ? (major == 2 ? 1 : 0) : attachmentContextAttribs.getMinorVersion();
         }
         final int major = resolveContextMajor();
-        final int minor = ForgeEarlyConfig.OPENGL_VERSION_MINOR;
+        final int minor = ForgeEarlyConfig.openglVersionMinor;
         if (major == 2) {
             return 1;
         }
@@ -362,14 +362,14 @@ public class Display {
                 SDL_SetNumberProperty(
                     props,
                     SDLVideo.SDL_PROP_WINDOW_CREATE_X_NUMBER,
-                    ForgeEarlyConfig.WINDOW_CENTERED
+                    ForgeEarlyConfig.windowCentered
                         ? SDLVideo.SDL_WINDOWPOS_CENTERED
                         : SDLVideo.SDL_WINDOWPOS_UNDEFINED));
             Sys.checkSdl(
                 SDL_SetNumberProperty(
                     props,
                     SDLVideo.SDL_PROP_WINDOW_CREATE_Y_NUMBER,
-                    ForgeEarlyConfig.WINDOW_CENTERED
+                    ForgeEarlyConfig.windowCentered
                         ? SDLVideo.SDL_WINDOWPOS_CENTERED
                         : SDLVideo.SDL_WINDOWPOS_UNDEFINED));
             Sys.checkSdl(SDL_SetNumberProperty(props, SDLVideo.SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, (long) mode.getWidth()));
@@ -383,12 +383,12 @@ public class Display {
                 SDL_SetBooleanProperty(
                     props,
                     SDLVideo.SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN,
-                    ForgeEarlyConfig.SCALE_FRAMEBUFFER));
+                    ForgeEarlyConfig.scaleFramebuffer));
             Sys.checkSdl(
                 SDL_SetBooleanProperty(
                     props,
                     SDLVideo.SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN,
-                    ForgeEarlyConfig.WINDOW_START_ICONIFIED));
+                    ForgeEarlyConfig.windowStartIconified));
             Sys.checkSdl(
                 SDL_SetBooleanProperty(
                     props,
@@ -398,12 +398,12 @@ public class Display {
                 SDL_SetBooleanProperty(
                     props,
                     SDLVideo.SDL_PROP_WINDOW_CREATE_BORDERLESS_BOOLEAN,
-                    !ForgeEarlyConfig.WINDOW_DECORATED));
+                    !ForgeEarlyConfig.windowDecorated));
             Sys.checkSdl(
                 SDL_SetBooleanProperty(
                     props,
                     SDLVideo.SDL_PROP_WINDOW_CREATE_MAXIMIZED_BOOLEAN,
-                    ForgeEarlyConfig.WINDOW_START_MAXIMIZED));
+                    ForgeEarlyConfig.windowStartMaximized));
 
             sdlWindow = SDL_CreateWindowWithProperties(props);
             if (sdlWindow == NULL) {
@@ -448,10 +448,10 @@ public class Display {
 
     private static int windowFlags() {
         long flags = SDL_WINDOW_OPENGL;
-        if (!ForgeEarlyConfig.WINDOW_DECORATED) {
+        if (!ForgeEarlyConfig.windowDecorated) {
             flags |= SDL_WINDOW_BORDERLESS;
         }
-        if (ForgeEarlyConfig.WINDOW_START_ICONIFIED) {
+        if (ForgeEarlyConfig.windowStartIconified) {
             flags |= SDL_WINDOW_HIDDEN;
         }
         return (int) flags;
@@ -468,7 +468,7 @@ public class Display {
             if (attachmentContextAttribs.isDebug()) {
                 contextFlags |= SDLVideo.SDL_GL_CONTEXT_DEBUG_FLAG;
             }
-        } else if (ForgeEarlyConfig.OPENGL_DEBUG_CONTEXT) {
+        } else if (ForgeEarlyConfig.openglDebugContext) {
             contextFlags |= SDLVideo.SDL_GL_CONTEXT_DEBUG_FLAG;
         }
         Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_CONTEXT_FLAGS, contextFlags));
@@ -477,15 +477,15 @@ public class Display {
         Sys.checkSdl(
             SDLVideo.SDL_GL_SetAttribute(
                 SDLVideo.SDL_GL_FRAMEBUFFER_SRGB_CAPABLE,
-                ForgeEarlyConfig.OPENGL_SRGB_CONTEXT ? 1 : 0));
+                ForgeEarlyConfig.openglSrgbContext ? 1 : 0));
         Sys.checkSdl(
             SDLVideo.SDL_GL_SetAttribute(
                 SDLVideo.SDL_GL_DOUBLEBUFFER,
-                ForgeEarlyConfig.OPENGL_DOUBLEBUFFER ? 1 : 0));
+                ForgeEarlyConfig.openglDoubleBuffer ? 1 : 0));
         Sys.checkSdl(
             SDLVideo.SDL_GL_SetAttribute(
                 SDLVideo.SDL_GL_CONTEXT_NO_ERROR,
-                ForgeEarlyConfig.OPENGL_CONTEXT_NO_ERROR ? 1 : 0));
+                ForgeEarlyConfig.openglContextNoError ? 1 : 0));
         Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_DEPTH_SIZE, 24));
         Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_STENCIL_SIZE, 8));
         // No alpha channel on the window surface: Minecraft clears with alpha 0, which a compositor that honours
@@ -521,7 +521,7 @@ public class Display {
                 .checkSdl(
                     SDLVideo.SDL_GL_SetAttribute(
                         SDLVideo.SDL_GL_CONTEXT_PROFILE_MASK,
-                        ForgeEarlyConfig.OPENGL_COMPAT_PROFILE ? SDLVideo.SDL_GL_CONTEXT_PROFILE_COMPATIBILITY
+                        ForgeEarlyConfig.openglCompatProfile ? SDLVideo.SDL_GL_CONTEXT_PROFILE_COMPATIBILITY
                             : SDLVideo.SDL_GL_CONTEXT_PROFILE_CORE));
         }
     }
@@ -811,9 +811,9 @@ public class Display {
             final boolean ctrlGraphicalMode;
             if (isAlt) {
                 if (isAltGr) {
-                    ctrlGraphicalMode = !ForgeEarlyConfig.INPUT_ALTGR_ESCAPE_CODES;
+                    ctrlGraphicalMode = !ForgeEarlyConfig.inputAltGrEscapeCodes;
                 } else {
-                    ctrlGraphicalMode = ForgeEarlyConfig.INPUT_CTRL_ALT_TEXT;
+                    ctrlGraphicalMode = ForgeEarlyConfig.inputCtrlAltText;
                 }
                 if (ctrlGraphicalMode) {
                     Keyboard.addSdlKeyEvent(lwjglKey, (char) (keycode & 0x1f), state, lwjglScan, mods);

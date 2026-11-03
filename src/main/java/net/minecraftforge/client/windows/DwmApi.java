@@ -112,42 +112,42 @@ public interface DwmApi extends Library {
         }
 
         // DWMWA_USE_IMMERSIVE_DARK_MODE
-        final boolean useImmersiveDarkMode = ForgeEarlyConfig.MODERN_WINDOWS_STYLES.USE_IMMERSIVE_DARK_MODE && WindowsTheme.isAppsDarkTheme();
+        final boolean useImmersiveDarkMode = ForgeEarlyConfig.modernWindowsStyles.useImmersiveDarkMode && WindowsTheme.isAppsDarkTheme();
         INSTANCE.DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, new IntByReference(useImmersiveDarkMode ? BOOL_TRUE : BOOL_FALSE), INT_SIZE);
 
         // DWMWA_SYSTEMBACKDROP_TYPE
         if (WindowsProperties.buildNumber >= WindowsProperties.BACKDROP_BUILD_NUM) {
-            final DWM_SYSTEMBACKDROP_TYPE systemBackdropType = DWM_SYSTEMBACKDROP_TYPE.fromInt(ForgeEarlyConfig.MODERN_WINDOWS_STYLES.SYSTEM_BACKDROP_TYPE);
+            final DWM_SYSTEMBACKDROP_TYPE systemBackdropType = DWM_SYSTEMBACKDROP_TYPE.fromInt(ForgeEarlyConfig.modernWindowsStyles.systemBackdropType);
             INSTANCE.DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, new IntByReference(systemBackdropType.ordinal()), INT_SIZE);
         }
 
         // DWMWA_WINDOW_CORNER_PREFERENCE
-        final DWM_WINDOW_CORNER_PREFERENCE windowCorner = DWM_WINDOW_CORNER_PREFERENCE.fromInt(ForgeEarlyConfig.MODERN_WINDOWS_STYLES.WINDOW_CORNER);
+        final DWM_WINDOW_CORNER_PREFERENCE windowCorner = DWM_WINDOW_CORNER_PREFERENCE.fromInt(ForgeEarlyConfig.modernWindowsStyles.windowCorner);
         INSTANCE.DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, new IntByReference(windowCorner.ordinal()), INT_SIZE);
 
         // DWMWA_BORDER_COLOR
-        if (ForgeEarlyConfig.MODERN_WINDOWS_STYLES.USE_DEFAULT_BORDER) {
+        if (ForgeEarlyConfig.modernWindowsStyles.useDefaultBorder) {
             INSTANCE.DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, new IntByReference(DWMWA_COLOR_DEFAULT), INT_SIZE);
-        } else if (ForgeEarlyConfig.MODERN_WINDOWS_STYLES.HIDE_WINDOW_BORDER) {
+        } else if (ForgeEarlyConfig.modernWindowsStyles.hideWindowBorder) {
             INSTANCE.DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, new IntByReference(DWMWA_COLOR_NONE), INT_SIZE);
         } else {
-            final int borderColor = convert(ForgeEarlyConfig.MODERN_WINDOWS_STYLES.BORDER_COLOR);
+            final int borderColor = convert(ForgeEarlyConfig.modernWindowsStyles.borderColor);
             INSTANCE.DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, new IntByReference(borderColor), INT_SIZE);
         }
 
         // DWMWA_CAPTION_COLOR
-        if (ForgeEarlyConfig.MODERN_WINDOWS_STYLES.USE_DEFAULT_CAPTION) {
+        if (ForgeEarlyConfig.modernWindowsStyles.useDefaultCaption) {
             INSTANCE.DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, new IntByReference(DWMWA_COLOR_DEFAULT), INT_SIZE);
         } else {
-            final int captionColor = convert(ForgeEarlyConfig.MODERN_WINDOWS_STYLES.CAPTION_COLOR);
+            final int captionColor = convert(ForgeEarlyConfig.modernWindowsStyles.captionColor);
             INSTANCE.DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, new IntByReference(captionColor), INT_SIZE);
         }
 
         // DWMWA_TEXT_COLOR
-        if (ForgeEarlyConfig.MODERN_WINDOWS_STYLES.USE_DEFAULT_TEXT) {
+        if (ForgeEarlyConfig.modernWindowsStyles.useDefaultText) {
             INSTANCE.DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, new IntByReference(DWMWA_COLOR_DEFAULT), INT_SIZE);
         } else {
-            final int textColor = convert(ForgeEarlyConfig.MODERN_WINDOWS_STYLES.TEXT_COLOR);
+            final int textColor = convert(ForgeEarlyConfig.modernWindowsStyles.textColor);
             INSTANCE.DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, new IntByReference(textColor), INT_SIZE);
         }
     }

@@ -205,10 +205,10 @@ public class Mouse {
     public static double totalScrollAmount = 0.0;
 
     public static void addWheelEvent(double delta) {
-        if (ForgeEarlyConfig.INPUT_INVERT_WHEEL) {
+        if (ForgeEarlyConfig.inputInvertWheel) {
             delta = -delta;
         }
-        delta *= ForgeEarlyConfig.INPUT_SCROLL_SPEED;
+        delta *= ForgeEarlyConfig.inputScrollSpeed;
 
         final int lastWheel = (int) fractionalWheelPosition;
         fractionalWheelPosition += delta;

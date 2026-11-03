@@ -20,6 +20,7 @@
 package net.minecraftforge.common.config;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.lang.reflect.Modifier;
@@ -35,6 +36,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import net.minecraftforge.fml.relauncher.FMLLaunchHandler;
+import net.minecraftforge.fml.relauncher.FMLInjectionData;
 import net.minecraftforge.common.config.Config.Comment;
 import net.minecraftforge.common.config.Config.LangKey;
 import net.minecraftforge.common.config.Config.Name;
@@ -242,7 +244,25 @@ public class ConfigManager
         @Override
         public File configDir()
         {
-            return Loader.instance().getConfigDir();
+            File dir = Loader.instance().getConfigDir();
+            if (dir != null)
+                return dir;
+
+            // The early config classes are registered before Loader has resolved its directories. Falling back to the
+            // launch home keeps those files under <instance>/config instead of the process working directory.
+            Object home = FMLInjectionData.data()[6];
+            if (home instanceof File file)
+            {
+                try
+                {
+                    return new File(file, "config").getCanonicalFile();
+                }
+                catch (IOException ignored)
+                {
+                    return new File(file, "config").getAbsoluteFile();
+                }
+            }
+            return null;
         }
 
         @Override
@@ -380,15 +400,33 @@ public class ConfigManager
     {
         warnAboutResolution(target);
 
-        Configuration cfg = CONFIGS.get(target.file().getAbsolutePath());
+        String key = key(target.file());
+        Configuration cfg = CONFIGS.get(key);
         if (cfg == null)
         {
             cfg = new Configuration(target.file(), target.format());
             cfg.load();
             cfg.setPatchLayer(ConfigPatch.load(environment().configDir(), target.file()));
-            CONFIGS.put(target.file().getAbsolutePath(), cfg);
+            CONFIGS.put(key, cfg);
         }
         return cfg;
+    }
+
+    /**
+     * The cache key for one config file. Canonical when possible: the loader hands out canonical directories, while an
+     * early registration may still hold the launch path ("<home>/config" vs "<home>/./config"), and the two spellings
+     * must not become two {@link Configuration} objects for one file - their saves would overwrite each other.
+     */
+    private static String key(File file)
+    {
+        try
+        {
+            return file.getCanonicalPath();
+        }
+        catch (IOException e)
+        {
+            return file.getAbsolutePath();
+        }
     }
 
     private static void warnAboutResolution(ConfigFileResolver.Target target)

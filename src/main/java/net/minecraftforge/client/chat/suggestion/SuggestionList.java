@@ -78,7 +78,7 @@ public class SuggestionList {
     }
 
     public boolean isInvisible() {
-        return !ForgeEarlyConfig.COMMAND_COMPLETION || this.suggestions.isEmpty();
+        return !ForgeEarlyConfig.commandCompletion || this.suggestions.isEmpty();
     }
 
     public boolean isVisible() {
@@ -240,7 +240,7 @@ public class SuggestionList {
 
     public void drawCommandColor(GuiTextField inputField, FontRenderer fontRenderer) {
         String text = inputField.getText();
-        if (!ForgeEarlyConfig.COMMAND_COMPLETION || text.isEmpty() || (!this.commandBlockMode && !text.startsWith("/"))) {
+        if (!ForgeEarlyConfig.commandCompletion || text.isEmpty() || (!this.commandBlockMode && !text.startsWith("/"))) {
             return;
         }
         int scrollOffset = inputField.getLineScrollOffset();

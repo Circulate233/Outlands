@@ -391,7 +391,7 @@ public final class ModDiscoverer {
             }
             // Reading the cache is what makes the records worth producing; ignoring it falls back to the pre-cache
             // parse pattern (classes are only read when the mod id is still unknown) and produces no records.
-            boolean readCache = !ForgeEarlyConfig.IGNORE_SCAN_CACHE;
+            boolean readCache = !ForgeEarlyConfig.ignoreScanCache;
             boolean needClasses = readCache || modIds.isEmpty();
             List<JarEntry> entries = needClasses ? Collections.list(jarFile.entries()) : List.of();
             JarFingerprint fingerprint = readCache ? JarFingerprint.compute(entries) : null;
@@ -511,7 +511,7 @@ public final class ModDiscoverer {
             }
             if (isCorePluginBlacklisted(fmlCorePlugin)) {
                 CoreModManager.getIgnoredMods().add(file.getName());
-                FMLLog.log.warn("Loading plugin {} for mod {} is in the forge_early.cfg blacklist and won't be loaded.", fmlCorePlugin, file.getName());
+                FMLLog.log.warn("Loading plugin {} for mod {} is in forge.cfg [early] loadingPluginBlacklist and won't be loaded.", fmlCorePlugin, file.getName());
                 return;
             }
         } catch (IOException ioe) {
@@ -580,7 +580,7 @@ public final class ModDiscoverer {
     }
 
     private static boolean isCorePluginBlacklisted(String fmlCorePlugin) {
-        for (String plugin : ForgeEarlyConfig.LOADING_PLUGIN_BLACKLIST) {
+        for (String plugin : ForgeEarlyConfig.loadingPluginBlacklist) {
             if (plugin.equals(fmlCorePlugin)) {
                 return true;
             }

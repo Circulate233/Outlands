@@ -123,7 +123,7 @@ public class ForgeClientHandler
         }
 
         IMEHandler.setIME(gui != null &&
-                (ForgeEarlyConfig.IME_AVAILABLE_IN_GUI || gui instanceof GuiScreenBook || gui instanceof GuiEditSign
+                (ForgeEarlyConfig.imeAvailableInGui || gui instanceof GuiScreenBook || gui instanceof GuiEditSign
                         || guiInWhiteList(gui)));
     }
 
@@ -144,7 +144,7 @@ public class ForgeClientHandler
             if (event.getGui() instanceof GuiMainMenu && !played)
             {
                 if (WindowsProperties.handle == Long.MIN_VALUE) return;
-                if (!ForgeEarlyConfig.MODERN_WINDOWS_STYLES.DISABLE_FLASH_AFTER_LOADED)
+                if (!ForgeEarlyConfig.modernWindowsStyles.disableFlashAfterLoaded)
                 {
                     TaskbarApi.flashTaskbarUntilForeground(WindowsProperties.handle);
                 }

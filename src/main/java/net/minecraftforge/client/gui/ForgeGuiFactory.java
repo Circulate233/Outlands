@@ -32,7 +32,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraftforge.common.ForgeChunkManager;
-import net.minecraftforge.common.ForgeEarlyConfig;
 import net.minecraftforge.common.ForgeModContainer;
 import net.minecraftforge.common.ForgeVersion;
 import net.minecraftforge.common.config.ConfigCategory;
@@ -89,7 +88,7 @@ import static net.minecraftforge.common.ForgeModContainer.VERSION_CHECK_CAT;
  *                  - Mod2
  *                  - etc.
  *          - Version Check Settings (from forge.cfg)
- *          - Early Config (from forge_early.cfg)
+ *          - Early Config (from forge.cfg [early])
  *
  * Other things to check out:
  *      ForgeModContainer.syncConfig()
@@ -265,11 +264,11 @@ public class ForgeGuiFactory implements IModGuiFactory
             protected GuiScreen buildChildScreen()
             {
                 return new GuiConfig(this.owningScreen,
-                        ConfigElement.from(ForgeEarlyConfig.class).getChildElements(),
-                        this.owningScreen.modID, "forge_early",
+                        new ConfigElement(ForgeModContainer.getConfig().getCategory("early")).getChildElements(),
+                        this.owningScreen.modID, "early",
                         this.configElement.requiresWorldRestart() || this.owningScreen.allRequireWorldRestart,
                         this.configElement.requiresMcRestart() || this.owningScreen.allRequireMcRestart,
-                        GuiConfig.getAbridgedConfigPath("config/forge_early.cfg"));
+                        GuiConfig.getAbridgedConfigPath("config/forge.cfg"));
             }
         }
 

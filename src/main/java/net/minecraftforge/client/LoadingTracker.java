@@ -164,7 +164,7 @@ public class LoadingTracker {
             @Override public void onPop(ProgressBar bar)  { LoadingTracker.onBarPop(bar); }
         });
 
-        if (ForgeEarlyConfig.MODERN_WINDOWS_STYLES.UPDATE_WINDOWS_TASKBAR_PROGRESS) {
+        if (ForgeEarlyConfig.modernWindowsStyles.updateWindowsTaskbarProgress) {
             setTaskbarState(false);
             updateTaskbar(0, true);
         } else {
@@ -296,7 +296,7 @@ public class LoadingTracker {
     }
 
     private static void updateTaskbar(int progress, boolean force) {
-        if (!ForgeEarlyConfig.MODERN_WINDOWS_STYLES.UPDATE_WINDOWS_TASKBAR_PROGRESS) return;
+        if (!ForgeEarlyConfig.modernWindowsStyles.updateWindowsTaskbarProgress) return;
 
         long now = System.nanoTime();
         if (!force && lastTaskbarUpdateNanos != 0L && now - lastTaskbarUpdateNanos < TASKBAR_UPDATE_DEBOUNCE_NANOS) return;

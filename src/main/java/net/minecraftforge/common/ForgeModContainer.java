@@ -81,7 +81,6 @@ import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.ICrashCallable;
 import net.minecraftforge.fml.common.LoadController;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.ModMetadata;
 import net.minecraftforge.fml.common.WorldAccessContainer;
@@ -165,11 +164,12 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
             updateJSONUrl    = new URI("https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json").toURL();
         } catch (MalformedURLException | URISyntaxException ignored) {}
 
-        config = null;
-        File cfgFile = new File(Loader.instance().getConfigDir(), "forge.cfg");
-        config = new Configuration(cfgFile);
+        config = ForgeConfig.get();
 
-        syncConfig(true);
+        // Ensure the [early] properties exist even when the launch path did not call loadEarly; the early pass has
+        // already filled the fields before the window was created.
+        ForgeEarlyConfig.sync(config, false);
+        syncConfig(false);
 
         INSTANCE = this;
     }
@@ -182,7 +182,7 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
 
     public static Configuration getConfig()
     {
-        return config;
+        return config != null ? config : ForgeConfig.get();
     }
 
     private static void remapGeneralPropertyToClient(String key)
@@ -507,7 +507,7 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
                     FMLCommonHandler.instance().reloadRenderers();
                 }
             }
-            case "forge_early" -> ConfigManager.sync(ForgeEarlyConfig.class);
+            case "early" -> ForgeEarlyConfig.sync(config, true);
             default -> syncConfig(false);
         }
     }

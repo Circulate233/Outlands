@@ -23,6 +23,7 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+import net.minecraftforge.common.ForgeEarlyConfig;
 import net.minecraftforge.common.LoaderVersion;
 import com.llamalad7.mixinextras.MixinExtrasBootstrap;
 import net.minecraft.launchwrapper.LaunchClassLoader;
@@ -105,6 +106,11 @@ public class FMLLaunchHandler
     {
         FMLInjectionData.build(minecraftHome, classLoader);
         redirectStdOutputToLog();
+
+        // The video driver, window/GL settings and the mod scan settings are needed before the loader has resolved its
+        // config directory. Register the [early] properties now and fill the fields, but do not save: ForgeModContainer
+        // re-applies the legacy sections' comments first.
+        ForgeEarlyConfig.loadEarly(new File(minecraftHome, "config"));
         FMLLog.log.info("Forge Mod Loader version {}.{}.{}.{} for Minecraft {} loading", FMLInjectionData.major, FMLInjectionData.minor,
                 FMLInjectionData.rev, FMLInjectionData.build, FMLInjectionData.mccversion);
         FMLLog.log.info("Outlands version {}", LoaderVersion.BUILD_VERSION);

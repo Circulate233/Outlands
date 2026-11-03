@@ -53,7 +53,7 @@ forge.configgui.ctgy.forgeChunkLoadingModConfig=Переопределение �
 forge.configgui.ctgy.forgeChunkLoadingAddModConfig.tooltip=Позволяет установить настройки модов, переопределяющие параметры по умолчанию. Значение ноль в любом пункте отключит возможность загрузки чанков для этого мода.
 forge.configgui.ctgy.forgeChunkLoadingAddModConfig=+ добавить новое переопределение
 forge.configgui.ctgy.VersionCheckConfig=Настройки проверки версий
-forge.configgui.ctgy.forgeEarlyConfig.tooltip=Редактирование настроек из forge_early.cfg, включая OpenGL, окно, ввод и параметры запуска.
+forge.configgui.ctgy.forgeEarlyConfig.tooltip=Редактирование настроек из forge.cfg, включая OpenGL, окно, ввод и параметры запуска.
 forge.configgui.ctgy.forgeEarlyConfig=Ранние настройки
 
 forge.configgui.biomeSkyBlendRange.tooltip=Управляет диапазоном размытия цветного неба в биомах.

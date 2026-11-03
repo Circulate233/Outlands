@@ -31,7 +31,7 @@ public class SuggestionUpdater implements GuiPageButtonList.GuiResponder {
         this.field = field;
         this.commandBlockMode = commandBlockMode;
         Minecraft mc = Minecraft.getMinecraft();
-        if (ForgeEarlyConfig.COMMAND_COMPLETION && mc.player != null && mc.player.connection != null) {
+        if (ForgeEarlyConfig.commandCompletion && mc.player != null && mc.player.connection != null) {
             mc.player.connection.sendPacket(new CPacketTabComplete("/", null, false));
             this.pendingReplies++;
         }
@@ -54,7 +54,7 @@ public class SuggestionUpdater implements GuiPageButtonList.GuiResponder {
      * deduplicates on the cursor-relative prefix so a no-op move is basically free
      */
     public void refresh() {
-        if (!ForgeEarlyConfig.COMMAND_COMPLETION) {
+        if (!ForgeEarlyConfig.commandCompletion) {
             this.lastRequest = "";
             this.pendingReplies = 0;
             this.suggestionList.hide();
@@ -98,7 +98,7 @@ public class SuggestionUpdater implements GuiPageButtonList.GuiResponder {
      * Stale replies are dropped so the suggestions list isn't outdated.
      */
     public void onServerCompletions(String... completions) {
-        if (!ForgeEarlyConfig.COMMAND_COMPLETION) {
+        if (!ForgeEarlyConfig.commandCompletion) {
             this.lastRequest = "";
             this.pendingReplies = 0;
             this.suggestionList.hide();

@@ -67,7 +67,7 @@ public class KeyBindingMap {
                 matches.add(binding);
             }
         }
-        if (matches.size() > 1 && !net.minecraftforge.common.ForgeEarlyConfig.INPUT_KEYBIND_ALL_MATCHING)
+        if (matches.size() > 1 && !net.minecraftforge.common.ForgeEarlyConfig.inputKeybindAllMatching)
         {
             return Collections.singleton(matches.iterator().next());
         }

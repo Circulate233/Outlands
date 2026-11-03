@@ -25,7 +25,6 @@ import java.util.List;
 
 import net.minecraftforge.client.modlist.ModListConfig;
 import net.minecraft.launchwrapper.LaunchClassLoader;
-import net.minecraftforge.common.ForgeEarlyConfig;
 import net.minecraftforge.common.ForgeVersion;
 import net.minecraftforge.common.config.ConfigManager;
 
@@ -50,7 +49,6 @@ public class FMLInjectionData
         build = String.valueOf(ForgeVersion.buildVersion);
         mccversion = ForgeVersion.mcVersion;
         mcpversion = ForgeVersion.mcpVersion;
-        ConfigManager.register(ForgeEarlyConfig.class);
         ConfigManager.register(ModListConfig.class);
     }
 

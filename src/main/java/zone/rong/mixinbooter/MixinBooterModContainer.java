@@ -17,8 +17,8 @@ public class MixinBooterModContainer extends DummyModContainer {
     public MixinBooterModContainer() {
         super(loadMetadata());
         ModMetadata meta = getMetadata();
-        if (ForgeEarlyConfig.CUSTOM_BUILT_IN_MOD_VERSION) {
-            meta.version = ForgeEarlyConfig.MIXIN_BOOTER_VERSION;
+        if (ForgeEarlyConfig.customBuiltInModVersion) {
+            meta.version = ForgeEarlyConfig.mixinBooterVersion;
         }
     }
 
@@ -31,7 +31,7 @@ public class MixinBooterModContainer extends DummyModContainer {
     private static ModMetadata loadMetadata() {
         Map<String, Object> fallbackData = new HashMap<>();
         fallbackData.put("name", Tags.MOD_NAME);
-        fallbackData.put("version", ForgeEarlyConfig.CUSTOM_BUILT_IN_MOD_VERSION ? ForgeEarlyConfig.MIXIN_BOOTER_VERSION : Tags.VERSION);
+        fallbackData.put("version", ForgeEarlyConfig.customBuiltInModVersion ? ForgeEarlyConfig.mixinBooterVersion : Tags.VERSION);
 
         InputStream inputStream = MixinBooterModContainer.class.getClassLoader().getResourceAsStream("mixinbooter.info");
         try {

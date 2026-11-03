@@ -116,6 +116,53 @@ class ConfigEnvironmentTest {
     }
 
     /**
+     * One file must be one {@link Configuration}, however the directory is spelled. The loader's directory is
+     * canonical while an early registration may still hold the launch path, and two objects for one file would make
+     * their saves overwrite each other.
+     */
+    @Test
+    void oneFileInTwoSpellingsSharesOneConfiguration(@TempDir Path root) throws IOException {
+        Files.createDirectories(root.resolve("config"));
+        Files.write(root.resolve("config/mymod.cfg"), "general {\n    I:count=5\n}\n".getBytes(StandardCharsets.UTF_8));
+
+        ClassLoader loader = getClass().getClassLoader();
+
+        ConfigManager.setEnvironment(environment(root, loader));
+        Configuration first = ConfigManager.getConfiguration(TestConfig.class.getAnnotation(Config.class));
+
+        ConfigManager.setEnvironment(new ConfigEnvironment() {
+            @Override
+            public File configDir() {
+                return new File(root.toFile(), "./config");
+            }
+
+            @Override
+            public File userConfigDir() {
+                return null;
+            }
+
+            @Override
+            public ClassLoader modClassLoader() {
+                return loader;
+            }
+
+            @Override
+            public boolean loading() {
+                return true;
+            }
+
+            @Override
+            public Side side() {
+                return Side.CLIENT;
+            }
+        });
+        Configuration second = ConfigManager.getConfiguration(TestConfig.class.getAnnotation(Config.class));
+
+        assertSame(first, second, "the same file must not become two Configuration objects");
+        assertEquals(5, second.getCategory("general").get("count").getInt());
+    }
+
+    /**
      * The reason {@link Config.Storage#USER} exists: one file for every instance on the machine. The instance's own
      * {@code config/} still holds a file of the same name and is simply not this config.
      */

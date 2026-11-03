@@ -13,12 +13,7 @@ import static org.lwjgl.sdl.SDLInit.SDL_PROP_APP_METADATA_URL_STRING;
 import static org.lwjgl.sdl.SDLInit.SDL_SetAppMetadata;
 import static org.lwjgl.sdl.SDLInit.SDL_SetAppMetadataProperty;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -38,7 +33,6 @@ import org.lwjgl.system.Platform;
 import org.lwjgl.system.Pointer;
 
 import net.minecraftforge.common.LoaderVersion;
-import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.common.ForgeEarlyConfig;
 import net.minecraftforge.fml.common.FMLLog;
 
@@ -142,7 +136,7 @@ public class Sys {
      * @return the driver handed to SDL, or {@code null} when SDL should pick one itself
      */
     private static String applyLinuxVideoDriverHint() {
-        final String configured = readConfiguredLinuxVideoDriver();
+        final String configured = ForgeEarlyConfig.linuxVideoDriver;
         final String requested = configured == null ? "auto" : configured.trim().toLowerCase(Locale.ENGLISH);
         final String driver = switch (requested) {
             case "x11", "xorg" -> "x11";
@@ -157,31 +151,6 @@ public class Sys {
             SDLHints.SDL_SetHint(SDLHints.SDL_HINT_VIDEO_DRIVER, driver);
         }
         return driver;
-    }
-
-    /**
-     * Reads the driver preference straight out of {@code forge_early.cfg}: the window is created before
-     * {@code ConfigManager} syncs {@link ForgeEarlyConfig}, so the field still holds the default at this point.
-     * Anything unreadable falls back to the field, which keeps the option visible in the config file and GUI.
-     */
-    private static String readConfiguredLinuxVideoDriver() {
-        final File file = new File(Launch.minecraftHome, "config" + File.separator + "forge_early.cfg");
-        if (!file.isFile()) {
-            return ForgeEarlyConfig.LINUX_VIDEO_DRIVER;
-        }
-        try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                final String trimmed = line.trim();
-                if (!trimmed.startsWith("S:LINUX_VIDEO_DRIVER=") && !trimmed.startsWith("B:LINUX_VIDEO_DRIVER=")) {
-                    continue;
-                }
-                return trimmed.substring(trimmed.indexOf('=') + 1).trim();
-            }
-        } catch (IOException e) {
-            FMLLog.log.warn("Could not read LINUX_VIDEO_DRIVER from {}, using the default", file, e);
-        }
-        return ForgeEarlyConfig.LINUX_VIDEO_DRIVER;
     }
 
     private static boolean isWaylandSession() {

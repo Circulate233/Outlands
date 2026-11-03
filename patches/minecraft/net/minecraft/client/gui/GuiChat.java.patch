@@ -168,7 +168,7 @@
                  super.complete();
  
 -                if (this.completions.size() > 1)
-+                if (!ForgeEarlyConfig.COMMAND_COMPLETION && this.completions.size() > 1)
++                if (!ForgeEarlyConfig.commandCompletion && this.completions.size() > 1)
                  {
                      StringBuilder stringbuilder = new StringBuilder();
  

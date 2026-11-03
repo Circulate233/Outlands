@@ -70,7 +70,7 @@ public class LibraryManager
      */
     private static boolean oneLevelScan()
     {
-        return ForgeEarlyConfig.MOD_SCAN_DEPTH == ForgeEarlyConfig.ModScanDepth.ONE_LEVEL;
+        return ForgeEarlyConfig.modScanDepth == ForgeEarlyConfig.ModScanDepth.ONE_LEVEL;
     }
 
     public static final Attributes.Name MODSIDE = JarDeclaration.MANIFEST_SIDE;
