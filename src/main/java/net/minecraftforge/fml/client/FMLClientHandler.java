@@ -37,8 +37,6 @@ import java.util.function.Predicate;
 
 import net.minecraftforge.client.modlist.ModListConfig;
 import net.minecraftforge.client.modlist.screen.ModListScreen;
-import net.minecraftforge.fml.common.PatchModPresentChecker;
-import net.minecraftforge.fml.common.discovery.ModDiscoverer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.Gui;
@@ -219,18 +217,6 @@ public class FMLClientHandler implements IFMLSidedHandler
         detectOptifine();
         SplashProgress.start();
         client = minecraft;
-
-        if (PatchModPresentChecker.isNotPresent() && ModDiscoverer.instance().hasForgeMods())
-        {
-            String warning = PatchModPresentChecker.getWarningMessage();
-            String prompt = "Press any key to continue, ESC to exit.";
-
-            if (!SplashProgress.confirm(warning, prompt))
-            {
-                SplashProgress.finish();
-                System.exit(0);
-            }
-        }
 
         this.resourcePackList = resourcePackList;
         this.metaSerializer = metaSerializer;

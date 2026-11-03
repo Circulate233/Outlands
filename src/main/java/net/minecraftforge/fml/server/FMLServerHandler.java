@@ -26,8 +26,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import net.minecraftforge.fml.common.PatchModPresentChecker;
-import net.minecraftforge.fml.common.discovery.ModDiscoverer;
 import net.minecraft.network.INetHandler;
 import net.minecraft.network.NetHandlerPlayServer;
 import net.minecraft.network.NetworkManager;
@@ -97,16 +95,6 @@ public class FMLServerHandler implements IFMLSidedHandler
     public void beginServerLoading(MinecraftServer minecraftServer)
     {
         server = minecraftServer;
-
-        if (PatchModPresentChecker.isNotPresent() && ModDiscoverer.instance().hasForgeMods())
-        {
-            String text = PatchModPresentChecker.getWarningMessage() + "\n\n"
-                + "Run the command /fml confirm to proceed, or /fml cancel to abort.";
-            if (!StartupQuery.confirm(text))
-            {
-                StartupQuery.abort();
-            }
-        }
 
         Loader.instance().loadMods(injectedModContainers);
 

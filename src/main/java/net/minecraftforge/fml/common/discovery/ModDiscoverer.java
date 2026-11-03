@@ -110,14 +110,8 @@ public final class ModDiscoverer {
 
     private List<File> nonModLibs = List.of();
 
-    private boolean hasForgeMods;
-
     private ModDiscoverer() {
         this.discover();
-    }
-
-    public boolean hasForgeMods() {
-        return hasForgeMods;
     }
 
     public boolean isModPresent(String modId) {
@@ -450,10 +444,6 @@ public final class ModDiscoverer {
                 coremod,
                 tweaker);
         discoveredFiles.put(absolute, info);
-
-        if (!hasForgeMods && ManifestAttributes.FORGEMODTYPE.equals(info.modType())) {
-            hasForgeMods = true;
-        }
     }
 
     /** @return the jar section of {@code file}, or {@code null} when it declares none */
