@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026.11.03] - 2026-11-03
+### New Features
+- [`04a90a4`](https://github.com/Project-Outlands/Outlands/commit/04a90a4e332f2f87b6d61cc8beb8d9220f72986c) - declare mixin configurations in the jar section *(PR [#47](https://github.com/Project-Outlands/Outlands/pull/47) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`c0a2b1a`](https://github.com/Project-Outlands/Outlands/commit/c0a2b1a2df5c795c66eb6eb95477405fc1da013a) - declare dependencies in a mod entry as one object per dependency *(PR [#45](https://github.com/Project-Outlands/Outlands/pull/45) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`dc77147`](https://github.com/Project-Outlands/Outlands/commit/dc771473a68c8b30bbd0602a3bc84c59df08ff70) - read dependency lists from the entry whenever the jar section is declared *(PR [#44](https://github.com/Project-Outlands/Outlands/pull/44) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Bug Fixes
+- [`691fab8`](https://github.com/Project-Outlands/Outlands/commit/691fab8b70cfd656001d7504095f930d9b959fc0) - read the jar section with the types it declares *(PR [#43](https://github.com/Project-Outlands/Outlands/pull/43) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`ceba6d2`](https://github.com/Project-Outlands/Outlands/commit/ceba6d2a2374c0282a0a021c3893bc7afb50f3db) - extract the bundled jars of mods that belong to no mod list *(PR [#42](https://github.com/Project-Outlands/Outlands/pull/42) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+
 ## [2026.11.02] - 2026-11-02
 ### New Features
 - [`40bcfbb`](https://github.com/Project-Outlands/Outlands/commit/40bcfbb593b2fb639f505245447db8d78e5a4a3c) - move the coremod keys into the jar section and read mcmod.info once *(PR [#41](https://github.com/Project-Outlands/Outlands/pull/41) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
@@ -405,3 +416,4 @@ net.minecraftforge.* only. *(commit by [@kappa-maintainer](https://github.com/ka
 [2026.10.29]: https://github.com/Project-Outlands/Outlands/compare/2026.10.26...2026.10.29
 [2026.11.01]: https://github.com/Project-Outlands/Outlands/compare/2026.10.29...2026.11.01
 [2026.11.02]: https://github.com/Project-Outlands/Outlands/compare/2026.11.01...2026.11.02
+[2026.11.03]: https://github.com/Project-Outlands/Outlands/compare/2026.11.02...2026.11.03
