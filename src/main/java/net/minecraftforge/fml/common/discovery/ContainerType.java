@@ -23,6 +23,17 @@ import java.util.List;
 
 import net.minecraftforge.fml.common.ModContainer;
 
+/**
+ * How a candidate's contents are found: a jar, a directory, or a type a mod added.
+ *
+ * <p>An enum on purpose, and it has to stay one. Mods extend it at runtime - {@code EnumHelper.addEnum(ContainerType.class,
+ * name, new Class[]{Class.class}, new Object[]{myDiscovererClass})}, which lands in {@code $VALUES} through
+ * {@code EnumHackery} - and then hand the constant to {@code ModCandidate}'s public constructors, whose {@code findMods}
+ * dispatches to that mod's own {@link ITypeDiscoverer}. That contract is tied to the enum: {@code EnumHelper.addEnum}
+ * takes a {@code Class<T extends Enum<?>>} at compile time, and mod bytecode reaches the constants through
+ * {@code values()}, {@code valueOf()}, {@code ordinal()} and {@code switch}. Replacing this with a registry would delete
+ * the extension point instead of modernising it, so it stays - see {@code SlotTable} for the sets that can move.
+ */
 public enum ContainerType
 {
     JAR(JarDiscoverer.class),

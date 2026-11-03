@@ -80,7 +80,7 @@ public class FMLLaunchHandler
         this.classLoader.addTransformerExclusion("org.spongepowered.asm.util.");
         this.classLoader.addTransformerExclusion("org.spongepowered.asm.lib.");
         this.classLoader.addTransformerExclusion("org.objectweb.asm.");
-        this.classLoader.addTransformerExclusion("net.minecraftforge.fml.common.registry.FrozenRegistry");
+        this.classLoader.addTransformerExclusion("net.minecraftforge.fml.common.util.SlotTable");
         this.classLoader.addTransformerExclusion("net.minecraftforge.fml.relauncher.");
         this.classLoader.addTransformerExclusion("net.minecraftforge.classloading.");
         this.classLoader.addTransformerExclusion("net.minecraftforge.fml.common.asm.transformers.");

@@ -3,7 +3,7 @@ package net.minecraftforge.fml.common;
 import java.util.List;
 import java.util.Map;
 
-import net.minecraftforge.fml.common.registry.FrozenRegistry;
+import net.minecraftforge.fml.common.util.SlotTable;
 
 import net.minecraftforge.fml.common.discovery.JarDeclaration;
 
@@ -12,9 +12,10 @@ import javax.annotation.Nullable;
 /**
  * Maps a {@code modLanguage} name to the adapter that knows how to construct that language's mod instances.
  *
- * <p>One registry, one way in: {@link #registerLanguageAdapter}. The loader's own adapters (today only {@code java}) use it
- * directly; a language a jar provides is first declared ({@link #declareProviders}) and then registered the same way when
- * something asks for it, which is also when it is instantiated.
+ * <p>One registry, one way in: {@link #registerLanguageAdapter}. The loader's own adapters (today only {@code java})
+ * are registered as the built-in entry, so they keep slot 0; a language a jar provides is first declared
+ * ({@link #declareProviders}) and then registered the same way when something asks for it, which is also when it is
+ * instantiated.
  *
  * <p>Declaring is the only way a jar can provide a language. There is deliberately no public method that hands over a
  * live adapter instance: the claim "this jar provides scala" belongs with the jar, where it is discoverable, travels
@@ -32,8 +33,8 @@ import javax.annotation.Nullable;
  */
 public final class LanguageAdapterRegistry {
 
-    private static final FrozenRegistry<ILanguageAdapter> ADAPTERS =
-            new FrozenRegistry<>("language adapters", ILanguageAdapter.class);
+    private static final SlotTable<ILanguageAdapter> ADAPTERS =
+            new SlotTable<>("language adapters", ILanguageAdapter.class);
 
     /** The adapter used for {@code java}. */
     private static final ILanguageAdapter JAVA = new ILanguageAdapter.JavaAdapter();
@@ -42,7 +43,11 @@ public final class LanguageAdapterRegistry {
     private static final LanguageProviderDeclarations DECLARED = new LanguageProviderDeclarations();
 
     static {
-        registerLanguageAdapter("java", JAVA);
+        // Built-in, so it keeps slot 0 the way the fixed set did before; everything a jar declares is registered
+        // after this prefix.
+        ADAPTERS.registerBuiltin("java", JAVA);
+        ADAPTERS.freezeBuiltins();
+        FMLLog.log.debug("Registering language adapter {} for language java.", JAVA.getClass().getName());
     }
 
     private LanguageAdapterRegistry() {
@@ -79,12 +84,12 @@ public final class LanguageAdapterRegistry {
     public static void declareProviders(JarDeclaration declaration, String jarPath) {
         for (Map.Entry<String, String> entry : declaration.providers().entrySet()) {
             String language = entry.getKey();
-            int slot = ADAPTERS.slotOf(language);
-            if (slot != -1) {
+            ILanguageAdapter registered = ADAPTERS.get(language);
+            if (registered != null) {
                 // Covers "java" too: it is registered by this class, so a jar claiming it is claiming to replace the
                 // adapter that reads plain Java entry classes. That would be a silent global change to every mod.
                 throw new LoaderException("The jar " + jarPath + " declares a language provider for '" + language
-                        + "', but an adapter for it is already registered (" + ADAPTERS.get(slot).getClass().getName()
+                        + "', but an adapter for it is already registered (" + registered.getClass().getName()
                         + "). Only one adapter can serve a language; remove the declaration from the jar.");
             }
             DECLARED.declare(language, entry.getValue(), jarPath,
@@ -130,9 +135,9 @@ public final class LanguageAdapterRegistry {
         String id = language == null || language.isBlank()
                 ? ModLanguageDeclaration.DEFAULT_LANGUAGE
                 : language.trim();
-        int slot = ADAPTERS.slotOf(id);
-        if (slot != -1) {
-            return ADAPTERS.get(slot);
+        ILanguageAdapter registered = ADAPTERS.get(id);
+        if (registered != null) {
+            return registered;
         }
         LanguageProviderDeclarations.Declaration declared = DECLARED.declarationFor(id);
         if (declared != null) {
@@ -202,7 +207,7 @@ public final class LanguageAdapterRegistry {
             message.append("Mod '").append(modId).append("' (").append(sourceName).append(") declares modLanguage '")
                     .append(language).append("', but no adapter is registered for it.\n");
         }
-        message.append("  Known languages: ").append(ADAPTERS.describeContents()).append('\n');
+        message.append("  Known languages: ").append(knownLanguages()).append('\n');
         message.append("  Providers declared in this instance:\n").append(DECLARED.describe()).append('\n');
         message.append("  Fix: install a jar that declares jar.providers.").append(language)
                 .append(", or set modLanguageAdapter to the full class name of an ")
@@ -210,6 +215,12 @@ public final class LanguageAdapterRegistry {
                 .append(", or set modLanguage to \"").append(ModLanguageDeclaration.DEFAULT_LANGUAGE)
                 .append("\" if the entry class is a plain Java-style class.");
         return message.toString();
+    }
+
+    /** @return the registered languages, or {@code none} when the table is empty */
+    private static String knownLanguages() {
+        List<String> ids = ADAPTERS.ids();
+        return ids.isEmpty() ? "none" : String.join(", ", ids);
     }
 
     /** Closes the registry. Called once discovery has built every container. */
