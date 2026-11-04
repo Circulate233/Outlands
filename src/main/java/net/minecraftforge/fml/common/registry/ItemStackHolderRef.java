@@ -21,11 +21,11 @@ package net.minecraftforge.fml.common.registry;
 
 import java.lang.reflect.Field;
 
-import net.minecraftforge.hackery.ReflectionHackery;
 import net.lenni0451.reflect.Classes;
 import net.lenni0451.reflect.Fields;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.FMLLog;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 /**
  * Internal class used in tracking {@link GameRegistry.ItemStackHolder} references
@@ -57,7 +57,7 @@ class ItemStackHolderRef {
             // Same compatibility path as @ObjectHolder: non-final is the shape to declare, final still works.
             if (java.lang.reflect.Modifier.isFinal(f.getModifiers()))
             {
-                ReflectionHackery.stripFieldOfFinalModifier(f);
+                ObfuscationReflectionHelper.removeFinalModifier(f);
             }
         }
         catch (ReflectiveOperationException e)
@@ -81,7 +81,6 @@ class ItemStackHolderRef {
         {
             Classes.ensureInitialized(field.getDeclaringClass());
             Fields.setObject(null, field, is);
-            //field.set(null, is);
         }
         catch (Exception e)
         {

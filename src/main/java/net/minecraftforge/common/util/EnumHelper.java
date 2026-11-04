@@ -23,10 +23,10 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.BiPredicate;
 
-import net.minecraftforge.hackery.enums.EnumHackery;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 
+import net.lenni0451.reflect.Enums;
 import net.lenni0451.reflect.Fields;
 import net.minecraftforge.fml.common.EnhancedRuntimeException;
 import net.minecraftforge.fml.common.FMLLog;
@@ -83,68 +83,68 @@ public class EnumHelper
     @Nullable
     public static EnumAction addAction(String name)
     {
-        return EnumHackery.addEnumEntry(EnumAction.class, name);
+        return addEnumEntry(EnumAction.class, name);
     }
     @Nullable
     public static ArmorMaterial addArmorMaterial(String name, String textureName, int durability, int[] reductionAmounts, int enchantability, SoundEvent soundOnEquip, float toughness)
     {
-        return EnumHackery.addEnumEntry(ArmorMaterial.class, name,
+        return addEnumEntry(ArmorMaterial.class, name,
                 new Class<?>[] { String.class, int.class, int[].class, int.class, SoundEvent.class, float.class },
                 new Object[] { textureName, durability, reductionAmounts, enchantability, soundOnEquip, toughness });
     }
     @Nullable
     public static EnumArt addArt(String name, String tile, int sizeX, int sizeY, int offsetX, int offsetY)
     {
-        return EnumHackery.addEnumEntry(EnumArt.class, name,
+        return addEnumEntry(EnumArt.class, name,
                 new Class<?>[] { String.class, int.class, int.class, int.class, int.class },
                 new Object[] { tile, sizeX, sizeY, offsetX, offsetY });
     }
     @Nullable
     public static EnumCreatureAttribute addCreatureAttribute(String name)
     {
-        return EnumHackery.addEnumEntry(EnumCreatureAttribute.class, name);
+        return addEnumEntry(EnumCreatureAttribute.class, name);
     }
     @Nullable
     public static EnumCreatureType addCreatureType(String name, Class<? extends IAnimals> typeClass, int maxNumber, Material material, boolean peaceful, boolean animal)
     {
-        return EnumHackery.addEnumEntry(EnumCreatureType.class, name,
+        return addEnumEntry(EnumCreatureType.class, name,
                 new Class<?>[] { Class.class, int.class, Material.class, boolean.class, boolean.class },
                 new Object[] { typeClass, maxNumber, material, peaceful, animal });
     }
     @Nullable
     public static Door addDoor(String name)
     {
-        return EnumHackery.addEnumEntry(Door.class, name);
+        return addEnumEntry(Door.class, name);
     }
     @Nullable
     public static EnumEnchantmentType addEnchantmentType(String name, Predicate<Item> delegate)
     {
-        return EnumHackery.addEnumEntry(EnumEnchantmentType.class, name, new Class<?>[] { Predicate.class }, new Object[] { delegate });
+        return addEnumEntry(EnumEnchantmentType.class, name, new Class<?>[] { Predicate.class }, new Object[] { delegate });
     }
     @Nullable
     public static Sensitivity addSensitivity(String name)
     {
-        return EnumHackery.addEnumEntry(Sensitivity.class, name);
+        return addEnumEntry(Sensitivity.class, name);
     }
     @Nullable
     public static RayTraceResult.Type addMovingObjectType(String name)
     {
-        return EnumHackery.addEnumEntry(RayTraceResult.Type.class, name);
+        return addEnumEntry(RayTraceResult.Type.class, name);
     }
     @Nullable
     public static EnumSkyBlock addSkyBlock(String name, int lightValue)
     {
-        return EnumHackery.addEnumEntry(EnumSkyBlock.class, name, new Class<?>[] { int.class }, new Object[] { lightValue });
+        return addEnumEntry(EnumSkyBlock.class, name, new Class<?>[] { int.class }, new Object[] { lightValue });
     }
     @Nullable
     public static SleepResult addStatus(String name)
     {
-        return EnumHackery.addEnumEntry(SleepResult.class, name);
+        return addEnumEntry(SleepResult.class, name);
     }
     @Nullable
     public static ToolMaterial addToolMaterial(String name, int harvestLevel, int maxUses, float efficiency, float damage, int enchantability)
     {
-        return EnumHackery.addEnumEntry(ToolMaterial.class, name,
+        return addEnumEntry(ToolMaterial.class, name,
                 new Class<?>[] { int.class, int.class, float.class, float.class, int.class },
                 new Object[] { harvestLevel, maxUses, efficiency, damage, enchantability });
     }
@@ -154,13 +154,13 @@ public class EnumHelper
     @Deprecated
     public static EnumRarity addRarity(String name, TextFormatting color, String displayName)
     {
-        return EnumHackery.addEnumEntry(EnumRarity.class, name, new Class<?>[] { TextFormatting.class, String.class }, new Object[] { color, displayName });
+        return addEnumEntry(EnumRarity.class, name, new Class<?>[] { TextFormatting.class, String.class }, new Object[] { color, displayName });
     }
 
     @Nullable
     public static EntityLiving.SpawnPlacementType addSpawnPlacementType(String name, BiPredicate<IBlockAccess, BlockPos> predicate)
     {
-        return EnumHackery.addEnumEntry(EntityLiving.SpawnPlacementType.class, name, new Class<?>[] { BiPredicate.class }, new Object[] { predicate });
+        return addEnumEntry(EntityLiving.SpawnPlacementType.class, name, new Class<?>[] { BiPredicate.class }, new Object[] { predicate });
     }
 
     /**
@@ -173,7 +173,7 @@ public class EnumHelper
     @Nullable 
     public static HorseArmorType addHorseArmor(String name, String textureLocation, int armorStrength)
     {
-        return EnumHackery.addEnumEntry(HorseArmorType.class, name, new Class<?>[] { String.class, int.class }, new Object[] { textureLocation, armorStrength });
+        return addEnumEntry(HorseArmorType.class, name, new Class<?>[] { String.class, int.class }, new Object[] { textureLocation, armorStrength });
     }
 
     public static void setFailsafeFieldValue(Field field, @Nullable Object target, @Nullable Object value) throws Exception
@@ -285,8 +285,38 @@ public class EnumHelper
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <T extends Enum<? >> T addEnum(Class<T> enumType, String enumName, Class<?>[] paramTypes, Object... paramValues)
     {
-        return (T) EnumHackery.addEnumEntry((Class<? extends Enum>) enumType, enumName, paramTypes, paramValues);
+        return (T) addEnumEntry((Class<? extends Enum>) enumType, enumName, paramTypes, paramValues);
     }
 
+    /**
+     * Creates a new constant without constructor arguments and appends it to {@code enumClass}.
+     *
+     * @param enumClass the enum to extend
+     * @param enumName  the name of the new constant
+     * @return the new constant, already visible through {@code values()} and {@code valueOf(String)}
+     */
+    public static <T extends Enum<T>> T addEnumEntry(Class<T> enumClass, String enumName)
+    {
+        return addEnumEntry(enumClass, enumName, new Class[0], new Object[0]);
+    }
+
+    /**
+     * Creates a new constant and appends it to {@code enumClass}.
+     *
+     * <p>The constant is built with {@link Enums#newInstance} and pushed into the synthetic {@code $VALUES} array
+     * through {@link Enums#addEnumInstance}, so it is indistinguishable from a declared one afterwards.
+     *
+     * @param enumClass       the enum to extend
+     * @param enumName        the name of the new constant
+     * @param parameterTypes  the constructor parameter types, without the leading {@code String}/{@code int}
+     * @param parameterValues the constructor arguments, matching {@code parameterTypes}
+     * @return the new constant, already visible through {@code values()} and {@code valueOf(String)}
+     */
+    public static <T extends Enum<T>> T addEnumEntry(Class<T> enumClass, String enumName, Class<?>[] parameterTypes, Object[] parameterValues)
+    {
+        T o = Enums.newInstance(enumClass, enumName, enumClass.getEnumConstants().length, parameterTypes, parameterValues);
+        Enums.addEnumInstance(enumClass, o);
+        return o;
+    }
 
 }

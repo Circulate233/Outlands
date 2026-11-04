@@ -82,7 +82,8 @@ public class EnumHelperTest
         for (Method method : mtds)
         {
             String name = method.getName();
-            if (!name.equals("addEnum") && name.startsWith("add") && Modifier.isPublic(method.getModifiers()))
+            //addEnum and addEnumEntry are the generic entry points, not per-enum accessors: they take the target class
+            if (!name.equals("addEnum") && !name.equals("addEnumEntry") && name.startsWith("add") && Modifier.isPublic(method.getModifiers()))
             {
                 //System.out.println("  " + method);
 

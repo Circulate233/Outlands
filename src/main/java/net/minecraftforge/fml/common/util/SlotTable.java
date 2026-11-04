@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
  *
  * <p>Written for the set that would otherwise be an {@code enum} but cannot stay one: a handful of entries that are
  * fixed when the loader is written, that code outside the loader has a legitimate reason to add to, and that must be
- * closed before anything is constructed from it. {@code EnumHelper}/{@code EnumHackery} is what that shape costs when it
+ * closed before anything is constructed from it. {@code EnumHelper} is what that shape costs when it
  * is spelled as an enum - new entries have to be pushed into the enum class at runtime - so a loader-owned set of that
  * shape uses this instead, and the values it holds are ordinary objects.
  *
@@ -38,7 +38,7 @@ import javax.annotation.Nullable;
  * require the enum. This is for the loader's own tables, whose entries nothing outside the loader is compiled against.
  *
  * <p>{@code net.minecraftforge.fml.common.discovery.ContainerType} is the documented example of a set that has to stay
- * an enum for a different reason: mods add types to it through {@code EnumHelper.addEnum}/{@code EnumHackery} and pass
+ * an enum for a different reason: mods add types to it through {@code EnumHelper.addEnum} and pass
  * them to {@code ModCandidate}'s public constructors. Moving it here would delete that extension point rather than
  * modernise it - see the note on that enum.
  *

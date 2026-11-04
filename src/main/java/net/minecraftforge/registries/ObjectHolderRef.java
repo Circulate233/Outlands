@@ -25,10 +25,12 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import net.minecraftforge.hackery.ReflectionHackery;
+import net.lenni0451.reflect.Classes;
+import net.lenni0451.reflect.Fields;
 import net.minecraft.util.ResourceLocation;
 
 import net.minecraftforge.fml.common.FMLLog;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
 
@@ -90,7 +92,7 @@ class ObjectHolderRef
             // mods that already declare @ObjectHolder fields as "public static final".
             if (Modifier.isFinal(field.getModifiers()))
             {
-                ReflectionHackery.stripFieldOfFinalModifier(field);
+                ObfuscationReflectionHelper.removeFinalModifier(field);
             }
         }
         catch (ReflectiveOperationException e)
@@ -148,7 +150,11 @@ class ObjectHolderRef
         }
         try
         {
-            ReflectionHackery.setField(field, null, thing);
+            // <clinit> has to have run, or a later one overwrites what is written here. The write itself goes through
+            // Unsafe: a static final field cannot be assigned with Field.set, and clearing the FINAL bit on the
+            // Field object does not change the classfile flag the JVM checks for putstatic.
+            Classes.ensureInitialized(field.getDeclaringClass());
+            Fields.set(null, field, thing);
         }
         catch (IllegalArgumentException e)
         {

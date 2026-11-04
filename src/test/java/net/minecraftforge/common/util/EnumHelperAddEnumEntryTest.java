@@ -1,6 +1,5 @@
-package net.minecraftforge.hackery;
+package net.minecraftforge.common.util;
 
-import net.minecraftforge.hackery.enums.EnumHackery;
 import net.lenni0451.reflect.Constructors;
 import net.minecraft.item.ItemStack;
 import org.junit.jupiter.api.Test;
@@ -9,7 +8,11 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class EnumHackeryTest {
+/**
+ * Covers {@link EnumHelper#addEnumEntry}, the reflective entry point {@code EnumHelper}'s {@code addXxx} methods and
+ * {@code EnumHelperClient} are built on.
+ */
+public class EnumHelperAddEnumEntryTest {
 
     public enum TestEnum {
 
@@ -60,7 +63,7 @@ public class EnumHackeryTest {
     @Test
     public void testAddEnumEntryWithoutParameters() {
         TestEnum[] oldValues = TestEnum.values();
-        TestEnum three = EnumHackery.addEnumEntry(TestEnum.class, "THREE");
+        TestEnum three = EnumHelper.addEnumEntry(TestEnum.class, "THREE");
         TestEnum[] newValues = TestEnum.values();
         assertNotNull(Enum.valueOf(TestEnum.class, "THREE"));
         assertEquals(Enum.valueOf(TestEnum.class, "THREE"), three);
@@ -72,8 +75,8 @@ public class EnumHackeryTest {
     @Test
     public void testAddEnumEntryWithParameters() {
         CtorTestEnum[] oldValues = CtorTestEnum.values();
-        CtorTestEnum three = EnumHackery.addEnumEntry(CtorTestEnum.class, "THREE", new Class<?>[] { String.class }, new Object[] { "three" });
-        CtorTestEnum four = EnumHackery.addEnumEntry(CtorTestEnum.class, "FOUR", new Class<?>[] { String.class }, new Object[] { "four" });
+        CtorTestEnum three = EnumHelper.addEnumEntry(CtorTestEnum.class, "THREE", new Class<?>[] { String.class }, new Object[] { "three" });
+        CtorTestEnum four = EnumHelper.addEnumEntry(CtorTestEnum.class, "FOUR", new Class<?>[] { String.class }, new Object[] { "four" });
         CtorTestEnum[] newValues = CtorTestEnum.values();
         assertNotNull(Enum.valueOf(CtorTestEnum.class, "THREE"));
         assertEquals(Enum.valueOf(CtorTestEnum.class, "THREE"), three);
@@ -90,7 +93,7 @@ public class EnumHackeryTest {
     @Test
     public void testAddEnumEntryWithMassiveParameters() {
         MassiveTestEnum[] oldValues = MassiveTestEnum.values();
-        MassiveTestEnum obsidian = EnumHackery.addEnumEntry(MassiveTestEnum.class, "OBSIDIAN", new Class<?>[] { String.class, int.class, int[].class }, new Object[] {"obsidian", 40, new int[]{1, 1, 1, 1}});
+        MassiveTestEnum obsidian = EnumHelper.addEnumEntry(MassiveTestEnum.class, "OBSIDIAN", new Class<?>[] { String.class, int.class, int[].class }, new Object[] {"obsidian", 40, new int[]{1, 1, 1, 1}});
         MassiveTestEnum[] newValues = MassiveTestEnum.values();
         assertNotNull(Enum.valueOf(MassiveTestEnum.class, "OBSIDIAN"));
         assertEquals(Enum.valueOf(MassiveTestEnum.class, "OBSIDIAN"), obsidian);
@@ -111,8 +114,8 @@ public class EnumHackeryTest {
         Arrays.stream(Constructors.getDeclaredConstructors(VarargTestEnum.class)).forEach(System.out::println);
         System.out.println("==============================");
         VarargTestEnum[] oldValues = VarargTestEnum.values();
-        VarargTestEnum three = EnumHackery.addEnumEntry(VarargTestEnum.class, "THREE", new Class<?>[] { String.class, String[].class }, new Object[] { "three", new String[] { "test5", "test6" } });
-        VarargTestEnum four = EnumHackery.addEnumEntry(VarargTestEnum.class, "FOUR", new Class<?>[] { String.class, String[].class }, new Object[] { "four", new String[] { "test7", "test8", "test9" } });
+        VarargTestEnum three = EnumHelper.addEnumEntry(VarargTestEnum.class, "THREE", new Class<?>[] { String.class, String[].class }, new Object[] { "three", new String[] { "test5", "test6" } });
+        VarargTestEnum four = EnumHelper.addEnumEntry(VarargTestEnum.class, "FOUR", new Class<?>[] { String.class, String[].class }, new Object[] { "four", new String[] { "test7", "test8", "test9" } });
         VarargTestEnum[] newValues = VarargTestEnum.values();
         assertNotNull(Enum.valueOf(VarargTestEnum.class, "THREE"));
         assertEquals(Enum.valueOf(VarargTestEnum.class, "THREE"), three);

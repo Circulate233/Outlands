@@ -22,8 +22,10 @@ package net.minecraftforge.fml.common;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
+import net.lenni0451.reflect.Fields;
 import net.minecraftforge.fml.common.asm.transformers.deobf.FMLDeobfuscatingRemapper;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.ReflectionHelper.UnableToAccessFieldException;
@@ -192,5 +194,51 @@ public class ObfuscationReflectionHelper
     public static <T> Constructor<T> findConstructor(Class<T> klass, Class<?>... parameterTypes)
     {
         return ReflectionHelper.findConstructor(klass, parameterTypes);
+    }
+
+    /**
+     * {@code Field.modifiers}, resolved once.
+     *
+     * <p>Looked up through the native field listing rather than {@link Class#getDeclaredField}, which hides it on
+     * modern JDKs. Making it accessible still needs {@code java.base} to be open to the loader, which is what
+     * {@code Foundation.breakModuleAndReflection()} arranges at startup.
+     */
+    private static final Field field$modifiers = findModifiersField();
+
+    private static Field findModifiersField()
+    {
+        Field modifiers = Fields.getDeclaredField(Field.class, "modifiers");
+        if (modifiers == null)
+        {
+            try
+            {
+                modifiers = Field.class.getDeclaredField("modifiers");
+            }
+            catch (ReflectiveOperationException e)
+            {
+                throw new IllegalStateException("Could not locate Field.modifiers; the JDK's reflection internals moved", e);
+            }
+        }
+        modifiers.setAccessible(true);
+        return modifiers;
+    }
+
+    /**
+     * Clears {@code final} on a field so it can be written reflectively.
+     *
+     * <p><b>This only helps for instance fields.</b> The flag the JVM enforces for a static field lives in the
+     * classfile, not in the {@code Field} object, so a {@code static final} stays unwritable through {@link Field#set}
+     * even after this call - those need an {@code Unsafe} write (see {@code ObjectHolderRef}). What this does buy, in
+     * both cases, is a {@link Field#getModifiers()} that no longer reports {@code final}, which is what reflective
+     * access checks and a fair number of libraries look at.
+     *
+     * <p>Only call it when the field actually is final; writing a non-final field needs no modifier surgery.
+     *
+     * @param field the field to clear {@code final} on
+     * @throws IllegalAccessException kept for the callers written against the loader's original signature
+     */
+    public static void removeFinalModifier(Field field) throws IllegalAccessException
+    {
+        Fields.setInt(field, field$modifiers, field.getModifiers() & ~Modifier.FINAL);
     }
 }
