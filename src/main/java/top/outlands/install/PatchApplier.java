@@ -31,10 +31,10 @@ import net.minecraftforge.fml.repackage.com.nothome.delta.GDiffPatcher;
  * {@code top.outlands.foundation} before the game's class loader exists (see {@code docs/install-step.md} in the
  * Foundation repository for the whole model).
  *
- * <p>The output is an <b>overlay</b>: only the classes the patches rewrite, nothing else. That makes it provably
- * equivalent to what runtime patching produces for those classes, and it lets everything else keep coming from the
- * vanilla jar the launcher already has. A full jar would have to be assembled from our recompiled tree, which would
- * also shadow classes that differ by nothing but line tables.
+ * <p>The output is an <b>overlay</b>: only the classes the patches rewrite or add, nothing else. That makes it
+ * provably equivalent to what runtime patching produces for those classes, and it lets everything else keep coming
+ * from the vanilla jar the launcher already has. A full jar would have to be assembled from our recompiled tree,
+ * which would also shadow classes that differ by nothing but line tables.
  *
  * <p>The classpath of the JVM that runs this is just the loader jar and the LZMA decoder, so nothing here may touch
  * Guava, log4j or any other FML dependency.
@@ -51,15 +51,18 @@ public final class PatchApplier {
     /** Fixed entry time so the same inputs produce the same bytes, which keeps the marker meaningful. */
     private static final long ENTRY_TIME = 0L;
 
+    /** The input of a patch that creates its class: the diff was built against an absent file. */
+    private static final byte[] EMPTY_CLASS = new byte[0];
+
     private PatchApplier() {
     }
 
     /** What one run did, for the caller's log line and the marker. */
-    public record Report(int records, int written, int skipped, long classBytes) {
+    public record Report(int records, int written, int created, int skipped, long classBytes) {
         @Override
         public String toString() {
-            return records + " records, " + written + " written, " + skipped + " skipped, " + classBytes
-                    + " bytes of class data";
+            return records + " records, " + written + " written (" + created + " of them created), " + skipped
+                    + " skipped, " + classBytes + " bytes of class data";
         }
     }
 
@@ -78,30 +81,43 @@ public final class PatchApplier {
 
         final GDiffPatcher patcher = new GDiffPatcher();
         int written = 0;
+        int created = 0;
         int skipped = 0;
         long classBytes = 0L;
 
         try (ZipFile in = new ZipFile(input);
              JarOutputStream out = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(output)))) {
             for (ClassPatch patch : patches) {
-                if (!patch.existsAtTarget) {
-                    // The patches remove this class; there is nothing to write and nothing to read.
+                final byte[] bytes;
+                if (patch.existsAtTarget) {
+                    final ZipEntry source = in.getEntry(patch.name + ".class");
+                    if (source == null) {
+                        throw new IOException(patch.name + " is patched but missing from " + input.getName()
+                                + "; this is not the jar the patches were built against");
+                    }
+                    bytes = in.getInputStream(source).readAllBytes();
+                    final int checksum = adler32(bytes);
+                    if (patch.inputChecksum != 0 && checksum != patch.inputChecksum) {
+                        throw new IOException(String.format(
+                                "patch input checksum mismatch for %s: patch expects %s, jar has %s",
+                                patch.name, Integer.toHexString(patch.inputChecksum), Integer.toHexString(checksum)));
+                    }
+                } else {
+                    // 'No class at the target' means the patches add one: the diff runs from nothing to the whole
+                    // class, so there is no input to read and no checksum to compare. Skipping these leaves the
+                    // reference dangling - a patched class that gained an anonymous inner class refers to it, and
+                    // the runtime applier creates it (ClassPatchManager#applyPatch starts from an empty array).
+                    bytes = EMPTY_CLASS;
+                }
+                final byte[] patched = patcher.patch(bytes, patch.patch);
+                if (patched.length == 0) {
+                    // A diff down to nothing is a removal; there is no entry to write for it.
                     skipped++;
                     continue;
                 }
-                final ZipEntry source = in.getEntry(patch.name + ".class");
-                if (source == null) {
-                    throw new IOException(patch.name + " is patched but missing from " + input.getName()
-                            + "; this is not the jar the patches were built against");
+                if (!patch.existsAtTarget) {
+                    created++;
                 }
-                final byte[] bytes = in.getInputStream(source).readAllBytes();
-                final int checksum = adler32(bytes);
-                if (patch.inputChecksum != 0 && checksum != patch.inputChecksum) {
-                    throw new IOException(String.format(
-                            "patch input checksum mismatch for %s: patch expects %s, jar has %s",
-                            patch.name, Integer.toHexString(patch.inputChecksum), Integer.toHexString(checksum)));
-                }
-                final byte[] patched = patcher.patch(bytes, patch.patch);
                 final JarEntry entry = new JarEntry(patch.name + ".class");
                 entry.setTime(ENTRY_TIME);
                 out.putNextEntry(entry);
@@ -111,7 +127,7 @@ public final class PatchApplier {
                 written++;
             }
         }
-        return new Report(patches.size(), written, skipped, classBytes);
+        return new Report(patches.size(), written, created, skipped, classBytes);
     }
 
     public static void main(String[] args) {
