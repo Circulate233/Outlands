@@ -25,8 +25,6 @@ import net.minecraftforge.client.modlist.LegacyModListScreen;
 import net.minecraftforge.client.modlist.ModListConfig;
 import net.minecraftforge.client.modlist.ModListConstants;
 import net.minecraftforge.client.modlist.screen.ModListScreen;
-import net.minecraftforge.client.windows.TaskbarApi;
-import net.minecraftforge.client.windows.WindowsProperties;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.gui.GuiMainMenu;
@@ -36,7 +34,6 @@ import net.minecraft.client.gui.inventory.GuiEditSign;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntityFurnace;
-import net.minecraft.util.Util;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.translation.I18n;
 import net.minecraftforge.client.event.ColorHandlerEvent;
@@ -49,10 +46,14 @@ import net.minecraftforge.common.config.ConfigManager;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent;
+import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.oredict.OreDictionary;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.sdl.SDLError;
+import org.lwjgl.sdl.SDLVideo;
 
 import java.util.Arrays;
 import java.util.List;
@@ -139,17 +140,23 @@ public class ForgeClientHandler
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onGuiOpenLast(GuiOpenEvent event)
     {
-        if (Util.getOSType().equals(Util.EnumOS.WINDOWS))
+        // The window is the only thing that can still be missing here: the main menu is reached long after the
+        // window exists, but a shutdown in progress clears it. Asking Display instead of caching a handle keeps
+        // this from flashing a window that has already been destroyed.
+        if (event.getGui() instanceof GuiMainMenu && !played && Display.isCreated())
         {
-            if (event.getGui() instanceof GuiMainMenu && !played)
+            if (!ForgeEarlyConfig.modernWindowsStyles.disableFlashAfterLoaded)
             {
-                if (WindowsProperties.handle == Long.MIN_VALUE) return;
-                if (!ForgeEarlyConfig.modernWindowsStyles.disableFlashAfterLoaded)
+                // SDL maps this onto each desktop's own attention request: FlashWindowEx on Windows, an
+                // urgency hint on X11, the activation protocol on Wayland, requestUserAttention on macOS.
+                // A desktop that cannot do it is not a reason to fail the launch: the flash is cosmetic.
+                if (!SDLVideo.SDL_FlashWindow(Display.getWindow(), SDLVideo.SDL_FLASH_UNTIL_FOCUSED))
                 {
-                    TaskbarApi.flashTaskbarUntilForeground(WindowsProperties.handle);
+                    FMLLog.log.debug("Taskbar flash not supported by this desktop ({}), continuing without it",
+                        SDLError.SDL_GetError());
                 }
-                played = true;
             }
+            played = true;
         }
     }
 

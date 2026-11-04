@@ -38,11 +38,8 @@ import javax.vecmath.Vector3f;
 import javax.vecmath.Vector4f;
 
 import net.minecraftforge.client.LoadingTracker;
-import net.minecraftforge.client.windows.DwmApi;
-import net.minecraftforge.client.windows.NtDll;
 import net.minecraftforge.client.TaskbarProgress;
 import net.minecraftforge.client.windows.TaskbarApi;
-import net.minecraftforge.client.windows.WindowsProperties;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -150,7 +147,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.core.async.ThreadNameCachingStrategy;
 import org.apache.logging.log4j.core.impl.ReusableLogEventFactory;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
@@ -1011,18 +1007,6 @@ public class ForgeHooksClient
         }
     }
     
-    public static void setWindowStyle(boolean isFullScreen) {
-        if (SystemUtils.IS_OS_WINDOWS) {
-            DwmApi.updateDwm(isFullScreen, WindowsProperties.handle);
-        }
-    }
-
-    public static void initializeWindowsInformation(){
-        if (SystemUtils.IS_OS_WINDOWS) {
-            NtDll.initializeWindowsInformation(Display.getWindow());
-        }
-    }
-
     public static void initializeTaskbarAPI(){
         if (SystemUtils.IS_OS_WINDOWS) {
             try {

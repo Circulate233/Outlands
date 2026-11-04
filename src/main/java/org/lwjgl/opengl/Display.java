@@ -70,6 +70,7 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.client.ime.ImeComposition;
 import net.minecraftforge.client.ime.ImeForceKey;
 import net.minecraftforge.client.ime.TextFieldHandler;
+import net.minecraftforge.client.windows.DwmApi;
 import net.minecraftforge.common.ForgeEarlyConfig;
 import net.minecraftforge.fml.common.FMLLog;
 
@@ -274,10 +275,30 @@ public class Display {
             applyBorderlessGeometry();
             Sys.checkSdl(SDL_SyncWindow(sdlWindow));
         }
+
+        // Ask for the foreground: SDL creates the window without stealing activation from whatever launched the
+        // game, so without this the window can open behind the launcher.
+        Sys.checkSdl(SDLVideo.SDL_RaiseWindow(sdlWindow));
+
+        refreshWindowStyle();
+    }
+
+    /**
+     * Re-applies the configured DWM window style to the current window.
+     * <p>
+     * Only Windows reads it, and only when the window exists: the attributes are written to the HWND that SDL
+     * owns, and DWM silently drops them while the client area is still empty.
+     */
+    private static void refreshWindowStyle() {
+        if (sdlWindow == NULL) {
+            return;
+        }
+        DwmApi.updateDwm(borderlessInsteadOfFullscreen, sdlWindow);
     }
 
     /** Oversizes the window past the display; an exact match reads as exclusive fullscreen. */
     private static void applyBorderlessGeometry() {
+        restoreFromMaximized();
         Sys.checkSdl(SDL_SetWindowBordered(sdlWindow, false));
         final Rectangle bounds = currentDisplayBounds();
 
@@ -306,6 +327,18 @@ public class Display {
             sdlWindow,
             bounds.getWidth() + spareX,
             bounds.getHeight() + spareY));
+    }
+
+    /**
+     * Leaves the maximized state, if the window is in it.
+     * <p>
+     * A maximized window ignores {@code SDL_SetWindowSize}: the platform keeps it at the work area size, so entering
+     * borderless fullscreen from a maximized window covers everything except the taskbar instead of the display.
+     */
+    private static void restoreFromMaximized() {
+        if ((SDL_GetWindowFlags(sdlWindow) & SDLVideo.SDL_WINDOW_MAXIMIZED) != 0) {
+            Sys.checkSdl(SDLVideo.SDL_RestoreWindow(sdlWindow));
+        }
     }
 
     /** Desktop bounds of every connected display. */
@@ -488,9 +521,10 @@ public class Display {
                 ForgeEarlyConfig.openglContextNoError ? 1 : 0));
         Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_DEPTH_SIZE, 24));
         Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_STENCIL_SIZE, 8));
-        // No alpha channel on the window surface: Minecraft clears with alpha 0, which a compositor that honours
-        // the buffer alpha (Wayland) blends away, leaving the window see-through and only the opaque GUI pixels
-        // (button outlines, text) on screen. Asking for a 24 bit colour buffer keeps the surface opaque.
+        // No alpha channel on the window surface. Minecraft clears with alpha 0, and two things go wrong when the
+        // surface carries an alpha channel that a compositor honours: on Wayland the cleared window blends away
+        // until only the opaque GUI pixels are left, and on Windows the DWM backdrop material would show through
+        // the whole client area. The backdrop is a frame decoration here, not a window transparency effect.
         Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_RED_SIZE, 8));
         Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_GREEN_SIZE, 8));
         Sys.checkSdl(SDLVideo.SDL_GL_SetAttribute(SDLVideo.SDL_GL_BLUE_SIZE, 8));
@@ -699,6 +733,11 @@ public class Display {
                 displayFramebufferWidth = sdlWindowEvent.data1();
                 displayFramebufferHeight = sdlWindowEvent.data2();
                 latestResized = true;
+                // The client area just got (or changed) its size, which is the first moment DWM can show the frame
+                // material, and the attributes do not survive the window being re-created by a display change.
+                if (displayWidth > 0 && displayHeight > 0) {
+                    refreshWindowStyle();
+                }
                 yield true;
             }
             case SDL_EVENT_WINDOW_MOVED -> {
@@ -1133,6 +1172,7 @@ public class Display {
                 }
                 applyBorderlessGeometry();
             } else {
+                restoreFromMaximized();
                 Sys.checkSdl(SDL_SetWindowBordered(sdlWindow, true));
                 Sys.checkSdl(SDL_SetWindowSize(sdlWindow, mode.getWidth(), mode.getHeight()));
                 Sys.checkSdl(SDL_SetWindowPosition(
