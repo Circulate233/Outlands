@@ -32,6 +32,7 @@ import net.minecraftforge.fml.common.patcher.ClassPatchManager;
 
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
@@ -74,6 +75,7 @@ public class FMLDeobfuscatingRemapper extends Remapper implements Unmapper {
 
     private FMLDeobfuscatingRemapper()
     {
+        super(Opcodes.ASM9);
         classNameBiMap=ImmutableBiMap.of();
     }
 

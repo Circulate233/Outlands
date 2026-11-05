@@ -12,7 +12,7 @@ public final class RewriteTable {
     private RewriteTable() {}
 
     /** SHA-256 of the table body, must match rewrite-table.tsv. */
-    public static final String TABLE_SHA256 = "0a6f765ee255921ca179245f3ad36c9a356c6785c2d6560fb189c70ccd19551a";
+    public static final String TABLE_SHA256 = "08f7f71f4505ab33524af9730e468a307b7886754e04748316945300d984496e";
 
     /** owner\0name\0desc */
     public static String key(String owner, String name, String desc) {
@@ -28,7 +28,7 @@ public final class RewriteTable {
     /** Allocation redirected to a replacement class. Value = replacementOwner. */
     public static final Map<String, String> CTOR = new HashMap<>(1 * 2);
     /** Static replacement for a dropped member. Value = "adapterOwner\0adapterName\0adapterDesc". */
-    public static final Map<String, String> ADAPTER = new HashMap<>(24 * 2);
+    public static final Map<String, String> ADAPTER = new HashMap<>(25 * 2);
 
     static {
         RENAME.put(key("org/lwjgl/openal/AL10", "alGetDouble", "(ILjava/nio/DoubleBuffer;)V"), "alGetDoublev");
@@ -464,6 +464,7 @@ public final class RewriteTable {
         ADAPTER.put(key("org/lwjgl/PointerBuffer", "getBuffer", "()Ljava/nio/ByteBuffer;"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0getBuffer\0(Lorg/lwjgl/PointerBuffer;)Ljava/nio/ByteBuffer;");
         ADAPTER.put(key("org/lwjgl/PointerBuffer", "position", "(I)Lorg/lwjgl/PointerBuffer;"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0position\0(Lorg/lwjgl/PointerBuffer;I)Lorg/lwjgl/PointerBuffer;");
         ADAPTER.put(key("org/lwjgl/openal/AL", "create", "()V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0alCreate\0()V");
+        ADAPTER.put(key("org/lwjgl/openal/AL", "destroy", "()V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0alDestroy\0()V");
         ADAPTER.put(key("org/lwjgl/openal/AL", "getDevice", "()Lorg/lwjgl/openal/ALCdevice;"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0getDevice\0()Lorg/lwjgl/openal/ALCdevice;");
         ADAPTER.put(key("org/lwjgl/openal/AL", "isCreated", "()Z"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0isCreated\0()Z");
         ADAPTER.put(key("org/lwjgl/openal/ALC10", "alcGetInteger", "(Lorg/lwjgl/openal/ALCdevice;ILjava/nio/IntBuffer;)V"), "net/minecraftforge/lwjgl/legacy/L2Adapters\0alcGetInteger\0(Lorg/lwjgl/openal/ALCdevice;ILjava/nio/IntBuffer;)V");

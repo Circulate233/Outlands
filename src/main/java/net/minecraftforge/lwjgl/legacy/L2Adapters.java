@@ -73,6 +73,24 @@ public final class L2Adapters {
         return ALC10.alcGetCurrentContext() != 0L;
     }
 
+    /**
+     * LWJGL3 kept {@code AL.destroy()} but made it package private, so LWJGL2 callers (paulscode's OpenAL library,
+     * on every resource reload) fail with {@link IllegalAccessError}. This is the same teardown LWJGL2 did: drop the
+     * current context, destroy it, and close the device {@link #alCreate()} opened.
+     */
+    public static void alDestroy() {
+        long context = ALC10.alcGetCurrentContext();
+        if (context == 0L) {
+            return;
+        }
+        long device = ALC10.alcGetContextsDevice(context);
+        ALC10.alcMakeContextCurrent(0L);
+        ALC10.alcDestroyContext(context);
+        if (device != 0L) {
+            ALC10.alcCloseDevice(device);
+        }
+    }
+
     public static ALCdevice getDevice() {
         return ALCdevice.wrap(ALC10.alcGetContextsDevice(ALC10.alcGetCurrentContext()));
     }

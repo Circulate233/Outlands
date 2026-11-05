@@ -92,3 +92,4 @@ ADAPTER	org/lwjgl/opengl/GL32	glClientWaitSync	(Lorg/lwjgl/opengl/GLSync;IJ)I	ne
 # the typed suffix family is ambiguous here (iv vs uiv), so pin the signed form
 RENAME	org/lwjgl/opengl/GL15	glGetQueryObject	(IILjava/nio/IntBuffer;)V	org/lwjgl/opengl/GL15	glGetQueryObjectiv	(IILjava/nio/IntBuffer;)V	-
 RENAME	org/lwjgl/opengl/GL15	glGetQueryObjectu	(IILjava/nio/IntBuffer;)V	org/lwjgl/opengl/GL15	glGetQueryObjectuiv	(IILjava/nio/IntBuffer;)V	-
+ADAPTER	org/lwjgl/openal/AL	destroy	()V	net/minecraftforge/lwjgl/legacy/L2Adapters	alDestroy	()V	-
