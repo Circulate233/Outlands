@@ -22,6 +22,7 @@ package net.minecraftforge.common;
 import net.minecraftforge.common.LoaderVersion;
 import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.ICrashCallable;
+import net.minecraftforge.fml.common.ICrashReportContributor;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.discovery.ASMDataTable;
 import net.minecraftforge.fml.common.discovery.ASMDataTable.ASMData;
@@ -108,10 +109,12 @@ public class MinecraftForge
            all.add(asm.getClassName());
        for (ASMData asm : table.getAll(ICrashCallable.class))
            all.add(asm.getClassName());
+       for (ASMData asm : table.getAll(ICrashReportContributor.class))
+           all.add(asm.getClassName());
 
        all.retainAll(classes);
 
-       if (all.size() == 0)
+       if (all.isEmpty())
         return;
 
        ForgeModContainer.log.debug("Preloading CrashReport Classes");

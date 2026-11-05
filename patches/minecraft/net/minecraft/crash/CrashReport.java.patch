@@ -1,14 +1,15 @@
 --- before/net/minecraft/crash/CrashReport.java
 +++ after/net/minecraft/crash/CrashReport.java
-@@ -116,6 +116,7 @@
+@@ -116,6 +116,8 @@
                  return IntCache.getCacheSizes();
              }
          });
 +        net.minecraftforge.fml.common.FMLCommonHandler.instance().enhanceCrashReport(this, this.systemDetailsCategory);
++        net.minecraftforge.fml.common.CrashReportHooks.addSections(this, this.cause);
      }
  
      public String getDescription()
-@@ -194,17 +195,18 @@
+@@ -194,17 +196,19 @@
          }
          finally
          {
@@ -19,7 +20,8 @@
          }
  
 -        return s;
-+        return s + net.minecraftforge.cleanmix.CleanMixHooks.addMixinMetadataToCrashReport(throwable);
++        return s + net.minecraftforge.cleanmix.CleanMixHooks.addMixinMetadataToCrashReport(throwable)
++                + net.minecraftforge.fml.common.CrashReportHooks.getStackTraceReport(throwable);
      }
  
      public String getCompleteReport()
@@ -30,7 +32,7 @@
          stringbuilder.append("// ");
          stringbuilder.append(getWittyComment());
          stringbuilder.append("\n\n");
-@@ -247,6 +249,7 @@
+@@ -247,6 +251,7 @@
              }
  
              Writer writer = null;
@@ -38,7 +40,7 @@
  
              try
              {
-@@ -258,12 +261,14 @@
+@@ -258,12 +263,14 @@
              catch (Throwable throwable)
              {
                  LOGGER.error("Could not save crash report to {}", toFile, throwable);
