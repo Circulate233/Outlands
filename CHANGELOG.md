@@ -27,6 +27,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [`a102079`](https://github.com/Project-Outlands/Outlands/commit/a1020798e0f615a871727962c791079e26a41dc4) - Update Foundation *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
 
 
+## [2026.11.03-2] - 2026-11-03
+
+### 🚀 Features
+
+- [`ab5ad7d`](https://github.com/Project-Outlands/Outlands/commit/ab5ad7da937a7e9c02d868cd58b07802e311d91f) - Add entity roll axis, mouse turn event and frame clock *(PR [#46](https://github.com/Project-Outlands/Outlands/pull/46) by [@DHJComical](https://github.com/DHJComical))*
+
+### 🚜 Refactor
+
+- [`aab7be1`](https://github.com/Project-Outlands/Outlands/commit/aab7be1cbb8f089caf99c4893e400e3789001fd6) - *(splash)* Remove Fugue/Scalar uninstalled warning *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`285191a`](https://github.com/Project-Outlands/Outlands/commit/285191ab5e3993dbe5dcb9d6ac7cdb5ea39c82c0) - *(config)* Move ForgeEarlyConfig into one forge.cfg *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`5251ecd`](https://github.com/Project-Outlands/Outlands/commit/5251ecdc57e4471c8efa8da19e34bdea11c87c6a) - *(fml)* Merge more duplicated code from old era *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+
 ## [2026.11.03] - 2026-11-03
 ### New Features
 - [`04a90a4`](https://github.com/Project-Outlands/Outlands/commit/04a90a4e332f2f87b6d61cc8beb8d9220f72986c) - declare mixin configurations in the jar section *(PR [#47](https://github.com/Project-Outlands/Outlands/pull/47) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
@@ -36,6 +49,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug Fixes
 - [`691fab8`](https://github.com/Project-Outlands/Outlands/commit/691fab8b70cfd656001d7504095f930d9b959fc0) - read the jar section with the types it declares *(PR [#43](https://github.com/Project-Outlands/Outlands/pull/43) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
 - [`ceba6d2`](https://github.com/Project-Outlands/Outlands/commit/ceba6d2a2374c0282a0a021c3893bc7afb50f3db) - extract the bundled jars of mods that belong to no mod list *(PR [#42](https://github.com/Project-Outlands/Outlands/pull/42) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+
+## [2026.11.02-2] - 2026-11-02
+
+### 🚀 Features
+
+- [`dc77147`](https://github.com/Project-Outlands/Outlands/commit/dc771473a68c8b30bbd0602a3bc84c59df08ff70) - Read dependency lists from the entry whenever the jar section is declared *(PR [#44](https://github.com/Project-Outlands/Outlands/pull/44) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`c0a2b1a`](https://github.com/Project-Outlands/Outlands/commit/c0a2b1a2df5c795c66eb6eb95477405fc1da013a) - Declare dependencies in a mod entry as one object per dependency *(PR [#45](https://github.com/Project-Outlands/Outlands/pull/45) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### 🐛 Bug Fixes
+
+- [`ceba6d2`](https://github.com/Project-Outlands/Outlands/commit/ceba6d2a2374c0282a0a021c3893bc7afb50f3db) - Extract the bundled jars of mods that belong to no mod list *(PR [#42](https://github.com/Project-Outlands/Outlands/pull/42) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`691fab8`](https://github.com/Project-Outlands/Outlands/commit/691fab8b70cfd656001d7504095f930d9b959fc0) - Read the jar section with the types it declares *(PR [#43](https://github.com/Project-Outlands/Outlands/pull/43) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
 
 
 ## [2026.11.02] - 2026-11-02
@@ -157,6 +183,27 @@ net.minecraftforge.* only. *(commit by [@kappa-maintainer](https://github.com/ka
 - [`c62d4da`](https://github.com/Project-Outlands/Outlands/commit/c62d4da3e40e0f691cc54a22c7d428bea280559c) - **release**: do not read a token that cannot see releases as 'release missing' *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
 
 ### Chores
+- [`1d3c4d3`](https://github.com/Project-Outlands/Outlands/commit/1d3c4d3d0d08369a578a88efe1944c377edcf290) - Merge branch 'main' of github.com:Project-Outlands/Outlands *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+
+## [2026.10.25-3] - 2026-10-25
+
+### 💼 Other
+
+- [`bde07a3`](https://github.com/Project-Outlands/Outlands/commit/bde07a3ee2cf7f244c9702b79015c094387fc635) - Point the forge slot template at the real main class *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`fc7ab14`](https://github.com/Project-Outlands/Outlands/commit/fc7ab1465f4ef7e84a44c5236b4a9e4e2f123b4a) - Patch the game once, into an overlay jar, instead of on every launch *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`0ad85f1`](https://github.com/Project-Outlands/Outlands/commit/0ad85f1ad13243944bf172ab252eaa70e0415dc1) - Give the renamer the loader's name space *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`7e90778`](https://github.com/Project-Outlands/Outlands/commit/7e90778f0cc100b82e99cd126223b99a51a4aa7f) - Pin the foundation release that carries the install step *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+
+## [2026.10.25-2] - 2026-10-25
+
+### 🐛 Bug Fixes
+
+- [`c62d4da`](https://github.com/Project-Outlands/Outlands/commit/c62d4da3e40e0f691cc54a22c7d428bea280559c) - *(release)* Do not read a token that cannot see releases as 'release missing' *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### ⚙️ Miscellaneous Tasks
+
 - [`1d3c4d3`](https://github.com/Project-Outlands/Outlands/commit/1d3c4d3d0d08369a578a88efe1944c377edcf290) - Merge branch 'main' of github.com:Project-Outlands/Outlands *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
 
 
