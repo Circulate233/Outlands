@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026.11.05-2] - 2026-11-05
+
+### 🚀 Features
+
+- [`adc95cf`](https://github.com/Project-Outlands/Outlands/commit/adc95cf57d89767430249d399da926c57cbd7f82) - New crash report enhance interface *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### 🐛 Bug Fixes
+
+- [`18754c8`](https://github.com/Project-Outlands/Outlands/commit/18754c8f3b00fd047418f0c81e0f93e822a2be6e) - *(display)* Release the GL provider when a display create fails *(PR [#49](https://github.com/Project-Outlands/Outlands/pull/49) by [@DHJComical](https://github.com/DHJComical))*
+
+### 🚜 Refactor
+
+- [`8f37529`](https://github.com/Project-Outlands/Outlands/commit/8f375290fbaaa0f8a7cfe560a939bb1bb4d8d0b3) - *(brand)* Simply replaced idea project icon with outlands icon *(PR [#48](https://github.com/Project-Outlands/Outlands/pull/48) by [@Gebardensprache](https://github.com/Gebardensprache))*
+
+
 ## [2026.11.05] - 2026-11-05
 ### New Features
 - [`ab5ad7d`](https://github.com/Project-Outlands/Outlands/commit/ab5ad7da937a7e9c02d868cd58b07802e311d91f) - add entity roll axis, mouse turn event and frame clock *(PR [#46](https://github.com/Project-Outlands/Outlands/pull/46) by [@DHJComical](https://github.com/DHJComical))*
