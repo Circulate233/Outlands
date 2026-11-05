@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026.11.05] - 2026-11-05
+### New Features
+- [`ab5ad7d`](https://github.com/Project-Outlands/Outlands/commit/ab5ad7da937a7e9c02d868cd58b07802e311d91f) - add entity roll axis, mouse turn event and frame clock *(PR [#46](https://github.com/Project-Outlands/Outlands/pull/46) by [@DHJComical](https://github.com/DHJComical))*
+
+### Bug Fixes
+- [`6ca2d2e`](https://github.com/Project-Outlands/Outlands/commit/6ca2d2ea546ade9be63de5f054ad26e5096f316a) - **config**: do not force the loader to load from the config directory lookup *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`9485511`](https://github.com/Project-Outlands/Outlands/commit/948551137b0e9a512a081746bce9c1166fb65243) - **transformers**: close two gaps in the bytecode transform layer *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`f114e92`](https://github.com/Project-Outlands/Outlands/commit/f114e929ea7d1b6cf9f20a081b0672bd5d38645b) - **windows**: make the Mica window style reach the window *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Refactors
+- [`4a3a584`](https://github.com/Project-Outlands/Outlands/commit/4a3a5849101580e128cbd9c63b012338684ed80a) - **taskbar**: drop the COM taskbar API for SDL's *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`bf7259f`](https://github.com/Project-Outlands/Outlands/commit/bf7259f321c6f25a579e830567f5601098bf50f8) - Remove legacy class for Fugue remap target *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`5251ecd`](https://github.com/Project-Outlands/Outlands/commit/5251ecdc57e4471c8efa8da19e34bdea11c87c6a) - **fml**: Merge more duplicated code from old era *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`285191a`](https://github.com/Project-Outlands/Outlands/commit/285191ab5e3993dbe5dcb9d6ac7cdb5ea39c82c0) - **config**: Move ForgeEarlyConfig into one forge.cfg *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`aab7be1`](https://github.com/Project-Outlands/Outlands/commit/aab7be1cbb8f089caf99c4893e400e3789001fd6) - **splash**: Remove Fugue/Scalar uninstalled warning *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Tests
+- [`7deb3bf`](https://github.com/Project-Outlands/Outlands/commit/7deb3bfed8de7523f1121ae0e414985f46928fd9) - **install**: test both record kinds the patch format has *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### Chores
+- [`a102079`](https://github.com/Project-Outlands/Outlands/commit/a1020798e0f615a871727962c791079e26a41dc4) - Update Foundation *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+
 ## [2026.11.03] - 2026-11-03
 ### New Features
 - [`04a90a4`](https://github.com/Project-Outlands/Outlands/commit/04a90a4e332f2f87b6d61cc8beb8d9220f72986c) - declare mixin configurations in the jar section *(PR [#47](https://github.com/Project-Outlands/Outlands/pull/47) by [@kappa-maintainer](https://github.com/kappa-maintainer))*
@@ -417,3 +440,4 @@ net.minecraftforge.* only. *(commit by [@kappa-maintainer](https://github.com/ka
 [2026.11.01]: https://github.com/Project-Outlands/Outlands/compare/2026.10.29...2026.11.01
 [2026.11.02]: https://github.com/Project-Outlands/Outlands/compare/2026.11.01...2026.11.02
 [2026.11.03]: https://github.com/Project-Outlands/Outlands/compare/2026.11.02...2026.11.03
+[2026.11.05]: https://github.com/Project-Outlands/Outlands/compare/2026.11.03...2026.11.05
