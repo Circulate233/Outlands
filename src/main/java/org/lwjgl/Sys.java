@@ -128,35 +128,57 @@ public class Sys {
     }
 
     /**
-     * Resolves the Linux video driver: the SDL default order puts Wayland first, but input methods only reach a
-     * Wayland client through the compositor's text-input protocol, while XWayland lets them in through XIM. Prefer
-     * X11 inside a Wayland session, and let {@link #retryWithPlatformDefaultDriver()} cover a session without a
-     * reachable X server.
+     * Resolves the Linux video driver.
+     * <p>
+     * A Wayland session gets the Wayland driver. KWin and Mutter now implement what the game needs from a native
+     * client - text-input for the IME, pointer constraints for relative mouse input, viewporter for fractional
+     * scale - while XWayland costs fractional scale, adds a round trip per frame and captures worse. {@code x11}
+     * stays available as an explicit choice for compositor bugs and X-only tooling, and
+     * {@link #retryWithPlatformDefaultDriver()} covers a session whose Wayland socket cannot be reached by falling
+     * back to the platform default order.
      *
      * @return the driver handed to SDL, or {@code null} when SDL should pick one itself
      */
     private static String applyLinuxVideoDriverHint() {
-        final String configured = ForgeEarlyConfig.linuxVideoDriver;
-        final String requested = configured == null ? "auto" : configured.trim().toLowerCase(Locale.ENGLISH);
-        final String driver = switch (requested) {
-            case "x11", "xorg" -> "x11";
-            case "wayland" -> "wayland";
-            case "auto" -> isWaylandSession() ? "x11" : null;
-            default -> {
-                FMLLog.log.warn("Unknown LINUX_VIDEO_DRIVER '{}', expected auto, x11 or wayland - using auto", configured);
-                yield isWaylandSession() ? "x11" : null;
-            }
-        };
+        final String driver = resolveLinuxVideoDriver(ForgeEarlyConfig.linuxVideoDriver, isWaylandSession());
         if (driver != null) {
             SDLHints.SDL_SetHint(SDLHints.SDL_HINT_VIDEO_DRIVER, driver);
         }
         return driver;
     }
 
+    /**
+     * Maps the {@code linuxVideoDriver} setting onto the driver SDL is asked for.
+     *
+     * @param configured the setting, possibly {@code null} or padded, may also be an SDL alias such as {@code xorg}
+     * @param waylandSession whether a Wayland compositor is reachable
+     * @return the driver handed to SDL, or {@code null} when SDL should pick one itself
+     */
+    static String resolveLinuxVideoDriver(String configured, boolean waylandSession) {
+        final String requested = configured == null ? "auto" : configured.trim().toLowerCase(Locale.ENGLISH);
+        return switch (requested) {
+            case "x11", "xorg" -> "x11";
+            case "wayland" -> "wayland";
+            case "auto" -> waylandSession ? "wayland" : null;
+            default -> {
+                FMLLog.log.warn("Unknown LINUX_VIDEO_DRIVER '{}', expected auto, x11 or wayland - using auto", configured);
+                yield resolveLinuxVideoDriver("auto", waylandSession);
+            }
+        };
+    }
+
+    /**
+     * Whether the session offers a Wayland compositor. {@code XDG_SESSION_TYPE} covers a normal login;
+     * {@code WAYLAND_DISPLAY} covers the sessions that do not export it (nested compositors, launchers that scrub
+     * the environment) while the socket is still reachable.
+     */
     private static boolean isWaylandSession() {
-        return Objects.requireNonNullElse(System.getenv("XDG_SESSION_TYPE"), "")
-            .toLowerCase()
-            .startsWith("wayland");
+        if (Objects.requireNonNullElse(System.getenv("XDG_SESSION_TYPE"), "")
+            .toLowerCase(Locale.ENGLISH)
+            .startsWith("wayland")) {
+            return true;
+        }
+        return !Objects.requireNonNullElse(System.getenv("WAYLAND_DISPLAY"), "").isEmpty();
     }
 
     /** Publishes the loader identity to SDL; packs override the title and icon through Display. */

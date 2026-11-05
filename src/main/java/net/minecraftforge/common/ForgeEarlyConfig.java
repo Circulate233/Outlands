@@ -217,8 +217,9 @@ public final class ForgeEarlyConfig
 
         p = cfg.get(CATEGORY, "linuxVideoDriver", "auto", comment(
                 "Linux-only - which SDL video driver to use: 'auto', 'x11' or 'wayland'.",
-                "'auto' prefers XWayland in a Wayland session (IME input methods reach X11 clients through XIM) and",
-                "falls back to native Wayland when the X11 driver cannot be initialised.",
+                "'auto' picks the Wayland driver whenever the session has a Wayland compositor, and leaves the choice",
+                "to SDL (X11/XWayland included) otherwise. Text input, IME candidates and fractional scale work on",
+                "either driver; 'x11' stays useful for compositor bugs and X-only capture tools.",
                 "The SDL_VIDEO_DRIVER environment variable still overrides this setting."));
         p.setValidValues(new String[] { "auto", "x11", "wayland" });
         p.setRequiresMcRestart(true);
