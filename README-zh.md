@@ -110,6 +110,21 @@ echo 'releaseToken=github_pat_...' >> ~/.gradle/gradle.properties
 CI 会再校验同样的条件（提交必须仍是 `HEAD`，版本必须仍是“下一个可用”），然后构建、上传 maven，**最后才打 tag**
 并创建 GitHub release。这个顺序保证失败的发布不会消耗版本号。
 
+### 更新日志
+
+release notes 与 `CHANGELOG.md` 的条目来自“上一个发布 tag 到 `HEAD`”之间的提交，由 [git-cliff](https://git-cliff.org)
+按 [`cliff.toml`](cliff.toml) 生成，因此可以在任意 checkout 里复现：
+
+```
+git cliff 2026.10.23..HEAD --tag <版本>            # 该版本的 release notes
+```
+
+区间永远是显式传入的。同一天的 `-2` 发布在 SemVer 里是 *pre-release*（`2026.10.23-2` 排在 `2026.10.23` 之后），
+任何“按 SemVer 取最近两个 tag”的做法都会把它排到当天无后缀 tag 的后面，那个发布就没有日志可写——之前用的
+action 正是这么丢的。分节按 conventional commit 前缀：`feat` → Features、`fix` → Bug Fixes、`perf` → Performance、
+`refactor` → Refactor、`test` → Testing、`chore` → Miscellaneous Tasks，其余（包括没有前缀的提交）→ Other；
+`docs`/`style`/`build`/`ci` 丢弃，破坏性变更用 `[**breaking**]` 标出。
+
 ### CI secrets
 
 只有一个：`OUTLANDS_MAVEN_TOKEN`（maven 发布令牌）。用户名 `fg` 不是秘密，直接写在 workflow 里。

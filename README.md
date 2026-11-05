@@ -117,6 +117,22 @@ CI then re-checks the same things (the commit must still be `HEAD`, and the vers
 builds, uploads to maven, **and only then creates the tag** and the GitHub release. That ordering is what keeps a
 failed release from consuming a version number.
 
+### Changelog
+
+Release notes and the `CHANGELOG.md` entry come from the commits between the previous release tag and `HEAD`, rendered
+by [git-cliff](https://git-cliff.org) with [`cliff.toml`](cliff.toml), so they can be reproduced from any checkout:
+
+```
+git cliff 2026.10.23..HEAD --tag <version>            # the release notes for <version>
+```
+
+The range is always passed explicitly. A same-day `-2` release is a SemVer *pre-release* (`2026.10.23-2` sorts below
+`2026.10.23`), so anything that picks "the two newest tags" by SemVer puts it below the plain tag of that day and the
+release ends up without notes - which is what the previous changelog action did. Sections follow the conventional
+commit type (`feat` → Features, `fix` → Bug Fixes, `perf` → Performance, `refactor` → Refactor, `test` → Testing,
+`chore` → Miscellaneous Tasks, anything else - including commits without a type - → Other); `docs`/`style`/`build`/`ci`
+are dropped, and a breaking change is flagged with `[**breaking**]`.
+
 ### CI secrets
 
 Only one: `OUTLANDS_MAVEN_TOKEN` (the maven publishing token). The user name `fg` is not a secret and is used

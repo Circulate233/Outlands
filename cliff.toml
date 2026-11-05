@@ -1,0 +1,64 @@
+# git-cliff configuration for the Outlands changelog and release notes.
+#
+# The release workflow always passes an explicit range (the previous release tag up to HEAD) and the version that is
+# being released. That is deliberate: CalVer's same-day suffix (2026.11.03-2) is a valid SemVer *pre-release*, so
+# anything that orders tags as SemVer - the changelog action we used before did - sorts it below the plain tag of the
+# same day, and the release ends up without notes. git-cliff orders tags by the commit time of the commit they point
+# at, and an explicit range leaves nothing to guess.
+#
+# Otherwise this is git-cliff's stock layout: one section per conventional commit type, commits in commit order. The
+# `*(PR ... by @...)*` suffix is looked up through the GitHub API for the repository in 'origin'; a token
+# (`GITHUB_TOKEN`, or `--github-token`) keeps that away from the anonymous rate limit, and without the remote data the
+# entries are still generated, just without the suffix.
+
+[changelog]
+# One release only - no changelog header or footer - because the release workflow uses this text verbatim as the
+# GitHub release body and inserts it into CHANGELOG.md itself. That keeps that file's header and makes the step
+# idempotent.
+body = """
+{% if version %}\
+    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in commits %}
+        - [`{{ commit.id | truncate(length=7, end="") }}`](<REPO>/commit/{{ commit.id }}) - {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
+            {% if commit.breaking %}[**breaking**] {% endif %}\
+            {{ commit.message | upper_first }}{% if commit.remote.pr_number %} *(PR [#{{ commit.remote.pr_number }}](<REPO>/pull/{{ commit.remote.pr_number }}) by [@{{ commit.remote.username }}](<GH>/{{ commit.remote.username }}))*{% elif commit.remote.username %} *(commit by [@{{ commit.remote.username }}](<GH>/{{ commit.remote.username }}))*{% endif %}\
+    {% endfor %}
+{% endfor %}\n
+"""
+trim = true
+# The links above are written with placeholders so the template stays readable. A fork moves here, nothing else.
+postprocessors = [
+  { pattern = '<REPO>', replace = "https://github.com/Project-Outlands/Outlands" },
+  { pattern = '<GH>', replace = "https://github.com" },
+]
+
+[git]
+conventional_commits = true
+# Commits that do not parse (the older "component: description" style) still belong in the changelog: they land in
+# `Other` instead of disappearing.
+filter_unconventional = false
+# Squash merges end the subject with ' (#123)'. The link comes from the commit's PR data instead, so the duplicate goes.
+commit_preprocessors = [
+  { pattern = '(?m)\s*\(#\d+\)$', replace = '' },
+]
+# The `<!-- n -->` prefix only fixes the order the sections are rendered in; it is stripped from the heading.
+commit_parsers = [
+  { message = "^feat", group = "<!-- 0 -->🚀 Features" },
+  { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
+  { message = "^perf", group = "<!-- 2 -->⚡ Performance" },
+  { message = "^refactor", group = "<!-- 3 -->🚜 Refactor" },
+  { message = "^test", group = "<!-- 4 -->🧪 Testing" },
+  { message = "^chore", group = "<!-- 5 -->⚙️ Miscellaneous Tasks" },
+  # Not released on their own: they only describe how the tree is built or documented. (The release itself commits
+  # `docs: update CHANGELOG.md ...` after every release, which would otherwise show up in the next one.)
+  { message = "^docs?", skip = true },
+  { message = "^style", skip = true },
+  { message = "^build", skip = true },
+  { message = "^ci", skip = true },
+  { message = ".*", group = "<!-- 6 -->💼 Other" },
+]

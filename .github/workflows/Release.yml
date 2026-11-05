@@ -171,12 +171,22 @@ jobs:
           done
 
       - name: Tag the release
+        id: tag
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
           git config user.name "outlands-release-bot"
           git config user.email "release@outlands.top"
+          # What the changelog starts from. Taken from the tag list (creation order, restricted to this branch) rather
+          # than from 'git describe', so it also holds when the tag already exists - this workflow runs on a pushed
+          # tag too - and never picks a tag of a commit that is not on this branch.
+          PREVIOUS=$(git tag --merged HEAD --sort=-creatordate | grep -vxF "$VERSION" | head -1 || true)
+          if [ -z "$PREVIOUS" ]; then
+            # First release on this branch: everything up to HEAD belongs to it.
+            PREVIOUS=$(git rev-list --max-parents=0 HEAD | head -1)
+          fi
+          echo "previous=$PREVIOUS" >> "$GITHUB_OUTPUT"
           if git ls-remote --tags --refs origin "refs/tags/$VERSION" | grep -q .; then
             echo "tag $VERSION already exists"
           else
@@ -184,17 +194,46 @@ jobs:
             git push origin "refs/tags/$VERSION"
           fi
 
-      - name: Update CHANGELOG
+      - name: Generate the changelog
+        # An explicit range, never 'the newest two tags': a same-day CalVer '-2' is a valid SemVer *pre-release*, so any
+        # tag ordering that speaks SemVer sorts it below the plain tag of that day - which is exactly how the previous
+        # action lost the second release of a day. git-cliff reads the checkout, so the notes also can not disagree
+        # with what was built.
         id: changelog
-        uses: requarks/changelog-action@v1
+        uses: orhun/git-cliff-action@v4
         with:
-          token: ${{ github.token }}
-          tag: ${{ steps.version.outputs.version }}
-          useGitmojis: false
-          includeInvalidCommits: true
-          reverseOrder: true
-          excludeTypes: style,build,docs
-        continue-on-error: true
+          version: v2.14.2
+          config: cliff.toml
+          args: '${{ steps.tag.outputs.previous }}..HEAD --tag ${{ steps.version.outputs.version }}'
+        env:
+          OUTPUT: /tmp/changes.md
+          # PR numbers and authors come from the API; the workflow's own token can read this repository.
+          GITHUB_REPO: ${{ github.repository }}
+
+      - name: Update CHANGELOG.md
+        # The file keeps its own header and older entries; the new section goes above the newest one. Done here rather
+        # than with 'git-cliff --prepend' so the step stays idempotent: a resumed release finds its section and leaves
+        # the file alone.
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          NOTES: ${{ steps.changelog.outputs.changelog }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, pathlib
+
+          version = os.environ["VERSION"]
+          notes = pathlib.Path(os.environ["NOTES"]).read_text().rstrip("\n").split("\n")
+          path = pathlib.Path("CHANGELOG.md")
+          lines = path.read_text().split("\n")
+
+          if any(line.startswith(f"## [{version}] - ") for line in lines):
+              print(f"CHANGELOG.md already documents {version}")
+          else:
+              at = next((i for i, line in enumerate(lines) if line.startswith("## [")), len(lines))
+              path.write_text("\n".join(lines[:at] + notes + ["", ""] + lines[at:]))
+              print(f"CHANGELOG.md: added {version}")
+          PY
 
       - name: Collect release artifacts
         # What a user installs: the loader jar, the installer and the launcher pack. Sources, userdev and the
@@ -217,7 +256,7 @@ jobs:
           tag: ${{ steps.version.outputs.version }}
           makeLatest: true
           allowUpdates: true
-          body: ${{ steps.changelog.outputs.changes }}
+          body: ${{ steps.changelog.outputs.content }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit CHANGELOG.md
