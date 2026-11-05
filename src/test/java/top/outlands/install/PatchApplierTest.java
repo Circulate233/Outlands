@@ -63,15 +63,38 @@ class PatchApplierTest {
         final byte[] source = bytes("class the patches delete");
         final File vanilla = jar("vanilla.jar", Map.of("aaa.class", source));
         final File output = dir.resolve("out.jar").toFile();
+        // A removal is a patch against an existing class whose result is empty; 'no class at the target' is the
+        // opposite case and means the patches add one (see createsTheClassesThePatchesAdd).
         final byte[] pack = pack(Map.of("binpatch/client/aaa.binpatch",
-                entry("aaa", "net/minecraft/Thing", false, source, bytes("gone"))));
+                entry("aaa", "net/minecraft/Thing", true, source, new byte[0])));
 
         final PatchApplier.Report report = PatchApplier.apply(pack, vanilla, output, "client");
 
         assertEquals(1, report.records());
         assertEquals(0, report.written());
+        assertEquals(0, report.created());
         assertEquals(1, report.skipped());
         assertEquals(Set.of(), entries(output));
+    }
+
+    @Test
+    void createsTheClassesThePatchesAdd() throws Exception {
+        final byte[] added = bytes("anonymous inner class the patches gained");
+        final File vanilla = jar("vanilla.jar", Map.of("aaa.class", bytes("the enclosing class")));
+        final File output = dir.resolve("out.jar").toFile();
+        // The diff for such a record runs from nothing to the whole class, so the pack carries no input checksum and
+        // the input jar is never asked for the class.
+        final byte[] pack = pack(Map.of("binpatch/client/aaa$1.binpatch",
+                rawEntry("aaa$1", "net/minecraft/Thing$1", false, 0, gdiff(new byte[0], added))));
+
+        final PatchApplier.Report report = PatchApplier.apply(pack, vanilla, output, "client");
+
+        assertEquals(1, report.records());
+        assertEquals(1, report.written());
+        assertEquals(1, report.created());
+        assertEquals(0, report.skipped());
+        assertEquals(Set.of("aaa$1.class"), entries(output));
+        assertArrayEquals(added, entryBytes(output, "aaa$1.class"));
     }
 
     @Test
