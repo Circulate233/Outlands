@@ -104,6 +104,7 @@ import org.lwjgl.sdl.SDLStdinc;
 import org.lwjgl.sdl.SDLSurface;
 import org.lwjgl.sdl.SDLVideo;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.Platform;
 import org.lwjgl.util.Rectangle;
 
 /**
@@ -272,8 +273,14 @@ public class Display {
         if (pendingBorderless) {
             pendingBorderless = false;
             borderlessInsteadOfFullscreen = true;
-            applyBorderlessGeometry();
+            if (platformOwnsFullscreen()) {
+                applyPlatformFullscreen(true);
+            } else {
+                applyBorderlessGeometry();
+            }
             Sys.checkSdl(SDL_SyncWindow(sdlWindow));
+            // The window changed size while it was being created, so the recorded geometry is stale.
+            updateWindowDimensions();
         }
 
         // Ask for the foreground: SDL creates the window without stealing activation from whatever launched the
@@ -296,7 +303,13 @@ public class Display {
         DwmApi.updateDwm(borderlessInsteadOfFullscreen, sdlWindow);
     }
 
-    /** Oversizes the window past the display; an exact match reads as exclusive fullscreen. */
+    /**
+     * Oversizes the window past the display; an exact match reads as exclusive fullscreen.
+     * <p>
+     * Only used where the platform cannot provide fullscreen itself, see {@link #platformOwnsFullscreen()}:
+     * Windows needs the overscan so the window is not read as an exclusive fullscreen window, macOS would move
+     * the window to its own Space.
+     */
     private static void applyBorderlessGeometry() {
         restoreFromMaximized();
         Sys.checkSdl(SDL_SetWindowBordered(sdlWindow, false));
@@ -322,7 +335,7 @@ public class Display {
         final int spareX = left && right ? 0 : BORDERLESS_OVERSCAN * 2;
         final int spareY = up && down ? 0 : BORDERLESS_OVERSCAN * 2;
 
-        Sys.checkSdl(SDL_SetWindowPosition(sdlWindow, bounds.getX() + insetX, bounds.getY() + insetY));
+        setWindowPosition(bounds.getX() + insetX, bounds.getY() + insetY);
         Sys.checkSdl(SDL_SetWindowSize(
             sdlWindow,
             bounds.getWidth() + spareX,
@@ -592,7 +605,7 @@ public class Display {
         displayX = new_x;
         displayY = new_y;
         if (displayCreated) {
-            MainThread.runOnMainThread(() -> Sys.checkSdl(SDL_SetWindowPosition(sdlWindow, new_x, new_y)));
+            MainThread.runOnMainThread(() -> setWindowPosition(new_x, new_y));
         }
     }
 
@@ -1153,13 +1166,49 @@ public class Display {
     public static void setFullscreen(boolean fullscreen) {
         if (!displayCreated) {
             pendingBorderless = fullscreen;
+            borderlessInsteadOfFullscreen = fullscreen;
             return;
         }
         setBorderless(fullscreen);
     }
 
-    public static void toggleBorderless() {
-        setBorderless(!isBorderlessActive());
+    /**
+     * Toggles between the configured window size and covering a display.
+     *
+     * @return whether the window is now expected to cover a display
+     */
+    public static boolean toggleBorderless() {
+        final boolean toBorderless = !isFullscreenActive();
+        setBorderless(toBorderless);
+        return toBorderless;
+    }
+
+    /**
+     * Whether the window covers a display. How that state is represented is up to the platform: Linux leaves it to
+     * the window manager or the compositor ({@code SDL_WINDOW_FULLSCREEN}), Windows and macOS use the undecorated
+     * oversize window built by {@link #applyBorderlessGeometry()}.
+     */
+    public static boolean isFullscreenActive() {
+        if (!displayCreated) {
+            return pendingBorderless;
+        }
+        if ((SDL_GetWindowFlags(sdlWindow) & SDLVideo.SDL_WINDOW_FULLSCREEN) != 0) {
+            return true;
+        }
+        return !platformOwnsFullscreen() && borderlessInsteadOfFullscreen;
+    }
+
+    /**
+     * Whether the window manager, not this class, makes the window cover a display.
+     * <p>
+     * Windows cannot keep native IME candidate windows above an exclusive fullscreen window, so the undecorated
+     * window is oversized by a pixel there instead; macOS fullscreen moves the window to its own Space. Linux needs
+     * neither workaround: SDL asks for EWMH fullscreen on X11 and for {@code xdg_toplevel} fullscreen on Wayland,
+     * both of which the window manager or the compositor implements. That never switches the display mode, so the
+     * IME keeps working, and it never places the window from the client, which Wayland forbids outright.
+     */
+    private static boolean platformOwnsFullscreen() {
+        return Platform.get() == Platform.LINUX;
     }
 
     public static void setBorderless(boolean toBorderless) {
@@ -1168,23 +1217,49 @@ public class Display {
             return;
         }
         MainThread.runOnMainThread(() -> {
-            if (toBorderless) {
+            if (platformOwnsFullscreen()) {
+                applyPlatformFullscreen(toBorderless);
+            } else if (toBorderless) {
+                // Left over from a previous platform fullscreen request, if any: geometry is applied by hand here.
                 if ((SDL_GetWindowFlags(sdlWindow) & SDLVideo.SDL_WINDOW_FULLSCREEN) != 0) {
                     Sys.checkSdl(SDL_SetWindowFullscreen(sdlWindow, false));
                 }
                 applyBorderlessGeometry();
             } else {
-                restoreFromMaximized();
-                Sys.checkSdl(SDL_SetWindowBordered(sdlWindow, true));
-                Sys.checkSdl(SDL_SetWindowSize(sdlWindow, mode.getWidth(), mode.getHeight()));
-                Sys.checkSdl(SDL_SetWindowPosition(
-                    sdlWindow,
-                    SDL_WINDOWPOS_CENTERED,
-                    SDL_WINDOWPOS_CENTERED));
+                restoreWindowedGeometry();
             }
             Sys.checkSdl(SDL_SyncWindow(sdlWindow));
             updateWindowDimensions();
         });
+    }
+
+    /** Hands the fullscreen state to the platform, see {@link #platformOwnsFullscreen()}. */
+    private static void applyPlatformFullscreen(boolean fullscreen) {
+        Sys.checkSdl(SDL_SetWindowFullscreen(sdlWindow, fullscreen));
+    }
+
+    /** Leaves fullscreen for the configured window size, centred on the display. */
+    private static void restoreWindowedGeometry() {
+        restoreFromMaximized();
+        Sys.checkSdl(SDL_SetWindowBordered(sdlWindow, true));
+        Sys.checkSdl(SDL_SetWindowSize(sdlWindow, mode.getWidth(), mode.getHeight()));
+        setWindowPosition(SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    }
+
+    /**
+     * Moves the window when the video driver can. Wayland has no request for a client to place a toplevel surface,
+     * so SDL fails the call there ("wayland cannot position non-popup windows") and placement is left to the
+     * compositor.
+     */
+    private static void setWindowPosition(int x, int y) {
+        if (!"wayland".equals(SDLVideo.SDL_GetCurrentVideoDriver())) {
+            Sys.checkSdl(SDL_SetWindowPosition(sdlWindow, x, y));
+            return;
+        }
+        FMLLog.log.debug(
+            "Leaving the window at {},{}: the 'wayland' video driver places windows itself",
+            displayX,
+            displayY);
     }
 
     private static Rectangle currentDisplayBounds() {
@@ -1202,12 +1277,6 @@ public class Display {
 
     public static boolean isBorderless() {
         return borderlessInsteadOfFullscreen;
-    }
-
-    private static boolean isBorderlessActive() {
-        return displayCreated
-            && (SDL_GetWindowFlags(sdlWindow) & SDLVideo.SDL_WINDOW_BORDERLESS) != 0
-            && (SDL_GetWindowFlags(sdlWindow) & SDLVideo.SDL_WINDOW_FULLSCREEN) == 0;
     }
 
     public static boolean isFullscreen() {
