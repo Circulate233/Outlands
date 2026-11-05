@@ -39,7 +39,6 @@ import javax.vecmath.Vector4f;
 
 import net.minecraftforge.client.LoadingTracker;
 import net.minecraftforge.client.TaskbarProgress;
-import net.minecraftforge.client.windows.TaskbarApi;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -142,7 +141,6 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.FMLLog;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.core.async.ThreadNameCachingStrategy;
 import org.apache.logging.log4j.core.impl.ReusableLogEventFactory;
@@ -1007,24 +1005,8 @@ public class ForgeHooksClient
         }
     }
     
-    public static void initializeTaskbarAPI(){
-        if (SystemUtils.IS_OS_WINDOWS) {
-            try {
-                TaskbarApi taskbarApi = TaskbarApi.create();
-            } catch (Throwable t) {
-                FMLLog.log.error("Unable to initialize Taskbar API", t);
-                TaskbarApi.clearInstance();
-            }
-        }
+    public static void initializeLoadingTracker(){
         LoadingTracker.init();
-    }
-
-    public static void shutdownTaskbarAPI() {
-        TaskbarApi api = TaskbarApi.getInstance();
-        if (api != null) {
-            api.close();
-            TaskbarApi.clearInstance();
-        }
     }
     
     public static void clearTaskbarProgress() {

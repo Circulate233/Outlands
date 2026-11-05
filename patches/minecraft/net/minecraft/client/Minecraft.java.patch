@@ -140,7 +140,7 @@
 +        Display.setTitle("Outlands");
 +
 +        Display.create((new PixelFormat()).withDepthBits(24));
-+        net.minecraftforge.client.ForgeHooksClient.initializeTaskbarAPI();
++        net.minecraftforge.client.ForgeHooksClient.initializeLoadingTracker();
      }
  
      private void setInitialDisplayMode() throws LWJGLException
