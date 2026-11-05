@@ -50,6 +50,7 @@ import net.minecraftforge.fml.common.discovery.ASMDataTable.ASMData;
 import net.minecraftforge.fml.common.discovery.asm.ModAnnotation.EnumHolder;
 
 import org.apache.commons.lang3.StringUtils;
+import top.outlands.foundation.boot.TransformerHolder;
 
 public class ConfigManager
 {
@@ -244,9 +245,12 @@ public class ConfigManager
         @Override
         public File configDir()
         {
-            File dir = Loader.instance().getConfigDir();
-            if (dir != null)
-                return dir;
+            if (TransformerHolder.renameTransformer != null)
+            {
+                File dir = Loader.instance().getConfigDir();
+                if (dir != null)
+                    return dir;
+            }
 
             // The early config classes are registered before Loader has resolved its directories. Falling back to the
             // launch home keeps those files under <instance>/config instead of the process working directory.
