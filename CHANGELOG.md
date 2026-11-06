@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026.11.06] - 2026-11-06
+
+### 🚀 Features
+
+- [`0b36b11`](https://github.com/Project-Outlands/Outlands/commit/0b36b118f0a2288d17c6983ecb593fdc6bc85c54) - *(render)* Add render takeover seams and the shim retarget table *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### 🐛 Bug Fixes
+
+- [`3139a6f`](https://github.com/Project-Outlands/Outlands/commit/3139a6f28cdf54e8cc043d0d0e840e4a3897bc69) - Use regular full screen on Linux, fix #50 *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`1070ad1`](https://github.com/Project-Outlands/Outlands/commit/1070ad178a86208f2ec9bfaa220382060d267d99) - Fix serveral issue on installer crafting and publish *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+### ⚙️ Miscellaneous Tasks
+
+- [`f339d98`](https://github.com/Project-Outlands/Outlands/commit/f339d98d5fc998f127dacbf491162483c60c480e) - Merge branch 'main' of github.com:Project-Outlands/Outlands *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+- [`ccf333d`](https://github.com/Project-Outlands/Outlands/commit/ccf333dbd2131897d73970a32de55e5004535cac) - Prefer wayland instead of X11 when possible *(commit by [@kappa-maintainer](https://github.com/kappa-maintainer))*
+
+
 ## [2026.11.05-2] - 2026-11-05
 
 ### 🚀 Features
